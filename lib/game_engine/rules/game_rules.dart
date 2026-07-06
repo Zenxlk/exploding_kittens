@@ -1,10 +1,8 @@
 import '../../core/errors/exceptions.dart';
 import '../models/card/card_model.dart';
 import '../models/game/game_state.dart';
-import '../models/player/player_model.dart';
 import '../models/turn/turn_action.dart';
 import 'card_rules.dart';
-import 'nope_rules.dart';
 
 /// Orquestador de reglas. Punto único de validación antes de aplicar acciones.
 abstract final class GameRules {

@@ -36,16 +36,15 @@ class GameEngine {
     assert(players.length >= 2 && players.length <= 5,
         'Se requieren 2-5 jugadores');
 
-    final (:deck, :players as updatedPlayers) =
-        DeckBuilder.build(players: players, config: config);
+    final result = DeckBuilder.build(players: players, config: config);
 
     _state = GameState(
       id: _uuid.v4(),
       config: config,
-      players: updatedPlayers,
-      deck: deck,
+      players: result.players,
+      deck: result.deck,
       turn: TurnModel(
-        currentPlayerId: updatedPlayers.first.id,
+        currentPlayerId: result.players.first.id,
         phase: TurnPhase.playing,
         actionsLeft: 1,
       ),
