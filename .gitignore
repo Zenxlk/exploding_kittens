@@ -1,45 +1,95 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
+# ── OS ──────────────────────────────────────────────────────────────────────
 .DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# IntelliJ related
+# ── Editors ──────────────────────────────────────────────────────────────────
+.idea/
 *.iml
 *.ipr
 *.iws
-.idea/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/*.code-workspace
+.atom/
+.history/
+*.swp
+*.swo
+*~
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# ── Flutter / Dart ────────────────────────────────────────────────────────────
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
 /build/
 /coverage/
+**/doc/api/
+**/ios/Flutter/.last_build_id
 
-# Symbolication related
+# Dart code generation (freezed, json_serializable, riverpod_generator)
+# Estos archivos se generan con: dart run build_runner build
+*.g.dart
+*.freezed.dart
+*.gen.dart
+
+# ── Android ──────────────────────────────────────────────────────────────────
+android/local.properties
+android/.gradle/
+android/captures/
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/key.properties
+*.jks
+*.keystore
+
+# ── iOS ──────────────────────────────────────────────────────────────────────
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/
+ios/Runner/GeneratedPluginRegistrant.h
+ios/Runner/GeneratedPluginRegistrant.m
+ios/**/*.xcworkspace/xcuserdata/
+ios/**/*.xcodeproj/xcuserdata/
+ios/**/*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+
+# ── Build artifacts ──────────────────────────────────────────────────────────
 app.*.symbols
-
-# Obfuscation related
 app.*.map.json
+*.apk
+*.aab
+*.ipa
+*.dSYM.zip
+*.dSYM
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# ── Secrets / credentials ────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+secrets.json
+google-services.json
+GoogleService-Info.plist
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── Misc ─────────────────────────────────────────────────────────────────────
+.svn/
+.buildlog/
+migrate_working_dir/
+.swiftpm/
+*.class
+*.pyc
+
+# ── Claude Code ───────────────────────────────────────────────────────────────
+.claude/
