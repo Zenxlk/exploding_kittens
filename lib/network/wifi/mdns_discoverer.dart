@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:exploding_kittens/core/constants/app_constants.dart';
 
-import 'discovered_room.dart';
+import 'package:exploding_kittens/features/lobby/domain/models/discovered_room.dart';
 
 // Discovers rooms on the local network by listening for UDP beacons
 // sent by MdnsAdvertiser.

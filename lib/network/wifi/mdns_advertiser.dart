@@ -7,7 +7,7 @@ import 'package:network_info_plus/network_info_plus.dart';
 import 'package:exploding_kittens/core/constants/app_constants.dart';
 import 'package:exploding_kittens/core/errors/failures.dart';
 
-import 'discovered_room.dart';
+import 'package:exploding_kittens/features/lobby/domain/models/discovered_room.dart';
 
 // Announces a room on the local network via UDP broadcast.
 //

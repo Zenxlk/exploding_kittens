@@ -32,6 +32,7 @@ class WsClient {
 
   WebSocketChannel? _channel;
   bool _connected = false;
+  LobbyRoom? _lastRoom;
   final _messageController = StreamController<WsMessage>.broadcast();
   final _statusController = StreamController<WsConnectionStatus>.broadcast();
   Timer? _pingTimer;
@@ -41,6 +42,10 @@ class WsClient {
 
   // Connection status changes (connecting → connected → disconnected).
   Stream<WsConnectionStatus> get status => _statusController.stream;
+
+  // Last room state received. Populated before the stream emits, so callers
+  // that miss the first stream event can still read the current state.
+  LobbyRoom? get lastRoom => _lastRoom;
 
   // Filtered view: emits a new LobbyRoom on every RoomStateMessage.
   Stream<LobbyRoom> get roomStream => messages
@@ -110,6 +115,11 @@ class WsClient {
   void _onData(String data) {
     try {
       final msg = WsMessage.fromJson(jsonDecode(data) as Map<String, dynamic>);
+      // Cache before emitting so lastRoom is always readable even if no
+      // subscriber was attached when the first RoomStateMessage arrived.
+      if (msg is RoomStateMessage) {
+        _lastRoom = LobbyRoom.fromJson(msg.roomJson);
+      }
       _messageController.add(msg);
     } catch (_) {}
   }
