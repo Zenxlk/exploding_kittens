@@ -39,6 +39,24 @@ class LobbyRoom extends Equatable {
     );
   }
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'hostId': hostId,
+        'players': players.map((p) => p.toJson()).toList(),
+        'maxPlayers': maxPlayers,
+        'status': status.name,
+      };
+
+  factory LobbyRoom.fromJson(Map<String, dynamic> j) => LobbyRoom(
+        id: j['id'] as String,
+        hostId: j['hostId'] as String,
+        players: (j['players'] as List)
+            .map((p) => LobbyPlayer.fromJson(p as Map<String, dynamic>))
+            .toList(),
+        maxPlayers: j['maxPlayers'] as int,
+        status: LobbyStatus.values.byName(j['status'] as String),
+      );
+
   @override
   List<Object?> get props => [id, hostId, players, maxPlayers, status];
 }

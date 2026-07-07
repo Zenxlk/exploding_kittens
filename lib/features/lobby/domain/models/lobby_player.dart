@@ -25,6 +25,20 @@ class LobbyPlayer extends Equatable {
     );
   }
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'isHost': isHost,
+        'isReady': isReady,
+      };
+
+  factory LobbyPlayer.fromJson(Map<String, dynamic> j) => LobbyPlayer(
+        id: j['id'] as String,
+        name: j['name'] as String,
+        isHost: j['isHost'] as bool,
+        isReady: j['isReady'] as bool,
+      );
+
   @override
   List<Object?> get props => [id, name, isHost, isReady];
 }
