@@ -7,7 +7,32 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 ## [Unreleased]
 
 ### En progreso
-- Fase 3: Lobby WiFi (descubrimiento mDNS, creación y unión de sala)
+- Fase 4: Pantalla de juego completa
+
+---
+
+## [0.3.0] — 2026-07-06
+
+### Añadido — Fase 3: Lobby local WiFi
+- **`LobbyRoom` / `LobbyPlayer` / `LobbyStatus`** — modelos inmutables del dominio del lobby con `toJson`/`fromJson`, `copyWith`, `isFull`, `canStart` (mínimo 2 jugadores, todos los no-host listos) y getter `host`
+- **`DiscoveredRoom`** — modelo de sala anunciada en la red local, con `toJson`/`fromJson` e `isFull`
+- **`WsMessage`** — sealed class con el protocolo completo del lobby: `JoinRoom`, `SetReady`, `LeaveRoom`, `StartGame` (cliente→servidor), `RoomState`, `GameStarting`, `PlayerKicked`, `WsError` (servidor→cliente), `Ping`/`Pong` (heartbeat) y stubs de Fase 5 (`GameState`, `Action`, `PlayerReconnected`)
+- **`WsServer`** — servidor WebSocket que corre en el host (`AppConstants.localGamePort`), gestiona el `LobbyRoom` autoritativo y retransmite `RoomStateMessage` tras cada cambio
+- **`WsClient`** (sobre `web_socket_channel`) — cliente WebSocket usado por todos los jugadores (incluido el host, vía loopback `127.0.0.1`), con estado de conexión y heartbeat ping/pong
+- **`MdnsAdvertiser`** — anuncia la sala en la red local mediante beacons UDP broadcast periódicos (255.255.255.255 : `AppConstants.discoveryPort`); sincroniza el contador de jugadores en cada cambio de sala
+- **`MdnsDiscoverer`** — escucha beacons UDP y expone `Stream<List<DiscoveredRoom>>` con las salas detectadas
+- **`ILobbyRepository`** / **`LobbyRepository`** — coordina `WsServer` + `WsClient` + `MdnsAdvertiser` + `MdnsDiscoverer` para exponer `createRoom`, `discoverRooms`, `joinRoom`, `setReady`, `startGame` y `leaveRoom` como una única fachada
+- **`LobbyNotifier` / `lobbyProvider`** — `Notifier<LobbyState>` con estados `LobbyIdle`, `LobbyConnecting`, `LobbyDiscovering`, `LobbyInRoom`, `LobbyError`; `playerIdProvider` (UUID de sesión) y `wifiIpProvider`
+- **`LobbyScreen`** — UI completa: crear sala, descubrir/unirse a salas en la red, lista de jugadores con estado ready, botón de inicio habilitado solo si `canStart`
+- Permisos de red en Android: `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CHANGE_WIFI_MULTICAST_STATE`
+- 34 tests nuevos del lobby (modelos, repositorio, providers) — 51 tests totales pasando
+
+### Cambiado
+- `WsClient` migrado a `web_socket_channel` (antes stub propio) para mayor compatibilidad multiplataforma
+
+### Notas técnicas
+- El descubrimiento de salas usa beacons UDP broadcast propios, no mDNS/Bonjour real; queda pendiente migrar a la librería `nsd` o `multicast_dns` para descubrimiento estándar (ver TODOs en `mdns_advertiser.dart` / `mdns_discoverer.dart`)
+- `LobbyRepository` unifica los modos host/cliente en una sola clase; se evaluará separarla en `HostLobbyRepository` / `ClientLobbyRepository` si crece en complejidad
 
 ---
 
