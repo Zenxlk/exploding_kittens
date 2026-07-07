@@ -97,33 +97,93 @@ Nope chain: `TurnModel.nopeChainCount` impar = acción cancelada.
 
 ---
 
-## Red (Fase 5)
+## Lobby local WiFi (Fase 3)
+
+### Componentes
+
+```
+LobbyScreen  →  lobbyProvider (LobbyNotifier)  →  LobbyRepository
+                                                        │
+                                        ┌───────────────┼───────────────┐
+                                        ▼               ▼               ▼
+                                    WsServer        WsClient      MdnsAdvertiser /
+                                  (host only)   (todos, incl.      MdnsDiscoverer
+                                                 host vía 127.0.0.1)  (host / cliente)
+```
+
+`LobbyRepository` implementa `ILobbyRepository` y es la única clase que conoce
+los cuatro colaboradores. El host levanta `WsServer` y además se conecta a su
+propio servidor como cliente (`127.0.0.1`), de modo que host y no-host comparten
+exactamente el mismo camino de código (`WsClient` + `roomStream`).
+
+### Descubrimiento de salas
+
+`MdnsAdvertiser` (host) envía un beacon JSON por UDP broadcast a
+`255.255.255.255:AppConstants.discoveryPort` cada pocos segundos.
+`MdnsDiscoverer` (cliente) escucha ese puerto y expone
+`Stream<List<DiscoveredRoom>>` con las salas vivas.
+
+> No es mDNS/Bonjour real — es un broadcast UDP propio con el mismo propósito.
+> Migrar a la librería `nsd` o `multicast_dns` es una mejora pendiente (ver `ROADMAP.md`).
+
+### Protocolo WebSocket del lobby
+
+`WsMessage` es una sealed class con todos los mensajes del lobby:
+
+| Dirección | Mensajes |
+|-----------|----------|
+| Cliente → Servidor | `JoinRoomMessage`, `SetReadyMessage`, `LeaveRoomMessage`, `StartGameMessage` |
+| Servidor → Cliente | `RoomStateMessage`, `GameStartingMessage`, `PlayerKickedMessage`, `WsErrorMessage` |
+| Ambos | `PingMessage` / `PongMessage` (heartbeat) |
+| Stubs Fase 5 | `GameStateMessage`, `ActionMessage`, `PlayerReconnectedMessage` |
+
+`WsServer` mantiene el `LobbyRoom` autoritativo y retransmite `RoomStateMessage`
+tras cada cambio (join, ready, leave). `WsClient` (sobre `web_socket_channel`)
+expone ese estado como `roomStream` para que `LobbyRepository` lo reenvíe a la UI.
+
+### Estado en Riverpod
+
+`LobbyNotifier` (`lobbyProvider`) modela el flujo del lobby como una sealed
+class `LobbyState`: `LobbyIdle → LobbyConnecting → LobbyInRoom`, con
+`LobbyDiscovering` en el camino del cliente y `LobbyError` ante fallos de red.
+`LobbyInRoom.canStart`/`isHost`/`isLocalPlayerReady` derivan directamente de
+`LobbyRoom`, sin estado duplicado.
+
+---
+
+## Red (Fase 5 — pendiente sobre transporte ya existente)
 
 ### Diseño cliente–servidor simétrico
 
-El **host** levanta `WebSocketServer` en `AppConstants.localGamePort` (8765) y
-también se conecta como cliente a sí mismo. Todos los jugadores (incluido el host)
-usan exactamente el mismo `WebSocketClient`.
+`WsServer` y `WsClient` (implementados en Fase 3 para el lobby, ver arriba) son
+el mismo transporte que usará el juego en partida: el **host** levanta
+`WsServer` en `AppConstants.localGamePort` (8765) y también se conecta como
+cliente a sí mismo. Todos los jugadores (incluido el host) usan exactamente el
+mismo `WsClient`.
 
 ```
-Host:    WebSocketServer  ←→  GameEngine  ←→  WebSocketClient (host)
-Clients:                       WebSocketClient (cliente 1..N)
+Host:    WsServer  ←→  GameEngine  ←→  WsClient (host)
+Clients:                WsClient (cliente 1..N)
 ```
 
 Cuando se migre a modo online, solo cambia la URL de conexión del cliente.
+`WsMessage` ya reserva los tipos `GameStateMessage` / `ActionMessage` /
+`PlayerReconnectedMessage` para esta fase; falta la lógica que los procese.
 
-### Serialización
+### Serialización (pendiente)
 
-`GameStateSerializer` convierte `GameState` ↔ JSON. El estado completo se
-retransmite a todos los clientes tras cada acción para garantizar consistencia.
-Los eventos individuales (`GameEvent` ↔ JSON via `EventSerializer`) se usan
-para triggers de animación en los clientes.
+`GameStateSerializer` convertirá `GameState` ↔ JSON para viajar dentro de
+`GameStateMessage.stateJson`. El estado completo se retransmitirá a todos los
+clientes tras cada acción para garantizar consistencia. Los eventos
+individuales (`GameEvent` ↔ JSON) se usarán para triggers de animación en los
+clientes.
 
-### Reconexión
+### Reconexión (pendiente)
 
-`ReconnectionManager` gestiona el grace period de `GameConstants.reconnectTimeoutSeconds`
-segundos. Al reconectar, el servidor envía el `GameState` completo y el cliente
-restaura la UI desde él.
+`ReconnectionManager` gestionará el grace period de
+`GameConstants.reconnectTimeoutSeconds` segundos. Al reconectar, el servidor
+enviará el `GameState` completo (vía `PlayerReconnectedMessage` +
+`GameStateMessage`) y el cliente restaurará la UI desde él.
 
 ---
 

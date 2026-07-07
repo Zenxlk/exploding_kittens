@@ -18,8 +18,8 @@ desarrollada en Flutter por **ZenXLK**. Soporta partidas locales por WiFi para
 | Fase | Descripción | Estado |
 |------|-------------|--------|
 | 1 | Motor de juego (reglas oficiales, mazo, turnos) | ✅ Completa |
-| 2 | UI base y navegación | 🔄 En progreso |
-| 3 | Lobby y partidas locales por WiFi | ⏳ Pendiente |
+| 2 | UI base y navegación | ✅ Completa |
+| 3 | Lobby y partidas locales por WiFi | ✅ Completa |
 | 4 | Pantalla de juego completa con animaciones | ⏳ Pendiente |
 | 5 | Red, reconexión y modo online | ⏳ Pendiente |
 | 6 | Bots / modo offline | 🗓 Futuro |
@@ -52,7 +52,8 @@ flutter run
 - **Flutter + Dart** — UI multiplataforma
 - **Riverpod 2** — gestión de estado
 - **GoRouter** — navegación declarativa
-- **WebSocket** — comunicación en red local y futura online
+- **WebSocket** (`web_socket_channel`) — comunicación en red local y futura online
+- **UDP broadcast** — descubrimiento de salas en la red local (lobby)
 - **Lottie + flutter_animate** — animaciones de cartas
 - **audioplayers** — efectos de sonido
 - **Hive** — persistencia local

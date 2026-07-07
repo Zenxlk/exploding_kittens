@@ -37,16 +37,17 @@ empezar la siguiente.
 
 ---
 
-## Fase 3 — Lobby local WiFi ⏳
+## Fase 3 — Lobby local WiFi ✅
 
-- [ ] `WifiDiscoveryService` — descubrimiento de salas via mDNS
-- [ ] `WifiHostService` — levantar servidor en `AppConstants.localGamePort`
-- [ ] `RoomModel` con estados: `waiting`, `inGame`, `finished`
-- [ ] `CreateRoomUseCase` / `JoinRoomUseCase` / `LeaveRoomUseCase`
-- [ ] `LobbyScreen` — lista de salas disponibles en red local
-- [ ] `CreateRoomScreen` — nombre de sala, número de jugadores
-- [ ] `WaitingRoomScreen` — lista de jugadores conectados, botón de inicio
-- [ ] Tests de integración del lobby
+- [x] `MdnsDiscoverer` — descubrimiento de salas via beacons UDP broadcast (sustituye al mDNS real previsto; ver nota abajo)
+- [x] `WsServer` — servidor WebSocket en el host (`AppConstants.localGamePort`)
+- [x] `LobbyRoom` / `LobbyPlayer` con estados vía `LobbyStatus`
+- [x] `LobbyRepository` — createRoom / joinRoom / leaveRoom / setReady / startGame (sin UseCases separados; coordinados directamente en el repositorio)
+- [x] `LobbyScreen` — creación de sala, descubrimiento y unión, lista de jugadores conectados con estado ready, botón de inicio
+- [x] Tests del lobby (modelos, repositorio, providers) — 34 tests nuevos, 51 totales
+
+> Nota: el descubrimiento usa UDP broadcast propio, no mDNS/Bonjour estándar.
+> Migrar a `nsd` o `multicast_dns` queda como mejora futura (Fase 6).
 
 ---
 
@@ -84,6 +85,11 @@ empezar la siguiente.
 ---
 
 ## Fase 6 — Futuro 🗓
+
+### Mejoras técnicas pendientes
+- [ ] Migrar `MdnsAdvertiser` / `MdnsDiscoverer` de UDP broadcast a mDNS/Bonjour real (`nsd` o `multicast_dns`)
+- [ ] `WifiManager.MulticastLock` vía platform channel en Android 10+
+- [ ] Persistir `playerId` con `shared_preferences` para reconexión tras crash
 
 ### Bots / modo offline
 - [ ] Interfaz `BotStrategy` con implementación básica (aleatoria)
