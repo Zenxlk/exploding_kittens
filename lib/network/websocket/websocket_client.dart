@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' show WebSocketStatus;
+
+import 'package:web_socket_channel/io.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'package:exploding_kittens/core/constants/app_constants.dart';
 import 'package:exploding_kittens/features/lobby/domain/models/lobby_room.dart';
@@ -10,6 +13,9 @@ import 'websocket_message.dart';
 enum WsConnectionStatus { connecting, connected, disconnected }
 
 // Connects to a WsServer running on the host device.
+// Uses web_socket_channel (Flutter-recommended) instead of dart:io directly,
+// which handles platform differences on Android/iOS more reliably.
+//
 // All players — including the host — use this client to communicate.
 //
 // Typical lifecycle:
@@ -17,10 +23,15 @@ enum WsConnectionStatus { connecting, connected, disconnected }
 //   2. Listen to [messages] or convenience streams (roomStream, etc.)
 //   3. Call send() to dispatch actions
 //   4. Call close() when leaving the room
+//
+// TODO(improvement): add automatic reconnection with exponential back-off
+// before delegating to ReconnectionManager (Phase 5). Right now a disconnect
+// emits WsConnectionStatus.disconnected and the UI must react.
 class WsClient {
   WsClient._();
 
-  WebSocket? _socket;
+  WebSocketChannel? _channel;
+  bool _connected = false;
   final _messageController = StreamController<WsMessage>.broadcast();
   final _statusController = StreamController<WsConnectionStatus>.broadcast();
   Timer? _pingTimer;
@@ -36,8 +47,7 @@ class WsClient {
       .where((m) => m is RoomStateMessage)
       .map((m) => LobbyRoom.fromJson((m as RoomStateMessage).roomJson));
 
-  bool get isConnected =>
-      _socket != null && _socket!.readyState == WebSocket.open;
+  bool get isConnected => _connected;
 
   // Connects to ws://<hostAddress>:<port> and immediately sends JoinRoom.
   static Future<WsClient> connect({
@@ -61,10 +71,16 @@ class WsClient {
     required String playerName,
   }) async {
     _statusController.add(WsConnectionStatus.connecting);
-    _socket = await WebSocket.connect(uri.toString());
+
+    _channel = IOWebSocketChannel.connect(uri);
+
+    // Wait for the handshake to complete; throws if the server is unreachable.
+    await _channel!.ready;
+
+    _connected = true;
     _statusController.add(WsConnectionStatus.connected);
 
-    _socket!.listen(
+    _channel!.stream.listen(
       (data) => _onData(data as String),
       onDone: _onDisconnect,
       onError: (_) => _onDisconnect(),
@@ -77,15 +93,15 @@ class WsClient {
     // Heartbeat — detects silent connection drops.
     _pingTimer = Timer.periodic(
       const Duration(seconds: 30),
-      (_) { if (isConnected) send(const PingMessage()); },
+      (_) { if (_connected) send(const PingMessage()); },
     );
   }
 
   // Serializes and sends any WsMessage to the server.
   void send(WsMessage msg) {
-    if (!isConnected) return;
+    if (!_connected) return;
     try {
-      _socket!.add(jsonEncode(msg.toJson()));
+      _channel!.sink.add(jsonEncode(msg.toJson()));
     } catch (_) {}
   }
 
@@ -101,7 +117,8 @@ class WsClient {
   void _onDisconnect() {
     _pingTimer?.cancel();
     _pingTimer = null;
-    _socket = null;
+    _connected = false;
+    _channel = null;
     if (!_statusController.isClosed) {
       _statusController.add(WsConnectionStatus.disconnected);
     }
@@ -109,13 +126,14 @@ class WsClient {
 
   // ── lifecycle ─────────────────────────────────────────────────────────────
 
-  // Sends LeaveRoom, closes the socket and disposes streams.
+  // Sends LeaveRoom, closes the channel and disposes streams.
   Future<void> close({required String playerId}) async {
     send(LeaveRoomMessage(playerId: playerId));
     _pingTimer?.cancel();
     _pingTimer = null;
-    await _socket?.close(WebSocketStatus.normalClosure);
-    _socket = null;
+    _connected = false;
+    await _channel?.sink.close(WebSocketStatus.normalClosure);
+    _channel = null;
     await _messageController.close();
     await _statusController.close();
   }

@@ -1,4 +1,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- WebSocket server/client (TCP) and UDP broadcast discovery -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Required by network_info_plus to read the device WiFi IP -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!--
+      Required on Android 10+ to RECEIVE UDP multicast packets.
+      Not strictly needed for broadcast to 255.255.255.255, but included
+      for the future migration to proper mDNS multicast (224.0.0.251).
+      TODO(improvement): acquire WifiManager.MulticastLock in a platform
+      channel when switching MdnsAdvertiser to multicast groups.
+    -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+
     <application
         android:label="exploding_kittens"
         android:name="${applicationName}"

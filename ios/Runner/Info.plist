@@ -49,6 +49,19 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!--
+	  iOS 14+ requires this key to access the local network (WebSocket server,
+	  UDP broadcast discovery). Without it the OS silently blocks all LAN traffic.
+	  TODO(improvement): add com.apple.developer.networking.multicast entitlement
+	  in Runner.entitlements when switching MdnsAdvertiser to true multicast groups.
+	-->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Exploding Kittens uses your local network to host and join games with nearby players over Wi-Fi.</string>
+	<!-- Service types used for local network discovery -->
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_explkittens._tcp</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
