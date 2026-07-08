@@ -11,6 +11,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.3.3] — 2026-07-07
+
+### Añadido — Fase 4: fundamentos (CardAssetResolver + GameNotifier)
+- **`CardVisuals`** — apariencia de respaldo (color, icono, nombre) por `CardType`, usada como placeholder mientras no exista el arte final
+- **`CardAssetResolver`** — resuelve la ruta real de una carta desde el `AssetManifest` del bundle si ya existe, o `null` para caer al placeholder; permite ir soltando el arte carta por carta sin tocar ningún widget (hoy con `assets/cards/` vacío, todo resuelve a placeholder)
+- **`IGameGateway`** / **`LocalGameGateway`** — fachada entre la UI y "la partida"; hoy envuelve un `GameEngine` local, deja el hueco para un gateway remoto en Fase 5 sin cambiar el Notifier ni los widgets
+- **`GameNotifier`** / **`gameProvider`** — `Notifier<GameSessionState>` (`GameIdle` / `GameRunning` / `GameFinished`) con métodos de intención (`drawCard`, `playCard`, `playFavor`, `playCatPair`, `playCatTrio`, `playNope`, `defuse`); captura `InvalidActionException` como error transitorio sin romper la UI; agenda y resuelve la ventana de Nope con un `Timer` interno (`GameConstants.nopeWindowMs`) llamando a `resolveNopeWindow()`
+- 7 tests nuevos del `GameNotifier` con un `IGameGateway` fake — 69 tests totales pasando
+
+---
+
 ## [0.3.2] — 2026-07-07
 
 ### Corregido — prework de engine para Fase 4

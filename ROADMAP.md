@@ -54,7 +54,8 @@ empezar la siguiente.
 ## Fase 4 — Pantalla de juego completa ⏳
 
 - [x] Prework de engine: `ActionProcessor.resolveNopeWindow()` / `GameEngine.resolveNopeWindow()` — difiere y resuelve los efectos de Favor, Cat Pair/Trío y Shuffle según si la cadena de Nope quedó cancelada; fix de la duplicación de bomba en Defuse (`GameState.pendingBomb`)
-- [ ] `GameStateProvider` — `StateNotifier<GameState>` conectado al `GameEngine`
+- [x] `CardAssetResolver` / `CardVisuals` — resuelve el asset real de una carta desde el `AssetManifest` si ya existe, o cae a un placeholder (color + icono + nombre) por `CardType`; permite ir soltando arte final carta por carta sin tocar widgets
+- [x] `GameStateProvider` — implementado como `GameNotifier` / `gameProvider` (`Notifier<GameSessionState>`, no `StateNotifier`, siguiendo el patrón ya usado por `lobbyProvider`), con `IGameGateway`/`LocalGameGateway` de por medio para poder enchufar un gateway remoto en Fase 5 sin tocar la UI
 - [ ] `GameScreen` — layout adaptativo portrait/landscape
 - [ ] `PlayerHandWidget` — fan de cartas con drag & drop
 - [ ] `CardWidget` — flip animation, glow en cartas jugables
