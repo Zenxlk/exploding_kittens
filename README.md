@@ -64,6 +64,7 @@ flutter run
 |---------|-----------|
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Arquitectura técnica y decisiones de diseño |
 | [`docs/GAME_RULES.md`](docs/GAME_RULES.md) | Reglas implementadas y pendientes |
+| [`docs/VERIFICATION_LOG.md`](docs/VERIFICATION_LOG.md) | Bitácora de verificación manual con capturas, y cómo reproducirla (ej. 2 emuladores en red real) |
 | [`ROADMAP.md`](ROADMAP.md) | Trabajo pendiente por fase |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Guía de contribución |
 | [`CHANGELOG.md`](CHANGELOG.md) | Historial de cambios |
