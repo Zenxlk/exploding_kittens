@@ -65,7 +65,7 @@ empezar la siguiente.
 - [ ] `NopeWindowOverlay` — temporizador visual con botón reactivo
 - [ ] `InsertBombOverlay` — selector de posición al usar Defuse
 - [x] `SeeTheFutureOverlay` — visualización de top 3 cartas, visibilidad derivada de `GameState.seeTheFutureCards`, descartado como estado local de UI
-- [ ] `FavorTargetOverlay` — selector de objetivo
+- [x] `FavorTargetOverlay` — selector de objetivo para Favor y pares de gato; el trío de gatos queda diferido (necesita elegir una carta concreta de la mano rival, que el actor no puede ver — hace falta su propio diseño de UI)
 - [ ] `ExplosionOverlay` — animación Lottie de explosión
 - [ ] `GameOverScreen` — resultado, ranking y opción de revancha
 - [ ] Integración de `audioplayers` (efectos y música de fondo)

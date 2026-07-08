@@ -11,6 +11,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.3.7] — 2026-07-07
+
+### Añadido — Fase 4: FavorTargetOverlay
+- **`FavorTargetOverlay`** — selector de jugador objetivo, usado por Favor (1 carta) y pares de gato (2 cartas del mismo tipo); ambos solo necesitan un objetivo, no una carta específica de la mano rival
+- `GameTableView` pasa de selección de una sola carta a selección múltiple (`Set<String>`), con una clasificación explícita de qué se puede hacer con lo seleccionado: jugar directo (Attack/Skip/Shuffle/SeeTheFuture), elegir objetivo (Favor/par), esperar la pareja (una sola carta de gato), o "se juega en otro momento" (Nope/Defuse sueltos, trío de gatos)
+- **Trío de gatos queda diferido a propósito**: el motor requiere que el actor indique `chosenCardId`, una carta concreta de la mano del rival que no puede ver en este diseño (un dispositivo por jugador) — necesita su propio diseño de UI, no se fuerza uno ad-hoc
+- 6 tests nuevos (`GameTableView`: hint de par, flujo Favor completo, flujo par de gatos completo, cancelar limpia selección) — 96 tests totales pasando
+
+---
+
 ## [0.3.6] — 2026-07-07
 
 ### Añadido — Fase 4: primer overlay (See the Future)
