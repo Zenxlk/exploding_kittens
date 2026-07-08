@@ -11,6 +11,21 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.3.2] — 2026-07-07
+
+### Corregido — prework de engine para Fase 4
+- **La ventana de Nope nunca se cerraba** — no existía ninguna vía para resolverla, y los efectos de Favor, Cat Pair/Trío y Shuffle se aplicaban *antes* de abrir la ventana, así que un Nope exitoso no podía cancelar nada. Ahora esos efectos se difieren y `ActionProcessor.resolveNopeWindow()` (expuesto como `GameEngine.resolveNopeWindow()`) los aplica solo si la cadena de Nopes no quedó cancelada (`nopeChainCount` par)
+- **Defuse duplicaba o perdía la bomba** — al reinsertar la bomba se buscaba cualquier Exploding Kitten restante en el mazo en vez de la carta realmente robada, duplicándola (o perdiéndola si era la última). Ahora se guarda en `GameState.pendingBomb` y se reinserta exactamente esa carta
+
+### Eliminado
+- `TurnManager.closeNopeWindow()` / `requireDraw()` — código muerto sin llamadas, sustituido por `ActionProcessor.resolveNopeWindow()`
+
+### Notas técnicas
+- `GameEngine.dispose()` documentado: cierra el `GameEventBus` singleton de por vida de la app; no debe llamarse desde el ciclo de vida de un provider (p. ej. en una revancha)
+- 4 tests nuevos de `ActionProcessor` (Defuse, Favor diferido, Nope cancela Favor, Shuffle diferido) — 62 tests totales pasando
+
+---
+
 ## [0.3.1] — 2026-07-06
 
 ### Añadido

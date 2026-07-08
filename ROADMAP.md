@@ -53,6 +53,7 @@ empezar la siguiente.
 
 ## Fase 4 — Pantalla de juego completa ⏳
 
+- [x] Prework de engine: `ActionProcessor.resolveNopeWindow()` / `GameEngine.resolveNopeWindow()` — difiere y resuelve los efectos de Favor, Cat Pair/Trío y Shuffle según si la cadena de Nope quedó cancelada; fix de la duplicación de bomba en Defuse (`GameState.pendingBomb`)
 - [ ] `GameStateProvider` — `StateNotifier<GameState>` conectado al `GameEngine`
 - [ ] `GameScreen` — layout adaptativo portrait/landscape
 - [ ] `PlayerHandWidget` — fan de cartas con drag & drop
