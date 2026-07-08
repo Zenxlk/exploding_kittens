@@ -85,6 +85,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             onPlaySimpleCard: (card) => ref
                 .read(gameProvider.notifier)
                 .playCard(lobbyState.localPlayerId, card),
+            onPlayFavor: (card, targetId) => ref
+                .read(gameProvider.notifier)
+                .playFavor(lobbyState.localPlayerId, card, targetId),
+            onPlayCatPair: (cards, targetId) => ref
+                .read(gameProvider.notifier)
+                .playCatPair(lobbyState.localPlayerId, cards, targetId),
             assetPathFor: resolver?.faceAssetFor,
             cardBackAssetPath: resolver?.cardBackAsset(),
           ),

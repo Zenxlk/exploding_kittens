@@ -56,6 +56,8 @@ void main() {
             localPlayerId: 'me',
             onDraw: () {},
             onPlaySimpleCard: (_) {},
+            onPlayFavor: (_, __) {},
+            onPlayCatPair: (_, __) {},
           ),
         ),
       );
@@ -82,6 +84,8 @@ void main() {
             localPlayerId: 'me',
             onDraw: () => draws++,
             onPlaySimpleCard: (_) {},
+            onPlayFavor: (_, __) {},
+            onPlayCatPair: (_, __) {},
           ),
         ),
       );
@@ -104,6 +108,8 @@ void main() {
               localPlayerId: 'me',
               onDraw: () {},
               onPlaySimpleCard: (card) => played = card,
+              onPlayFavor: (_, __) {},
+              onPlayCatPair: (_, __) {},
             ),
           ),
         );
@@ -123,8 +129,8 @@ void main() {
     testWidgets(
       'una carta sin soporte todavía deja el botón Jugar deshabilitado',
       (tester) async {
-        const favor = CardModel(id: 'a', type: CardType.favor);
-        const me = PlayerModel(id: 'me', name: 'Ana', hand: [favor]);
+        const nope = CardModel(id: 'a', type: CardType.nope);
+        const me = PlayerModel(id: 'me', name: 'Ana', hand: [nope]);
 
         await tester.pumpWidget(
           _wrap(
@@ -133,6 +139,8 @@ void main() {
               localPlayerId: 'me',
               onDraw: () {},
               onPlaySimpleCard: (_) {},
+              onPlayFavor: (_, __) {},
+              onPlayCatPair: (_, __) {},
             ),
           ),
         );
@@ -141,11 +149,169 @@ void main() {
         await tester.pump();
 
         expect(
-          find.text('Esta carta se juega en el próximo paso'),
+          find.text('Esta carta se juega en otro momento'),
           findsOneWidget,
         );
         final button = tester.widget<FilledButton>(find.byType(FilledButton));
         expect(button.onPressed, isNull);
+      },
+    );
+
+    testWidgets(
+      'una sola carta de gato pide otra igual para formar el par',
+      (tester) async {
+        const taco = CardModel(id: 'a', type: CardType.tacocat);
+        const me = PlayerModel(id: 'me', name: 'Ana', hand: [taco]);
+
+        await tester.pumpWidget(
+          _wrap(
+            GameTableView(
+              gameState: _state(players: const [me], currentPlayerId: 'me'),
+              localPlayerId: 'me',
+              onDraw: () {},
+              onPlaySimpleCard: (_) {},
+              onPlayFavor: (_, __) {},
+              onPlayCatPair: (_, __) {},
+            ),
+          ),
+        );
+
+        await tester.tap(find.byType(CardWidget));
+        await tester.pump();
+
+        expect(
+          find.text('Toca otra carta del mismo tipo para formar un par'),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'seleccionar Favor y un objetivo invoca onPlayFavor',
+      (tester) async {
+        const favor = CardModel(id: 'a', type: CardType.favor);
+        const me = PlayerModel(id: 'me', name: 'Ana', hand: [favor]);
+        const rival = PlayerModel(id: 'rival', name: 'Beto', hand: []);
+        CardModel? playedCard;
+        String? targetId;
+
+        await tester.pumpWidget(
+          _wrap(
+            GameTableView(
+              gameState: _state(
+                players: const [me, rival],
+                currentPlayerId: 'me',
+              ),
+              localPlayerId: 'me',
+              onDraw: () {},
+              onPlaySimpleCard: (_) {},
+              onPlayFavor: (card, target) {
+                playedCard = card;
+                targetId = target;
+              },
+              onPlayCatPair: (_, __) {},
+            ),
+          ),
+        );
+
+        await tester.tap(find.byType(CardWidget));
+        await tester.pump();
+        expect(find.text('Elegir objetivo'), findsOneWidget);
+
+        await tester.tap(find.text('Elegir objetivo'));
+        await tester.pump();
+        final targetButton = find.widgetWithText(OutlinedButton, 'Beto');
+        expect(targetButton, findsOneWidget);
+
+        await tester.tap(targetButton);
+        await tester.pump();
+
+        expect(playedCard, favor);
+        expect(targetId, 'rival');
+        expect(find.text('Elegir objetivo'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'seleccionar un par de gatos y un objetivo invoca onPlayCatPair',
+      (tester) async {
+        const tacoA = CardModel(id: 'a', type: CardType.tacocat);
+        const tacoB = CardModel(id: 'b', type: CardType.tacocat);
+        const me = PlayerModel(id: 'me', name: 'Ana', hand: [tacoA, tacoB]);
+        const rival = PlayerModel(id: 'rival', name: 'Beto', hand: []);
+        List<CardModel>? playedCards;
+        String? targetId;
+
+        await tester.pumpWidget(
+          _wrap(
+            GameTableView(
+              gameState: _state(
+                players: const [me, rival],
+                currentPlayerId: 'me',
+              ),
+              localPlayerId: 'me',
+              onDraw: () {},
+              onPlaySimpleCard: (_) {},
+              onPlayFavor: (_, __) {},
+              onPlayCatPair: (cards, target) {
+                playedCards = cards;
+                targetId = target;
+              },
+            ),
+          ),
+        );
+
+        await tester.tap(find.byType(CardWidget).first);
+        await tester.pump();
+        await tester.tap(find.byType(CardWidget).last);
+        await tester.pump();
+
+        expect(find.text('Elegir objetivo'), findsOneWidget);
+        await tester.tap(find.text('Elegir objetivo'));
+        await tester.pump();
+
+        await tester.tap(find.widgetWithText(OutlinedButton, 'Beto'));
+        await tester.pump();
+
+        expect(playedCards, [tacoA, tacoB]);
+        expect(targetId, 'rival');
+      },
+    );
+
+    testWidgets(
+      'cancelar en el selector de objetivo limpia la selección',
+      (tester) async {
+        const favor = CardModel(id: 'a', type: CardType.favor);
+        const me = PlayerModel(id: 'me', name: 'Ana', hand: [favor]);
+        const rival = PlayerModel(id: 'rival', name: 'Beto', hand: []);
+
+        await tester.pumpWidget(
+          _wrap(
+            GameTableView(
+              gameState: _state(
+                players: const [me, rival],
+                currentPlayerId: 'me',
+              ),
+              localPlayerId: 'me',
+              onDraw: () {},
+              onPlaySimpleCard: (_) {},
+              onPlayFavor: (_, __) {},
+              onPlayCatPair: (_, __) {},
+            ),
+          ),
+        );
+
+        await tester.tap(find.byType(CardWidget));
+        await tester.pump();
+        await tester.tap(find.text('Elegir objetivo'));
+        await tester.pump();
+        expect(find.widgetWithText(OutlinedButton, 'Beto'), findsOneWidget);
+
+        await tester.tap(find.text('Cancelar').last);
+        await tester.pump();
+
+        expect(find.widgetWithText(OutlinedButton, 'Beto'), findsNothing);
+        expect(find.text('Elegir objetivo'), findsNothing);
       },
     );
 
@@ -169,6 +335,8 @@ void main() {
               localPlayerId: 'me',
               onDraw: () {},
               onPlaySimpleCard: (_) {},
+              onPlayFavor: (_, __) {},
+              onPlayCatPair: (_, __) {},
             ),
           ),
         );
@@ -194,6 +362,8 @@ void main() {
                 localPlayerId: 'me',
                 onDraw: () {},
                 onPlaySimpleCard: (_) {},
+                onPlayFavor: (_, __) {},
+                onPlayCatPair: (_, __) {},
               ),
             );
 
