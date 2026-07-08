@@ -60,9 +60,11 @@ abstract final class ActionProcessor {
         return TurnManager.advance(next);
       }
 
-      // Tiene Defuse → esperar DefuseBombAction (el jugador elige posición)
+      // Tiene Defuse → esperar DefuseBombAction (el jugador elige posición).
+      // Se guarda la bomba robada para reinsertar exactamente esa carta.
       return next.copyWith(
         turn: next.turn.copyWith(phase: TurnPhase.resolving),
+        pendingBomb: drawn,
       );
     }
 
@@ -88,8 +90,9 @@ abstract final class ActionProcessor {
     return switch (action.card.type) {
       CardType.attack => _applyAttack(action.playerId, next),
       CardType.skip => TurnManager.advance(next),
-      CardType.shuffle => _applyShuffle(next),
       CardType.seeTheFuture => _applySeeTheFuture(action.playerId, next),
+      // Shuffle, cartas de gato sueltas, etc.: el efecto (si lo hay) se
+      // difiere hasta resolveNopeWindow() para que un Nope pueda cancelarlo.
       _ => TurnManager.openNopeWindow(next, action),
     };
   }
@@ -100,18 +103,10 @@ abstract final class ActionProcessor {
     var next = _removeCardFromHand(action.playerId, action.card.id, state);
     next = next.copyWith(deck: DeckManager.discard(next.deck, action.card));
 
-    final target = next.playerById(action.targetPlayerId)!;
-    if (target.hand.isEmpty) return TurnManager.openNopeWindow(next, action);
-
-    final randomCard = target.hand[Random().nextInt(target.hand.length)];
-
-    next = _removeCardFromHand(action.targetPlayerId, randomCard.id, next);
-    next = _addCardToHand(action.playerId, randomCard, next.players)
-        .let((p) => next.copyWith(players: p));
-
     _emit(CardPlayedEvent(
         timestamp: _now(), playerId: action.playerId, card: action.card));
 
+    // El robo de la carta objetivo se difiere: si lo nopean, no se roba nada.
     return TurnManager.openNopeWindow(next, action);
   }
 
@@ -124,14 +119,7 @@ abstract final class ActionProcessor {
       next = next.copyWith(deck: DeckManager.discard(next.deck, c));
     }
 
-    final target = next.playerById(action.targetPlayerId)!;
-    if (target.hand.isNotEmpty) {
-      final stolen = target.hand[Random().nextInt(target.hand.length)];
-      next = _removeCardFromHand(action.targetPlayerId, stolen.id, next);
-      next = next.copyWith(
-          players: _addCardToHand(action.playerId, stolen, next.players));
-    }
-
+    // El robo se difiere hasta la resolución de la ventana de Nope.
     return TurnManager.openNopeWindow(next, action);
   }
 
@@ -144,15 +132,7 @@ abstract final class ActionProcessor {
       next = next.copyWith(deck: DeckManager.discard(next.deck, c));
     }
 
-    final target = next.playerById(action.targetPlayerId)!;
-    final chosen =
-        target.hand.where((c) => c.id == action.chosenCardId).firstOrNull;
-    if (chosen != null) {
-      next = _removeCardFromHand(action.targetPlayerId, chosen.id, next);
-      next = next.copyWith(
-          players: _addCardToHand(action.playerId, chosen, next.players));
-    }
-
+    // El robo se difiere hasta la resolución de la ventana de Nope.
     return TurnManager.openNopeWindow(next, action);
   }
 
@@ -162,13 +142,14 @@ abstract final class ActionProcessor {
     var next =
         _removeCardFromHand(action.playerId, action.defuseCard.id, state);
 
-    // Reinsertar la bomba en la posición elegida
-    final bomb = state.deck.drawPile
-        .where((c) => c.type == CardType.explodingKitten)
-        .firstOrNull;
+    // Reinsertar exactamente la bomba que se robó (guardada en pendingBomb),
+    // no otra bomba cualquiera del mazo restante.
+    final bomb = state.pendingBomb;
     if (bomb != null) {
       next = next.copyWith(
-          deck: DeckManager.insertAt(next.deck, bomb, action.insertAtPosition));
+        deck: DeckManager.insertAt(next.deck, bomb, action.insertAtPosition),
+        clearPendingBomb: true,
+      );
     }
 
     _emit(BombDefusedEvent(
@@ -195,19 +176,73 @@ abstract final class ActionProcessor {
     return next;
   }
 
+  // ── Resolución de la ventana de Nope ──────────────────────────────────────────
+
+  /// Cierra la ventana de Nope: si la cadena quedó cancelada (nopeChainCount
+  /// impar) descarta el efecto pendiente sin aplicarlo; si no, lo aplica ahora.
+  /// No es una acción de jugador (la dispara un temporizador), por lo que no
+  /// pasa por GameRules.validate.
+  static GameState resolveNopeWindow(GameState state) {
+    var next = state;
+
+    if (!state.turn.isNoped) {
+      next = switch (state.pendingAction) {
+        PlayFavorAction(:final playerId, :final targetPlayerId) =>
+          _stealRandomCard(playerId, targetPlayerId, next),
+        PlayCatPairAction(:final playerId, :final targetPlayerId) =>
+          _stealRandomCard(playerId, targetPlayerId, next),
+        PlayCatTrioAction(
+          :final playerId,
+          :final targetPlayerId,
+          :final chosenCardId
+        ) =>
+          _stealChosenCard(playerId, targetPlayerId, chosenCardId, next),
+        PlayCardAction(:final card) when card.type == CardType.shuffle =>
+          _resolveShuffle(next),
+        _ => next,
+      };
+    }
+
+    return next.copyWith(
+      turn: next.turn.copyWith(phase: TurnPhase.playing, nopeChainCount: 0),
+      clearPendingAction: true,
+    );
+  }
+
+  static GameState _stealRandomCard(
+      String playerId, String targetPlayerId, GameState state) {
+    final target = state.playerById(targetPlayerId);
+    if (target == null || target.hand.isEmpty) return state;
+
+    final stolen = target.hand[Random().nextInt(target.hand.length)];
+    var next = _removeCardFromHand(targetPlayerId, stolen.id, state);
+    return next.copyWith(
+        players: _addCardToHand(playerId, stolen, next.players));
+  }
+
+  static GameState _stealChosenCard(String playerId, String targetPlayerId,
+      String chosenCardId, GameState state) {
+    final target = state.playerById(targetPlayerId);
+    final chosen = target?.hand.where((c) => c.id == chosenCardId).firstOrNull;
+    if (chosen == null) return state;
+
+    var next = _removeCardFromHand(targetPlayerId, chosen.id, state);
+    return next.copyWith(
+        players: _addCardToHand(playerId, chosen, next.players));
+  }
+
+  static GameState _resolveShuffle(GameState state) {
+    final shuffled = DeckManager.shuffle(state.deck);
+    _emit(DeckShuffledEvent(timestamp: _now()));
+    return state.copyWith(deck: shuffled);
+  }
+
   // ── Efectos de cartas específicas ─────────────────────────────────────────────
 
   static GameState _applyAttack(String playerId, GameState state) {
     final next = TurnManager.advance(state);
     // El siguiente jugador debe jugar 2 veces
     return next.copyWith(turn: next.turn.copyWith(actionsLeft: 2));
-  }
-
-  static GameState _applyShuffle(GameState state) {
-    final shuffled = DeckManager.shuffle(state.deck);
-    _emit(DeckShuffledEvent(timestamp: _now()));
-    return TurnManager.openNopeWindow(
-        state.copyWith(deck: shuffled), const Object());
   }
 
   static GameState _applySeeTheFuture(String playerId, GameState state) {
@@ -246,8 +281,4 @@ abstract final class ActionProcessor {
 
   static void _emit(GameEvent event) => GameEventBus.instance.emit(event);
   static DateTime _now() => DateTime.now();
-}
-
-extension _Let<T> on T {
-  R let<R>(R Function(T) f) => f(this);
 }

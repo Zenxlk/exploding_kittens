@@ -43,21 +43,4 @@ abstract final class TurnManager {
       pendingAction: pendingAction,
     );
   }
-
-  /// Cierra la ventana de Nope y entra en fase de resolución.
-  static GameState closeNopeWindow(GameState state) {
-    return state.copyWith(
-      turn: state.turn.copyWith(
-        phase: TurnPhase.resolving,
-        nopeChainCount: 0,
-      ),
-    );
-  }
-
-  /// Marca que el jugador debe robar para finalizar el turno.
-  static GameState requireDraw(GameState state) {
-    return state.copyWith(
-      turn: state.turn.copyWith(phase: TurnPhase.drawRequired),
-    );
-  }
 }

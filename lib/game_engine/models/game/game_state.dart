@@ -22,6 +22,7 @@ class GameState extends Equatable {
     required this.turn,
     required this.phase,
     this.pendingAction,
+    this.pendingBomb,
     this.seeTheFutureCards,
     this.result,
     this.turnCount = 0,
@@ -36,6 +37,9 @@ class GameState extends Equatable {
 
   // Acción en espera de resolución (Nope window abierta)
   final Object? pendingAction;
+
+  // Exploding Kitten robado, en espera de reinserción (Defuse en curso)
+  final CardModel? pendingBomb;
 
   // Top 3 cartas visibles (See the Future activo)
   final List<CardModel>? seeTheFutureCards;
@@ -61,10 +65,12 @@ class GameState extends Equatable {
     TurnModel? turn,
     GamePhase? phase,
     Object? pendingAction,
+    CardModel? pendingBomb,
     List<CardModel>? seeTheFutureCards,
     GameResult? result,
     int? turnCount,
     bool clearPendingAction = false,
+    bool clearPendingBomb = false,
     bool clearSeeTheFuture = false,
   }) {
     return GameState(
@@ -76,6 +82,7 @@ class GameState extends Equatable {
       phase: phase ?? this.phase,
       pendingAction:
           clearPendingAction ? null : (pendingAction ?? this.pendingAction),
+      pendingBomb: clearPendingBomb ? null : (pendingBomb ?? this.pendingBomb),
       seeTheFutureCards: clearSeeTheFuture
           ? null
           : (seeTheFutureCards ?? this.seeTheFutureCards),
@@ -93,6 +100,7 @@ class GameState extends Equatable {
         turn,
         phase,
         pendingAction,
+        pendingBomb,
         seeTheFutureCards,
         result,
         turnCount,

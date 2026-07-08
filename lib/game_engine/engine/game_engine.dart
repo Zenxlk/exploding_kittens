@@ -62,5 +62,16 @@ class GameEngine {
     return _state!;
   }
 
+  /// Cierra la ventana de Nope (llamado cuando expira su temporizador).
+  /// No es una acción de jugador: no pasa por [GameRules.validate].
+  GameState resolveNopeWindow() {
+    _state = ActionProcessor.resolveNopeWindow(_state!);
+    return _state!;
+  }
+
+  /// Libera recursos. OJO: [GameEventBus.instance] es un singleton de por
+  /// vida de la app — cerrarlo aquí lo deja inutilizable para el resto de la
+  /// sesión. No llamar desde el ciclo de vida de un provider (ej. en una
+  /// revancha); crear un [GameEngine] nuevo reutiliza el mismo bus sin cerrarlo.
   void dispose() => _bus.dispose();
 }
