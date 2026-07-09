@@ -26,6 +26,7 @@ class GameState extends Equatable {
     this.seeTheFutureCards,
     this.result,
     this.turnCount = 0,
+    this.eliminationOrder = const [],
   });
 
   final String id;
@@ -46,6 +47,11 @@ class GameState extends Equatable {
 
   final GameResult? result;
   final int turnCount;
+
+  // Ids en el orden cronológico real en que fueron eliminados (a diferencia
+  // de recorrer `players` filtrando por status, que sigue el orden de la
+  // lista, no el de eliminación) — ver `ActionProcessor._eliminatePlayer`.
+  final List<String> eliminationOrder;
 
   List<PlayerModel> get alivePlayers =>
       players.where((p) => p.status == PlayerStatus.active).toList();
@@ -69,6 +75,7 @@ class GameState extends Equatable {
     List<CardModel>? seeTheFutureCards,
     GameResult? result,
     int? turnCount,
+    List<String>? eliminationOrder,
     bool clearPendingAction = false,
     bool clearPendingBomb = false,
     bool clearSeeTheFuture = false,
@@ -88,6 +95,7 @@ class GameState extends Equatable {
           : (seeTheFutureCards ?? this.seeTheFutureCards),
       result: result ?? this.result,
       turnCount: turnCount ?? this.turnCount,
+      eliminationOrder: eliminationOrder ?? this.eliminationOrder,
     );
   }
 
@@ -104,5 +112,6 @@ class GameState extends Equatable {
         seeTheFutureCards,
         result,
         turnCount,
+        eliminationOrder,
       ];
 }

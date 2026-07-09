@@ -193,4 +193,48 @@ void main() {
       );
     });
   });
+
+  group('Eliminación — orden cronológico', () {
+    test(
+        'GameState.eliminationOrder y GameResult.eliminationOrder reflejan '
+        'el orden real en que explotaron, no el orden de la lista de '
+        'jugadores', () {
+      const bomb1 = CardModel(id: 'bomb-1', type: CardType.explodingKitten);
+      const bomb2 = CardModel(id: 'bomb-2', type: CardType.explodingKitten);
+
+      final p1 = PlayerModel(id: 'p1', name: 'A', hand: const []);
+      final p2 = PlayerModel(id: 'p2', name: 'B', hand: const []);
+      final p3 = PlayerModel(id: 'p3', name: 'C', hand: const []);
+
+      // p3 (último en la lista de jugadores) explota primero.
+      var state = baseState(
+        players: [p1, p2, p3],
+        deck: const DeckModel(drawPile: [bomb1], discardPile: []),
+        currentPlayerId: 'p3',
+      );
+      state = ActionProcessor.process(
+        const DrawCardAction(playerId: 'p3'),
+        state,
+      );
+
+      expect(state.eliminationOrder, ['p3']);
+
+      // p1 (primero en la lista) explota después.
+      state = state.copyWith(
+        deck: const DeckModel(drawPile: [bomb2], discardPile: []),
+        turn: state.turn.copyWith(
+          currentPlayerId: 'p1',
+          phase: TurnPhase.playing,
+        ),
+      );
+      state = ActionProcessor.process(
+        const DrawCardAction(playerId: 'p1'),
+        state,
+      );
+
+      expect(state.eliminationOrder, ['p3', 'p1']);
+      expect(state.result?.eliminationOrder, ['p3', 'p1']);
+      expect(state.result?.winnerId, 'p2');
+    });
+  });
 }

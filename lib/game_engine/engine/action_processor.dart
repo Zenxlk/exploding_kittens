@@ -259,7 +259,10 @@ abstract final class ActionProcessor {
         .map((p) =>
             p.id == playerId ? p.copyWith(status: PlayerStatus.eliminated) : p)
         .toList();
-    return state.copyWith(players: updated);
+    return state.copyWith(
+      players: updated,
+      eliminationOrder: [...state.eliminationOrder, playerId],
+    );
   }
 
   static GameState _removeCardFromHand(
