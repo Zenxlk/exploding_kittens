@@ -2,6 +2,8 @@ import 'package:exploding_kittens/core/errors/exceptions.dart';
 import 'package:exploding_kittens/features/game/domain/i_game_gateway.dart';
 import 'package:exploding_kittens/features/game/presentation/providers/game_providers.dart';
 import 'package:exploding_kittens/game_engine/events/game_event.dart';
+import 'package:exploding_kittens/game_engine/models/card/card_model.dart';
+import 'package:exploding_kittens/game_engine/models/card/card_type.dart';
 import 'package:exploding_kittens/game_engine/models/deck/deck_model.dart';
 import 'package:exploding_kittens/game_engine/models/game/game_config.dart';
 import 'package:exploding_kittens/game_engine/models/game/game_result.dart';
@@ -188,5 +190,115 @@ void main() {
         );
       },
     );
+
+    test('events expone el mismo stream de eventos del gateway', () {
+      expect(
+        container.read(gameProvider.notifier).events,
+        same(gateway.events),
+      );
+    });
+
+    group('acciones — cada método dispatchea el TurnAction correcto', () {
+      late TurnAction captured;
+
+      setUp(() {
+        gateway.onStart = (_, __) => _state();
+        gateway.onApply = (action) {
+          captured = action;
+          return _state();
+        };
+        container.read(gameProvider.notifier).startLocalGame(
+          const [],
+          const GameConfig(playerCount: 2),
+        );
+      });
+
+      test('playCard aplica PlayCardAction con la carta jugada', () {
+        const card = CardModel(id: 'a', type: CardType.skip);
+        container.read(gameProvider.notifier).playCard('p1', card);
+
+        expect(captured, isA<PlayCardAction>());
+        final action = captured as PlayCardAction;
+        expect(action.playerId, 'p1');
+        expect(action.card, card);
+      });
+
+      test(
+        'playFavor aplica PlayFavorAction con la carta y el objetivo',
+        () {
+          const card = CardModel(id: 'a', type: CardType.favor);
+          container.read(gameProvider.notifier).playFavor('p1', card, 'p2');
+
+          expect(captured, isA<PlayFavorAction>());
+          final action = captured as PlayFavorAction;
+          expect(action.playerId, 'p1');
+          expect(action.card, card);
+          expect(action.targetPlayerId, 'p2');
+        },
+      );
+
+      test(
+        'playCatPair aplica PlayCatPairAction con las cartas y el objetivo',
+        () {
+          const cards = [
+            CardModel(id: 'a', type: CardType.tacocat),
+            CardModel(id: 'b', type: CardType.tacocat),
+          ];
+          container.read(gameProvider.notifier).playCatPair('p1', cards, 'p2');
+
+          expect(captured, isA<PlayCatPairAction>());
+          final action = captured as PlayCatPairAction;
+          expect(action.playerId, 'p1');
+          expect(action.cards, cards);
+          expect(action.targetPlayerId, 'p2');
+        },
+      );
+
+      test(
+        'playCatTrio aplica PlayCatTrioAction con cartas, objetivo y carta '
+        'elegida',
+        () {
+          const cards = [
+            CardModel(id: 'a', type: CardType.tacocat),
+            CardModel(id: 'b', type: CardType.tacocat),
+            CardModel(id: 'c', type: CardType.tacocat),
+          ];
+          container
+              .read(gameProvider.notifier)
+              .playCatTrio('p1', cards, 'p2', 'chosen-1');
+
+          expect(captured, isA<PlayCatTrioAction>());
+          final action = captured as PlayCatTrioAction;
+          expect(action.playerId, 'p1');
+          expect(action.cards, cards);
+          expect(action.targetPlayerId, 'p2');
+          expect(action.chosenCardId, 'chosen-1');
+        },
+      );
+
+      test('playNope aplica NopeAction con la carta Nope', () {
+        const card = CardModel(id: 'a', type: CardType.nope);
+        container.read(gameProvider.notifier).playNope('p1', card);
+
+        expect(captured, isA<NopeAction>());
+        final action = captured as NopeAction;
+        expect(action.playerId, 'p1');
+        expect(action.nopeCard, card);
+      });
+
+      test(
+        'defuse aplica DefuseBombAction con la carta y la posición elegida',
+        () {
+          const card = CardModel(id: 'a', type: CardType.defuse);
+          container.read(gameProvider.notifier).defuse('p1', card, 3);
+
+          expect(captured, isA<DefuseBombAction>());
+          final action = captured as DefuseBombAction;
+          expect(action.playerId, 'p1');
+          expect(action.defuseCard, card);
+          expect(action.insertAtPosition, 3);
+        },
+      );
+    });
   });
 }
