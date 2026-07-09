@@ -6,6 +6,7 @@ import 'package:exploding_kittens/core/constants/game_constants.dart';
 import 'package:exploding_kittens/core/errors/exceptions.dart';
 import 'package:exploding_kittens/features/game/data/local_game_gateway.dart';
 import 'package:exploding_kittens/features/game/domain/i_game_gateway.dart';
+import 'package:exploding_kittens/game_engine/events/game_event.dart';
 import 'package:exploding_kittens/game_engine/models/card/card_model.dart';
 import 'package:exploding_kittens/game_engine/models/game/game_config.dart';
 import 'package:exploding_kittens/game_engine/models/game/game_result.dart';
@@ -57,6 +58,10 @@ class GameNotifier extends Notifier<GameSessionState> {
   final IGameGateway _gateway;
   final Duration _nopeWindowDuration;
   Timer? _nopeTimer;
+
+  /// Eventos del motor (animaciones, sonidos) para que la UI se suscriba
+  /// directamente sin pasar por el estado del `Notifier`.
+  Stream<GameEvent> get events => _gateway.events;
 
   @override
   GameSessionState build() {

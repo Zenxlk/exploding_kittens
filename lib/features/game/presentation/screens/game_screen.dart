@@ -2,13 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:exploding_kittens/core/audio/audio_service.dart';
+import 'package:exploding_kittens/core/audio/i_audio_service.dart';
+import 'package:exploding_kittens/core/constants/asset_paths.dart';
 import 'package:exploding_kittens/core/router/route_names.dart';
 import 'package:exploding_kittens/core/theme/app_colors.dart';
 import 'package:exploding_kittens/core/theme/app_text_styles.dart';
+import 'package:exploding_kittens/features/game/presentation/audio/game_sound_controller.dart';
 import 'package:exploding_kittens/features/game/presentation/providers/card_asset_provider.dart';
 import 'package:exploding_kittens/features/game/presentation/providers/game_providers.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/game_table_view.dart';
 import 'package:exploding_kittens/features/lobby/presentation/providers/lobby_providers.dart';
+import 'package:exploding_kittens/features/settings/domain/app_settings.dart';
+import 'package:exploding_kittens/features/settings/presentation/providers/settings_providers.dart';
 import 'package:exploding_kittens/game_engine/models/game/game_config.dart';
 import 'package:exploding_kittens/game_engine/models/player/player_model.dart';
 
@@ -23,10 +29,38 @@ class GameScreen extends ConsumerStatefulWidget {
 }
 
 class _GameScreenState extends ConsumerState<GameScreen> {
+  // Se guardan como campos (no releídos vía `ref.read` en dispose): Riverpod
+  // no permite leer providers en dispose(), el widget ya está desmontado.
+  late final GameSoundController _soundController;
+  late final IAudioService _audioService;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _startIfNeeded());
+    _audioService = ref.read(audioServiceProvider);
+    _soundController = GameSoundController(
+      events: ref.read(gameProvider.notifier).events,
+      audioService: _audioService,
+      settings: () => ref.read(settingsProvider).value ?? const AppSettings(),
+    );
+    _syncMusic();
+  }
+
+  void _syncMusic() {
+    final settings = ref.read(settingsProvider).value ?? const AppSettings();
+    _audioService.playMusic(
+      AssetPaths.musicIngame,
+      enabled: settings.musicEnabled,
+      volume: settings.volume,
+    );
+  }
+
+  @override
+  void dispose() {
+    _soundController.dispose();
+    _audioService.stopMusic();
+    super.dispose();
   }
 
   void _startIfNeeded() {
@@ -49,6 +83,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     ref.listen<GameSessionState>(gameProvider, (_, next) {
       if (next is GameFinished) context.go(RouteNames.gameOver);
     });
+    ref.listen(settingsProvider, (_, __) => _syncMusic());
 
     final lobbyState = ref.watch(lobbyProvider);
     final resolver = ref.watch(cardAssetResolverProvider).value;

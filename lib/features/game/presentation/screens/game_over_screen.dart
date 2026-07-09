@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:exploding_kittens/core/audio/audio_service.dart';
+import 'package:exploding_kittens/core/audio/i_audio_service.dart';
+import 'package:exploding_kittens/core/constants/asset_paths.dart';
 import 'package:exploding_kittens/core/router/route_names.dart';
 import 'package:exploding_kittens/core/theme/app_colors.dart';
 import 'package:exploding_kittens/core/theme/app_text_styles.dart';
 import 'package:exploding_kittens/features/game/presentation/providers/game_providers.dart';
 import 'package:exploding_kittens/features/lobby/presentation/providers/lobby_providers.dart';
+import 'package:exploding_kittens/features/settings/domain/app_settings.dart';
+import 'package:exploding_kittens/features/settings/presentation/providers/settings_providers.dart';
 import 'package:exploding_kittens/game_engine/models/game/game_config.dart';
 import 'package:exploding_kittens/game_engine/models/player/player_model.dart';
 
@@ -15,11 +20,44 @@ import 'package:exploding_kittens/game_engine/models/player/player_model.dart';
 /// revancha. Solo el host puede iniciarla hoy — mismo límite que
 /// `GameScreen`: solo el host corre el `GameEngine` real hasta que la Fase 5
 /// sincronice el estado por red.
-class GameOverScreen extends ConsumerWidget {
+class GameOverScreen extends ConsumerStatefulWidget {
   const GameOverScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GameOverScreen> createState() => _GameOverScreenState();
+}
+
+class _GameOverScreenState extends ConsumerState<GameOverScreen> {
+  // Se guarda como campo (no se relee vía `ref.read` en dispose): Riverpod
+  // no permite leer providers en dispose(), el widget ya está desmontado.
+  late final IAudioService _audioService;
+
+  @override
+  void initState() {
+    super.initState();
+    _audioService = ref.read(audioServiceProvider);
+    _syncMusic();
+  }
+
+  void _syncMusic() {
+    final settings = ref.read(settingsProvider).value ?? const AppSettings();
+    _audioService.playMusic(
+      AssetPaths.musicGameOver,
+      enabled: settings.musicEnabled,
+      volume: settings.volume,
+    );
+  }
+
+  @override
+  void dispose() {
+    _audioService.stopMusic();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(settingsProvider, (_, __) => _syncMusic());
+
     final sessionState = ref.watch(gameProvider);
     final lobbyState = ref.watch(lobbyProvider);
 
@@ -79,7 +117,7 @@ class GameOverScreen extends ConsumerWidget {
             const SizedBox(height: 32),
             if (isHost)
               FilledButton(
-                onPressed: () => _rematch(context, ref, inRoom!),
+                onPressed: () => _rematch(inRoom!),
                 style:
                     FilledButton.styleFrom(backgroundColor: AppColors.primary),
                 child: const Text('Revancha'),
@@ -101,7 +139,7 @@ class GameOverScreen extends ConsumerWidget {
     );
   }
 
-  void _rematch(BuildContext context, WidgetRef ref, LobbyInRoom lobbyState) {
+  void _rematch(LobbyInRoom lobbyState) {
     final players = lobbyState.room.players
         .map((p) => PlayerModel(id: p.id, name: p.name, hand: const []))
         .toList();
