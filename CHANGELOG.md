@@ -11,6 +11,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.4.1] — 2026-07-08
+
+### Corregido
+- `SettingsScreen` mostraba la versión hardcodeada `0.1.0` desde el primer release, nunca actualizada en los bumps posteriores — ahora dice `0.4.0`
+
+---
+
 ## [0.4.0] — 2026-07-08
 
 ### Añadido — Fase 4 completa: flutter_animate + cierre de fase
