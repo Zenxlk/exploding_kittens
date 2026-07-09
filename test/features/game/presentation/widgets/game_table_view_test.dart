@@ -7,6 +7,7 @@ import 'package:exploding_kittens/game_engine/models/deck/deck_model.dart';
 import 'package:exploding_kittens/game_engine/models/game/game_config.dart';
 import 'package:exploding_kittens/game_engine/models/game/game_state.dart';
 import 'package:exploding_kittens/game_engine/models/player/player_model.dart';
+import 'package:exploding_kittens/game_engine/models/player/player_status.dart';
 import 'package:exploding_kittens/game_engine/models/turn/turn_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -563,6 +564,70 @@ void main() {
 
         expect(find.text('¿Dónde escondes la bomba?'), findsNothing);
         expect(find.textContaining('esconda la bomba'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'un jugador recién eliminado muestra el overlay de explosión',
+      (tester) async {
+        const me = PlayerModel(id: 'me', name: 'Ana', hand: []);
+        const otherAlive = PlayerModel(id: 'other', name: 'Beto', hand: []);
+        final otherEliminated =
+            otherAlive.copyWith(status: PlayerStatus.eliminated);
+
+        Widget build(PlayerModel other) => _wrap(
+              GameTableView(
+                gameState: _state(players: [me, other], currentPlayerId: 'me'),
+                localPlayerId: 'me',
+                onDraw: () {},
+                onPlaySimpleCard: (_) {},
+                onPlayFavor: (_, __) {},
+                onPlayCatPair: (_, __) {},
+                onPlayNope: (_) {},
+                onDefuseBomb: (_, __) {},
+              ),
+            );
+
+        await tester.pumpWidget(build(otherAlive));
+        expect(find.text('¡BOOM!'), findsNothing);
+
+        await tester.pumpWidget(build(otherEliminated));
+        await tester.pump();
+
+        expect(find.text('¡BOOM!'), findsOneWidget);
+        expect(find.text('Beto explotó'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'el overlay de explosión se cierra solo al terminar la animación',
+      (tester) async {
+        const me = PlayerModel(id: 'me', name: 'Ana', hand: []);
+        const otherAlive = PlayerModel(id: 'other', name: 'Beto', hand: []);
+        final otherEliminated =
+            otherAlive.copyWith(status: PlayerStatus.eliminated);
+
+        Widget build(PlayerModel other) => _wrap(
+              GameTableView(
+                gameState: _state(players: [me, other], currentPlayerId: 'me'),
+                localPlayerId: 'me',
+                onDraw: () {},
+                onPlaySimpleCard: (_) {},
+                onPlayFavor: (_, __) {},
+                onPlayCatPair: (_, __) {},
+                onPlayNope: (_) {},
+                onDefuseBomb: (_, __) {},
+              ),
+            );
+
+        await tester.pumpWidget(build(otherAlive));
+        await tester.pumpWidget(build(otherEliminated));
+        await tester.pump();
+        expect(find.text('¡BOOM!'), findsOneWidget);
+
+        await tester.pumpAndSettle();
+
+        expect(find.text('¡BOOM!'), findsNothing);
       },
     );
   });

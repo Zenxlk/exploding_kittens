@@ -5,6 +5,7 @@ import 'package:exploding_kittens/core/theme/app_colors.dart';
 import 'package:exploding_kittens/core/theme/app_text_styles.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/deck_widget.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/discard_pile_widget.dart';
+import 'package:exploding_kittens/features/game/presentation/widgets/explosion_overlay.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/favor_target_overlay.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/insert_bomb_overlay.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/nope_window_overlay.dart';
@@ -132,6 +133,11 @@ class _GameTableViewState extends State<GameTableView> {
   // avanza (ver TurnManager.advance), no cuando el jugador ya lo vio.
   bool _seeTheFutureDismissed = false;
 
+  // No hay ningún campo en GameState que marque "alguien acaba de explotar":
+  // se detecta por diff (un jugador vivo en el build anterior que ya no lo
+  // está) y se guarda como estado local hasta que la animación termina.
+  String? _explodingPlayerName;
+
   @override
   void didUpdateWidget(covariant GameTableView oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -148,6 +154,14 @@ class _GameTableViewState extends State<GameTableView> {
     final hadReveal = oldWidget.gameState.seeTheFutureCards != null;
     final hasReveal = widget.gameState.seeTheFutureCards != null;
     if (!hadReveal && hasReveal) _seeTheFutureDismissed = false;
+
+    final newlyEliminated = oldWidget.gameState.alivePlayers.where((p) {
+      final now = widget.gameState.playerById(p.id);
+      return now != null && !now.isAlive;
+    });
+    if (newlyEliminated.isNotEmpty) {
+      _explodingPlayerName = newlyEliminated.first.name;
+    }
   }
 
   bool get _isMyTurn =>
@@ -240,6 +254,11 @@ class _GameTableViewState extends State<GameTableView> {
               }
               _clearSelection();
             },
+          ),
+        if (_explodingPlayerName != null)
+          ExplosionOverlay(
+            eliminatedPlayerName: _explodingPlayerName!,
+            onFinished: () => setState(() => _explodingPlayerName = null),
           ),
       ],
     );
