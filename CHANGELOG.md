@@ -11,6 +11,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.3.10] — 2026-07-08
+
+### Añadido — Fase 4: ExplosionOverlay
+- **`ExplosionOverlay`** — animación de eliminación (jugador robó Exploding Kitten sin Defuse): ícono con escala y rebote (`Curves.elasticOut`) sobre fondo oscuro, se cierra sola después de 1.6s sin necesitar ninguna acción del jugador. Placeholder con Flutter puro; se reemplaza por el Lottie real de `AssetPaths.animExplosion` cuando ese asset exista (`assets/animations/` sigue vacío)
+- `GameTableView` detecta la eliminación por diff entre el `GameState` anterior y el nuevo (un jugador que estaba vivo deja de estarlo) — no hay ningún evento ni campo dedicado en `GameState` para esto, mismo enfoque que ya usa el descarte de `SeeTheFutureOverlay`
+- 2 tests nuevos (`GameTableView`: overlay aparece al detectar la eliminación; se cierra solo tras la animación, usando `pumpAndSettle`) — 102 tests totales pasando
+
+---
+
 ## [0.3.9] — 2026-07-08
 
 ### Añadido — Fase 4: InsertBombOverlay

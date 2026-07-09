@@ -130,3 +130,19 @@ Tampoco se corrió en emulador en esta sesión, mismo motivo que arriba. Pasos:
 Limitación conocida: igual que con `NopeWindowOverlay`, verificar el punto de
 vista del jugador no-host (que solo debería ver "Esperando a que \<jugador\>
 esconda la bomba…") requiere Fase 5 o controlar ambas manos desde el host.
+
+---
+
+## Fase 4 — ExplosionOverlay (pendiente de verificación manual)
+
+Tampoco se corrió en emulador en esta sesión, mismo motivo que arriba. Pasos:
+
+1. Como host, robar cartas hasta sacar una Exploding Kitten **sin** tener
+   Defuse en mano.
+2. Confirmar que aparece el overlay "¡BOOM!" con el nombre del jugador
+   eliminado, y que se cierra solo (sin tocar nada) después de ~1.6s.
+3. Confirmar que el HUD (`PlayersHudWidget`) refleja al jugador como
+   eliminado (atenuado) una vez cerrado el overlay, y que el turno pasó al
+   siguiente jugador vivo.
+4. Si era el único jugador que quedaba vivo aparte del ganador, confirmar
+   que tras el overlay se navega a `GameOverScreen`.

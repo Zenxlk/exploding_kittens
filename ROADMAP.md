@@ -66,7 +66,7 @@ empezar la siguiente.
 - [x] `InsertBombOverlay` — slider para elegir en qué posición del mazo reinsertar la Exploding Kitten robada, entre "arriba del todo" y "abajo del todo"; solo se muestra al jugador que la robó
 - [x] `SeeTheFutureOverlay` — visualización de top 3 cartas, visibilidad derivada de `GameState.seeTheFutureCards`, descartado como estado local de UI
 - [x] `FavorTargetOverlay` — selector de objetivo para Favor y pares de gato; el trío de gatos queda diferido (necesita elegir una carta concreta de la mano rival, que el actor no puede ver — hace falta su propio diseño de UI)
-- [ ] `ExplosionOverlay` — animación Lottie de explosión
+- [x] `ExplosionOverlay` — animación de eliminación (placeholder con Flutter puro, escala con rebote; se reemplazará por el Lottie real de `AssetPaths.animExplosion` cuando exista ese asset); se detecta por diff de `GameState` (un jugador que estaba vivo deja de estarlo), se cierra sola sin acción del jugador
 - [ ] `GameOverScreen` — resultado, ranking y opción de revancha
 - [ ] Integración de `audioplayers` (efectos y música de fondo)
 - [ ] Integración de `flutter_animate` en cartas y transiciones
