@@ -51,7 +51,7 @@ empezar la siguiente.
 
 ---
 
-## Fase 4 — Pantalla de juego completa ⏳
+## Fase 4 — Pantalla de juego completa ✅
 
 - [x] Prework de engine: `ActionProcessor.resolveNopeWindow()` / `GameEngine.resolveNopeWindow()` — difiere y resuelve los efectos de Favor, Cat Pair/Trío y Shuffle según si la cadena de Nope quedó cancelada; fix de la duplicación de bomba en Defuse (`GameState.pendingBomb`)
 - [x] `CardAssetResolver` / `CardVisuals` — resuelve el asset real de una carta desde el `AssetManifest` si ya existe, o cae a un placeholder (color + icono + nombre) por `CardType`; permite ir soltando arte final carta por carta sin tocar widgets
@@ -69,7 +69,7 @@ empezar la siguiente.
 - [x] `ExplosionOverlay` — animación de eliminación (placeholder con Flutter puro, escala con rebote; se reemplazará por el Lottie real de `AssetPaths.animExplosion` cuando exista ese asset); se detecta por diff de `GameState` (un jugador que estaba vivo deja de estarlo), se cierra sola sin acción del jugador
 - [x] `GameOverScreen` — ganador, ranking en orden real de eliminación (fix de `WinCondition`/nuevo `GameState.eliminationOrder`: antes seguía el orden de la lista de jugadores, no el cronológico) y botón de revancha, solo para el host (mismo límite que `GameScreen` hoy); revancha re-arranca el mismo `GameEngine`/bus con los jugadores de la sala actual
 - [x] Integración de `audioplayers` (efectos y música de fondo) — `IAudioService`/`AudioService` (interfaz + impl, testeable con fake), `GameSoundController` reproduce el efecto de cada `GameEvent` del motor mientras dura la partida, `GameScreen`/`GameOverScreen` reproducen `music_ingame.mp3`/`music_gameover.mp3` en loop. De paso se corrigieron los nombres de archivo en `AssetPaths` (no coincidían con los reales en `assets/sounds/`). **Alcance de esta pasada**: solo pantallas de partida; `music_menu.mp3` para Home/Splash/Lobby/Settings queda pendiente (no es parte de "pantalla de juego completa")
-- [ ] Integración de `flutter_animate` en cartas y transiciones
+- [x] Integración de `flutter_animate` en cartas y transiciones — `CardWidget` hace un "pop" de escala al volverse jugable, y los 5 overlays (SeeTheFuture/FavorTarget/NopeWindow/InsertBomb/Explosion) tienen fade-in de entrada, mismo estilo `.animate()` que ya usaban Home/Splash
 - [x] Tests de providers y casos de uso — `GameNotifier`: un test por método (`playCard`/`playFavor`/`playCatPair`/`playCatTrio`/`playNope`/`defuse`) verificando el `TurnAction` concreto que dispatchea, más el nuevo getter `events`; 118 tests totales pasando
 
 ---

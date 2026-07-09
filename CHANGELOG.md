@@ -7,7 +7,18 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 ## [Unreleased]
 
 ### En progreso
-- Fase 4: Pantalla de juego completa
+- Fase 5: Red y reconexión
+
+---
+
+## [0.4.0] — 2026-07-08
+
+### Añadido — Fase 4 completa: flutter_animate + cierre de fase
+- **`flutter_animate` en cartas y overlays**: `CardWidget` hace un "pop" de escala (`.animate().scaleXY(...)`) al volverse jugable; los 5 overlays de la mesa (`SeeTheFutureOverlay`, `FavorTargetOverlay`, `NopeWindowOverlay`, `InsertBombOverlay`, `ExplosionOverlay`) ahora tienen un fade-in de entrada — mismo estilo `.animate()` que ya usaban `HomeScreen`/`SplashScreen`
+- Ajustados los tests de `game_table_view_test.dart` y `see_the_future_overlay_test.dart` para asentar (`pumpAndSettle`) las animaciones antes de verificar, siguiendo el mismo patrón que `home_screen_test.dart` ya usaba — `flutter_animate` deja un `Timer` corriendo internamente y `flutter_test` falla si queda pendiente al terminar el test
+- 118 tests totales pasando
+
+**Con esto se cierra la Fase 4 — Pantalla de juego completa.** Los 4 overlays de interacción (Nope, InsertBomb, Favor/pares, SeeTheFuture), `ExplosionOverlay`, `GameOverScreen` con ranking y revancha, audio (efectos + música) y animaciones están implementados sobre el motor de la Fase 1. Quedan fuera de esta fase, documentados como pendientes: trío de gatos (necesita su propio diseño de UI para elegir carta de la mano rival), música de menú fuera de la pantalla de juego, y por supuesto toda la sincronización real por red (Fase 5).
 
 ---
 

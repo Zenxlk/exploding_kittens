@@ -190,3 +190,25 @@ reproduzca los archivos reales en un dispositivo/emulador. Pasos:
 8. Si algo no suena, revisar la consola en busca de logs
    `[W][AudioService]` — la app no debe crashear ni bloquearse por un
    fallo de audio.
+
+---
+
+## Fase 4 — flutter_animate en cartas y overlays (pendiente de verificación manual)
+
+Tampoco se corrió en emulador en esta sesión. Pasos:
+
+1. Al tocar una carta jugable en la mano (Attack/Skip/Shuffle/See the
+   Future en tu turno), confirmar que aparece con un pequeño "pop" de
+   escala en vez de aparecer el glow de golpe.
+2. Confirmar que cada overlay (See the Future, Favor/pares, Nope, esconder
+   bomba, explosión) aparece con un fundido suave en vez de aparecer de
+   golpe.
+3. Nada de esto debería sentirse lento ni bloquear la interacción — son
+   animaciones de ~150-250ms.
+
+**Fase 4 — Pantalla de juego completa: cerrada con esta sesión.** Todos
+los ítems del Roadmap están marcados; queda pendiente de verificación
+manual todo lo listado arriba (Nope, InsertBomb, Explosion, GameOverScreen,
+audio, animaciones) — se recomienda una pasada completa jugando una
+partida de principio a fin con 2+ emuladores antes de dar la fase por
+buena en la práctica, no solo en código.
