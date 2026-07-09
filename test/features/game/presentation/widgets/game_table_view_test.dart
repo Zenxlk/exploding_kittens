@@ -15,16 +15,23 @@ GameState _state({
   required List<PlayerModel> players,
   required String currentPlayerId,
   TurnPhase phase = TurnPhase.playing,
+  int nopeChainCount = 0,
   List<CardModel>? seeTheFutureCards,
+  Object? pendingAction,
 }) {
   return GameState(
     id: 'g1',
     config: const GameConfig(playerCount: 2),
     players: players,
     deck: const DeckModel(drawPile: [], discardPile: []),
-    turn: TurnModel(currentPlayerId: currentPlayerId, phase: phase),
+    turn: TurnModel(
+      currentPlayerId: currentPlayerId,
+      phase: phase,
+      nopeChainCount: nopeChainCount,
+    ),
     phase: GamePhase.playing,
     seeTheFutureCards: seeTheFutureCards,
+    pendingAction: pendingAction,
   );
 }
 
@@ -58,6 +65,7 @@ void main() {
             onPlaySimpleCard: (_) {},
             onPlayFavor: (_, __) {},
             onPlayCatPair: (_, __) {},
+            onPlayNope: (_) {},
           ),
         ),
       );
@@ -86,6 +94,7 @@ void main() {
             onPlaySimpleCard: (_) {},
             onPlayFavor: (_, __) {},
             onPlayCatPair: (_, __) {},
+            onPlayNope: (_) {},
           ),
         ),
       );
@@ -110,6 +119,7 @@ void main() {
               onPlaySimpleCard: (card) => played = card,
               onPlayFavor: (_, __) {},
               onPlayCatPair: (_, __) {},
+              onPlayNope: (_) {},
             ),
           ),
         );
@@ -141,6 +151,7 @@ void main() {
               onPlaySimpleCard: (_) {},
               onPlayFavor: (_, __) {},
               onPlayCatPair: (_, __) {},
+              onPlayNope: (_) {},
             ),
           ),
         );
@@ -172,6 +183,7 @@ void main() {
               onPlaySimpleCard: (_) {},
               onPlayFavor: (_, __) {},
               onPlayCatPair: (_, __) {},
+              onPlayNope: (_) {},
             ),
           ),
         );
@@ -210,6 +222,7 @@ void main() {
                 targetId = target;
               },
               onPlayCatPair: (_, __) {},
+              onPlayNope: (_) {},
             ),
           ),
         );
@@ -257,6 +270,7 @@ void main() {
                 playedCards = cards;
                 targetId = target;
               },
+              onPlayNope: (_) {},
             ),
           ),
         );
@@ -297,6 +311,7 @@ void main() {
               onPlaySimpleCard: (_) {},
               onPlayFavor: (_, __) {},
               onPlayCatPair: (_, __) {},
+              onPlayNope: (_) {},
             ),
           ),
         );
@@ -337,6 +352,7 @@ void main() {
               onPlaySimpleCard: (_) {},
               onPlayFavor: (_, __) {},
               onPlayCatPair: (_, __) {},
+              onPlayNope: (_) {},
             ),
           ),
         );
@@ -364,6 +380,7 @@ void main() {
                 onPlaySimpleCard: (_) {},
                 onPlayFavor: (_, __) {},
                 onPlayCatPair: (_, __) {},
+                onPlayNope: (_) {},
               ),
             );
 
@@ -382,6 +399,71 @@ void main() {
         await tester.pumpWidget(build(null));
         await tester.pumpWidget(build(reveal));
         expect(find.text('Continuar'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'muestra el overlay de Nope y jugar la carta invoca onPlayNope',
+      (tester) async {
+        const nope = CardModel(id: 'a', type: CardType.nope);
+        const me = PlayerModel(id: 'me', name: 'Ana', hand: [nope]);
+        const other = PlayerModel(id: 'other', name: 'Beto', hand: []);
+        CardModel? played;
+
+        await tester.pumpWidget(
+          _wrap(
+            GameTableView(
+              gameState: _state(
+                players: const [me, other],
+                currentPlayerId: 'other',
+                phase: TurnPhase.nopeWindow,
+                pendingAction: const Object(),
+              ),
+              localPlayerId: 'me',
+              onDraw: () {},
+              onPlaySimpleCard: (_) {},
+              onPlayFavor: (_, __) {},
+              onPlayCatPair: (_, __) {},
+              onPlayNope: (card) => played = card,
+            ),
+          ),
+        );
+
+        expect(find.text('Ventana de Nope'), findsOneWidget);
+        await tester.tap(find.text('¡Nope!'));
+        expect(played, nope);
+      },
+    );
+
+    testWidgets(
+      'el botón de Nope está deshabilitado si no tengo un Nope en mano',
+      (tester) async {
+        const me = PlayerModel(id: 'me', name: 'Ana', hand: []);
+        const other = PlayerModel(id: 'other', name: 'Beto', hand: []);
+
+        await tester.pumpWidget(
+          _wrap(
+            GameTableView(
+              gameState: _state(
+                players: const [me, other],
+                currentPlayerId: 'other',
+                phase: TurnPhase.nopeWindow,
+                pendingAction: const Object(),
+              ),
+              localPlayerId: 'me',
+              onDraw: () {},
+              onPlaySimpleCard: (_) {},
+              onPlayFavor: (_, __) {},
+              onPlayCatPair: (_, __) {},
+              onPlayNope: (_) {},
+            ),
+          ),
+        );
+
+        final button = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, '¡Nope!'),
+        );
+        expect(button.onPressed, isNull);
       },
     );
   });

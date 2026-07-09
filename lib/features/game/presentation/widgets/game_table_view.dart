@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'package:exploding_kittens/core/constants/game_constants.dart';
 import 'package:exploding_kittens/core/theme/app_colors.dart';
 import 'package:exploding_kittens/core/theme/app_text_styles.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/deck_widget.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/discard_pile_widget.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/favor_target_overlay.dart';
+import 'package:exploding_kittens/features/game/presentation/widgets/nope_window_overlay.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/player_hand_widget.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/players_hud_widget.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/see_the_future_overlay.dart';
@@ -98,6 +100,7 @@ class GameTableView extends StatefulWidget {
     required this.onPlaySimpleCard,
     required this.onPlayFavor,
     required this.onPlayCatPair,
+    required this.onPlayNope,
     this.assetPathFor,
     this.cardBackAssetPath,
   });
@@ -109,6 +112,7 @@ class GameTableView extends StatefulWidget {
   final void Function(CardModel card, String targetPlayerId) onPlayFavor;
   final void Function(List<CardModel> cards, String targetPlayerId)
       onPlayCatPair;
+  final ValueChanged<CardModel> onPlayNope;
   final String? Function(CardType type)? assetPathFor;
   final String? cardBackAssetPath;
 
@@ -188,6 +192,8 @@ class _GameTableViewState extends State<GameTableView> {
     final seeTheFutureCards = widget.gameState.seeTheFutureCards;
     final showSeeTheFuture =
         seeTheFutureCards != null && !_seeTheFutureDismissed;
+    final nopeWindowOpen = widget.gameState.turn.phase == TurnPhase.nopeWindow;
+    final myNopeCards = hand.where((c) => c.type == CardType.nope).toList();
 
     return Stack(
       children: [
@@ -197,6 +203,14 @@ class _GameTableViewState extends State<GameTableView> {
             topCards: seeTheFutureCards,
             assetPathFor: widget.assetPathFor,
             onDismiss: () => setState(() => _seeTheFutureDismissed = true),
+          ),
+        if (nopeWindowOpen)
+          NopeWindowOverlay(
+            duration: const Duration(milliseconds: GameConstants.nopeWindowMs),
+            nopeChainCount: widget.gameState.turn.nopeChainCount,
+            canPlayNope: myNopeCards.isNotEmpty &&
+                widget.gameState.pendingAction != null,
+            onPlayNope: () => widget.onPlayNope(myNopeCards.first),
           ),
         if (_choosingTarget && selection is _NeedsTargetSelection)
           FavorTargetOverlay(

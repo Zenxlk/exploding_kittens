@@ -91,6 +91,9 @@ class _GameScreenState extends ConsumerState<GameScreen> {
             onPlayCatPair: (cards, targetId) => ref
                 .read(gameProvider.notifier)
                 .playCatPair(lobbyState.localPlayerId, cards, targetId),
+            onPlayNope: (card) => ref
+                .read(gameProvider.notifier)
+                .playNope(lobbyState.localPlayerId, card),
             assetPathFor: resolver?.faceAssetFor,
             cardBackAssetPath: resolver?.cardBackAsset(),
           ),
