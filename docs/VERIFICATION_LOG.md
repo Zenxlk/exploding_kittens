@@ -85,35 +85,106 @@ falla de esta sesión de trabajo.
 
 ---
 
-## Fase 4 — NopeWindowOverlay (pendiente de verificación manual)
+## Fase 4 — SeeTheFuture, FavorTarget y NopeWindow (verificado 2026-07-08)
 
-No se corrió en emulador en esta sesión (ver decisión en memoria: las pruebas
-manuales en emulador/dispositivo las hace el usuario). Pasos para reproducir
-cuando se quiera verificar:
+Verificado con dos emuladores Android reales (host + cliente), red real,
+sin mocks, jugando una partida real de principio a lo que permite el límite
+de Fase 5.
 
-1. Como host, dar el turno a un jugador que tenga en mano `Attack`, `Skip`,
-   `Shuffle` o `Favor`/par de gatos (cualquier carta que abra una ventana de
-   Nope al jugarse) y jugarla.
-2. Confirmar que aparece el overlay "Ventana de Nope" con la barra de
-   progreso corriendo (duración `GameConstants.nopeWindowMs`, 3000 ms).
-3. Si el jugador local (mismo dispositivo, host) tiene un Nope en mano, el
-   botón "¡Nope!" debe estar habilitado; tocarlo debe descartar el Nope y
-   reiniciar la barra desde el principio (nueva vuelta de la cadena).
-4. Si no hay Nope en mano, el botón debe verse deshabilitado.
-5. Dejar que expire el temporizador sin jugar Nope: la ventana debe cerrarse
-   sola y aplicar el efecto original de la carta.
+**Nota de entorno — el descubrimiento UDP no funcionó esta vez:** a
+diferencia de la sesión del 2026-07-07 (ver más arriba), esta vez cada
+emulador reportó su propio `wlan0` con la misma IP `10.0.2.16/24` — no
+comparten red virtual, así que `MdnsDiscoverer` no encontró nada
+("No rooms found yet" indefinidamente) y conectar a esa IP directamente
+también falló (`Connection refused`, cada emulador es su propia red
+aislada). Solución que sí funcionó: un puente manual con `adb`
+(sustituye al descubrimiento/IP directa solo para pruebas, no algo que la
+app deba hacer distinto):
+```bash
+ADB=/home/user/Android/Sdk/platform-tools/adb   # ajustar a tu instalación
+$ADB -s <serial-host>   forward tcp:8765 tcp:8765   # PC:8765 -> host:8765
+$ADB -s <serial-cliente> reverse tcp:8765 tcp:8765   # cliente:8765 -> PC:8765
+# En el cliente, "Enter IP manually" -> 127.0.0.1 -> Connect
+```
+Puede que dependa de cómo se hayan arrancado los emuladores en cada
+máquina (versión de imagen, flags de red); no se investigó la causa raíz
+porque no es código del proyecto.
+
+1. Sala creada y unida (con el puente de arriba), ambos "Ready", partida
+   arrancada: HUD real con 2 jugadores, mazo de 35 cartas, mano propia con
+   8 cartas reales (sin `assetPath`, cae al placeholder de `CardVisuals`
+   como se esperaba — `assets/cards/` sigue vacío).
+   ![GameScreen con mano real](screenshots/fase4/07_gamescreen_real_hand.png)
+2. **`SeeTheFutureOverlay`**: seleccionar la carta, "Jugar" → aparece el
+   overlay con las 3 cartas de arriba reales del mazo (Attack,
+   Rainbow-Ralphing, Bearded Dragon) y fundido de entrada (`flutter_animate`)
+   visible. "Continuar" la cierra y la carta pasa al descarte.
+   ![SeeTheFutureOverlay](screenshots/fase4/08_see_the_future_overlay.png)
+3. **`FavorTargetOverlay`**: seleccionar Favor, "Elegir objetivo" → aparece
+   el único rival listado. Tocarlo dispara la acción.
+   ![FavorTargetOverlay](screenshots/fase4/09_favor_target_overlay.png)
+4. **`NopeWindowOverlay`**: jugar Favor abre la ventana de verdad — barra de
+   progreso corriendo (`GameConstants.nopeWindowMs`), texto "Cualquiera
+   puede cancelar esto con un Nope", botón "¡Nope!" **deshabilitado**
+   correctamente porque la mano local no tenía ninguna carta Nope en ese
+   momento.
+   ![NopeWindowOverlay](screenshots/fase4/10_nope_window_overlay.png)
+5. Tras los ~3s, la ventana se cerró sola y el Favor se resolvió de verdad:
+   robó una carta al azar del rival (su mano bajó de 8→7, la mía subió de
+   6→7) — una `See the Future` nueva apareció en mi mano con su glow de
+   jugable (pop de escala de `flutter_animate` incluido).
+   ![Favor resuelto tras Nope](screenshots/fase4/11_favor_resolved_after_nope.png)
+6. Seguí robando: la única carta normal robada (Attack) **terminó mi
+   turno** y pasó al no-host, que quedó bloqueado en el placeholder de
+   siempre — confirmado que el límite de Fase 5 aplica igual con el puente
+   `adb` que con descubrimiento real.
+   ![No-host bloqueado tras pasar el turno](screenshots/fase4/12_nonhost_stuck_after_turn_pass.png)
+
+**Confirmado funcionando de punta a punta, sin excepciones ni crashes en
+los logs de `flutter run` de ninguno de los dos dispositivos:**
+`SeeTheFutureOverlay`, `FavorTargetOverlay`, `NopeWindowOverlay` (barra,
+botón deshabilitado, auto-resolución correcta de Favor no nopeado),
+transiciones de `flutter_animate` en overlays y en el pop de cartas
+jugables.
+
+**No verificado en esta pasada (bloqueado por el límite de Fase 5, no por
+falta de intento):** `InsertBombOverlay`, `ExplosionOverlay` y
+`GameOverScreen` necesitan que el jugador activo robe una Exploding
+Kitten — con 2 dispositivos reales solo el host puede actuar, así que solo
+hay **un intento** por partida (el primer robo del host) antes de que el
+turno pase al no-host y la partida quede bloqueada; no salió la bomba en
+ese intento. Probarlos de verdad requiere Fase 5 (para que el no-host
+también pueda jugar) o el modo bot/offline de Fase 6 (para poder seguir
+jugando ambas manos desde el host). Tampoco se verificó audio (necesita
+oídos, no capturas).
+
+---
+
+## Fase 4 — NopeWindowOverlay: jugar un Nope de verdad (pendiente)
+
+La barra, el auto-cierre y el botón deshabilitado ya se verificaron de punta
+a punta (ver sección de arriba, 2026-07-08). Lo único que falta específicamente:
+tocar "¡Nope!" **teniendo** una carta Nope en mano y confirmar que se
+descarta, la barra se reinicia desde el principio (nueva vuelta de la
+cadena) y, si queda en número par, el efecto original SÍ se aplica. No se
+dio el caso en la partida jugada esta sesión (la mano local no tenía Nope
+en ese momento).
 
 Limitación conocida: como hoy solo el host corre el `GameEngine` real (Fase 5
 pendiente), probar que *otro* jugador cancele la carta requiere que ese mismo
 dispositivo host controle temporalmente la mano de ambos jugadores o esperar
-a la sincronización por red — no es un caso cubierto todavía por este flujo
-manual de un solo dispositivo.
+a la sincronización por red.
 
 ---
 
 ## Fase 4 — InsertBombOverlay (pendiente de verificación manual)
 
-Tampoco se corrió en emulador en esta sesión, mismo motivo que arriba. Pasos:
+Sí se intentó en la sesión del 2026-07-08 (ver sección de arriba con las
+capturas reales) pero no salió la bomba en el único robo que el host
+alcanzó a hacer antes de que el turno pasara al no-host y la partida se
+bloqueara — con 2 dispositivos reales solo hay un intento por partida.
+Pasos para cuando se quiera reintentar (con más paciencia, o repitiendo la
+partida varias veces):
 
 1. Como host, robar cartas hasta sacar una Exploding Kitten teniendo un
    Defuse en mano (o forzarlo colocando el mazo a mano si se quiere apurar
@@ -135,7 +206,9 @@ esconda la bomba…") requiere Fase 5 o controlar ambas manos desde el host.
 
 ## Fase 4 — ExplosionOverlay (pendiente de verificación manual)
 
-Tampoco se corrió en emulador en esta sesión, mismo motivo que arriba. Pasos:
+Mismo intento y misma limitación que `InsertBombOverlay` arriba (un solo
+robo posible por partida con 2 dispositivos reales; no salió la bomba).
+Pasos:
 
 1. Como host, robar cartas hasta sacar una Exploding Kitten **sin** tener
    Defuse en mano.
@@ -193,22 +266,29 @@ reproduzca los archivos reales en un dispositivo/emulador. Pasos:
 
 ---
 
-## Fase 4 — flutter_animate en cartas y overlays (pendiente de verificación manual)
+## Fase 4 — flutter_animate en cartas y overlays (verificado parcialmente 2026-07-08)
 
-Tampoco se corrió en emulador en esta sesión. Pasos:
+El fundido de entrada se confirmó de verdad en `SeeTheFutureOverlay`,
+`FavorTargetOverlay` y `NopeWindowOverlay` durante la partida real jugada
+esta sesión (ver capturas más arriba) — no se sintió lento ni bloqueó la
+interacción. Falta confirmar específicamente:
 
-1. Al tocar una carta jugable en la mano (Attack/Skip/Shuffle/See the
-   Future en tu turno), confirmar que aparece con un pequeño "pop" de
-   escala en vez de aparecer el glow de golpe.
-2. Confirmar que cada overlay (See the Future, Favor/pares, Nope, esconder
-   bomba, explosión) aparece con un fundido suave en vez de aparecer de
-   golpe.
-3. Nada de esto debería sentirse lento ni bloquear la interacción — son
-   animaciones de ~150-250ms.
+1. El "pop" de escala en una carta jugable (Attack/Skip/Shuffle/See the
+   Future) al aparecer — se vio el glow correctamente pero no se prestó
+   atención al pop de entrada en sí durante la sesión.
+2. El fundido en `InsertBombOverlay` y `ExplosionOverlay` (bloqueados, ver
+   secciones de arriba).
 
-**Fase 4 — Pantalla de juego completa: cerrada con esta sesión.** Todos
-los ítems del Roadmap están marcados; queda pendiente de verificación
-manual todo lo listado arriba (Nope, InsertBomb, Explosion, GameOverScreen,
-audio, animaciones) — se recomienda una pasada completa jugando una
-partida de principio a fin con 2+ emuladores antes de dar la fase por
-buena en la práctica, no solo en código.
+**Fase 4 — Pantalla de juego completa: cerrada en código, verificada en
+buena parte en la práctica (2026-07-08).** `SeeTheFutureOverlay`,
+`FavorTargetOverlay` y `NopeWindowOverlay` confirmados de punta a punta en
+2 emuladores reales, sin crashes. Lo que sigue sin poder probarse con el
+alcance actual de la app (2 dispositivos reales, sin bots): jugar un Nope
+de verdad, `InsertBombOverlay`, `ExplosionOverlay` y `GameOverScreen` —
+todos requieren que la partida llegue a una Exploding Kitten o a un
+ganador, y con 2 dispositivos reales el no-host se bloquea apenas pasa su
+turno (límite de Fase 5 ya documentado, no un bug nuevo). Probarlos de
+verdad de forma práctica necesita Fase 5 (para que el no-host también
+pueda jugar) o el modo bot/offline de Fase 6 (para seguir jugando ambas
+manos desde el host sin depender de la suerte del mazo). Audio tampoco se
+verificó (necesita oídos, no capturas).
