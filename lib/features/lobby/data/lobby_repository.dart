@@ -34,6 +34,12 @@ class LobbyRepository implements ILobbyRepository {
   Stream<LobbyRoom> get roomStream =>
       _client?.roomStream ?? const Stream.empty();
 
+  @override
+  WsClient? get wsClient => _client;
+
+  @override
+  WsServer? get wsServer => _server;
+
   // ── host ──────────────────────────────────────────────────────────────────
 
   @override

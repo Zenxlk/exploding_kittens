@@ -9,6 +9,8 @@ import 'package:exploding_kittens/features/lobby/domain/models/discovered_room.d
 import 'package:exploding_kittens/features/lobby/domain/models/lobby_room.dart';
 import 'package:exploding_kittens/features/settings/presentation/providers/settings_providers.dart';
 import 'package:exploding_kittens/core/errors/failures.dart';
+import 'package:exploding_kittens/network/websocket/websocket_client.dart';
+import 'package:exploding_kittens/network/websocket/websocket_server.dart';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -77,6 +79,13 @@ class LobbyNotifier extends Notifier<LobbyState> {
     ref.onDispose(_disposeAll);
     return const LobbyIdle();
   }
+
+  // Exposed so the game feature (Fase 5) can relay in-game messages through
+  // the same live connection the lobby already opened, instead of a second
+  // one — matches the project's "switching WebSocket URL is the only online
+  // migration" design intent.
+  WsClient? get wsClient => _repo.wsClient;
+  WsServer? get wsServer => _repo.wsServer;
 
   // ── host ────────────────────────────────────────────────────────────────
 
