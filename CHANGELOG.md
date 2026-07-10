@@ -11,6 +11,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.4.7] — 2026-07-09
+
+### Añadido — Fase 5: RemoteGameNotifier
+- `RemoteGameNotifier`/`remoteGameProvider` — refleja para un dispositivo no-host el mismo `GameSessionState` que ya produce `GameNotifier`, mandando las acciones locales por `ActionMessage` y reflejando `GameStateMessage`/`GameEventMessage`/`ActionRejectedMessage`; se decidió como clase separada (no una `RemoteGameGateway implements IGameGateway`) para no tener que convertir `apply()`/`startGame()` a streams ni reescribir los tests existentes de `GameNotifier`
+- `GameNotifier` gana `applyAction`/`rawStates`/`eliminateForDisconnect` para el puente host↔red (próxima pieza); `IGameGateway` gana `eliminatePlayerForDisconnect`, mismo patrón que `resolveNopeWindow`
+- 188 tests totales pasando
+
+---
+
 ## [0.4.6] — 2026-07-09
 
 ### Añadido — Fase 5: acceso al WsClient/WsServer del lobby
