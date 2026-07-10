@@ -69,6 +69,28 @@ class GameEngine {
     return _state!;
   }
 
+  /// Marca a [playerId] como desconectado mientras corre su grace period
+  /// (Fase 5, disparado por `WsServer.onPlayerDisconnected`). No es una
+  /// acción de jugador: no pasa por [GameRules.validate].
+  GameState markPlayerDisconnected(String playerId) {
+    _state = ActionProcessor.markDisconnected(playerId, _state!);
+    return _state!;
+  }
+
+  /// Reconectó a tiempo: vuelve a `active` (Fase 5,
+  /// `WsServer.onPlayerReconnected`).
+  GameState markPlayerReconnected(String playerId) {
+    _state = ActionProcessor.markReconnected(playerId, _state!);
+    return _state!;
+  }
+
+  /// Expiró el grace period de reconexión sin que [playerId] volviera: lo
+  /// elimina de la partida por el mismo camino que una eliminación normal.
+  GameState eliminatePlayerForDisconnect(String playerId) {
+    _state = ActionProcessor.eliminateForDisconnect(playerId, _state!);
+    return _state!;
+  }
+
   /// Libera recursos. OJO: [GameEventBus.instance] es un singleton de por
   /// vida de la app — cerrarlo aquí lo deja inutilizable para el resto de la
   /// sesión. No llamar desde el ciclo de vida de un provider (ej. en una

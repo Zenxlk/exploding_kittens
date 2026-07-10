@@ -252,6 +252,71 @@ abstract final class ActionProcessor {
     return state.copyWith(seeTheFutureCards: top3);
   }
 
+  // ── Desconexión (Fase 5) ──────────────────────────────────────────────────────
+  //
+  // Ninguna de las dos operaciones siguientes es un TurnAction: las dispara la
+  // red (WsServer.onPlayerDisconnected/onPlayerReconnected vía
+  // ReconnectionManager), no un jugador jugando su turno, así que no pasan por
+  // GameRules.validate — mismo patrón que resolveNopeWindow().
+
+  /// Marca a [playerId] como desconectado (mientras corre su grace period).
+  /// No-op si ya no está activo (p. ej. ya fue eliminado o ganó).
+  static GameState markDisconnected(String playerId, GameState state) {
+    final player = state.playerById(playerId);
+    if (player == null || player.status != PlayerStatus.active) return state;
+    return _setStatus(playerId, PlayerStatus.disconnected, state);
+  }
+
+  /// Reconectó a tiempo: vuelve a `active`. No-op si no estaba `disconnected`.
+  static GameState markReconnected(String playerId, GameState state) {
+    final player = state.playerById(playerId);
+    if (player == null || player.status != PlayerStatus.disconnected) {
+      return state;
+    }
+    return _setStatus(playerId, PlayerStatus.active, state);
+  }
+
+  /// Expiró el grace period sin reconectar: elimina a [playerId] reutilizando
+  /// el mismo camino que la eliminación por bomba (eliminationOrder +
+  /// WinCondition). Si tenía el turno, lo pasa al siguiente jugador vivo;
+  /// si no, el turno en curso no se ve afectado.
+  static GameState eliminateForDisconnect(String playerId, GameState state) {
+    final player = state.playerById(playerId);
+    if (player == null || player.status == PlayerStatus.eliminated) {
+      return state;
+    }
+
+    var next = _eliminatePlayer(playerId, state);
+    _emit(PlayerEliminatedEvent(
+      timestamp: _now(),
+      playerId: playerId,
+      playerName: player.name,
+    ));
+
+    final result = WinCondition.check(next);
+    if (result != null) {
+      _emit(GameOverEvent(
+        timestamp: _now(),
+        winnerId: result.winnerId,
+        winnerName: result.winnerName,
+      ));
+      return next.copyWith(phase: GamePhase.finished, result: result);
+    }
+
+    if (state.turn.currentPlayerId == playerId) {
+      return TurnManager.advance(next);
+    }
+    return next;
+  }
+
+  static GameState _setStatus(
+      String playerId, PlayerStatus status, GameState state) {
+    final updated = state.players
+        .map((p) => p.id == playerId ? p.copyWith(status: status) : p)
+        .toList();
+    return state.copyWith(players: updated);
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────────
 
   static GameState _eliminatePlayer(String playerId, GameState state) {
