@@ -11,6 +11,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.4.2] — 2026-07-09
+
+### Añadido — Fase 5: serialización del motor
+- `toJson()`/`fromJson()` manuales en todos los modelos puros del motor (`CardModel`, `PlayerModel`, `DeckModel`, `TurnModel`, `GameConfig`, `GameResult`, `GameState`) y en las dos jerarquías selladas (`TurnAction`, `GameEvent`), mismo estilo ya usado por los modelos del lobby — necesario para que el `GameState`/las acciones/los eventos viajen por WebSocket en el resto de la fase
+- `TurnAction` ahora extiende `Equatable` (era el único modelo del motor que no lo hacía); sin esto, la igualdad estructural de `GameState` se rompía en cuanto `pendingAction` contenía una instancia no-`const` (p. ej. una reconstruida desde JSON)
+- 149 tests totales pasando
+
+---
+
 ## [0.4.1] — 2026-07-08
 
 ### Corregido
