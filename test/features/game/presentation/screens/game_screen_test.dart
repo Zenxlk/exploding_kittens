@@ -59,6 +59,10 @@ class _FakeGameGateway implements IGameGateway {
 
   @override
   GameState resolveNopeWindow() => throw UnimplementedError();
+
+  @override
+  GameState eliminatePlayerForDisconnect(String playerId) =>
+      throw UnimplementedError();
 }
 
 const _room = LobbyRoom(

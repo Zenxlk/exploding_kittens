@@ -17,4 +17,9 @@ abstract interface class IGameGateway {
 
   /// Cierra la ventana de Nope (temporizador expirado).
   GameState resolveNopeWindow();
+
+  /// Expiró el grace period de reconexión (Fase 5) sin que [playerId]
+  /// volviera: lo elimina de la partida. No es un `TurnAction`, igual que
+  /// `resolveNopeWindow`.
+  GameState eliminatePlayerForDisconnect(String playerId);
 }

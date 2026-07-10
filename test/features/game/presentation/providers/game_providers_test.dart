@@ -34,6 +34,7 @@ class _FakeGameGateway implements IGameGateway {
   GameState Function(List<PlayerModel>, GameConfig)? onStart;
   GameState Function(TurnAction)? onApply;
   GameState Function()? onResolve;
+  GameState Function(String)? onEliminateForDisconnect;
   int applyCalls = 0;
   int resolveCalls = 0;
 
@@ -55,6 +56,10 @@ class _FakeGameGateway implements IGameGateway {
     resolveCalls++;
     return onResolve!();
   }
+
+  @override
+  GameState eliminatePlayerForDisconnect(String playerId) =>
+      onEliminateForDisconnect!(playerId);
 }
 
 void main() {
@@ -196,6 +201,85 @@ void main() {
         container.read(gameProvider.notifier).events,
         same(gateway.events),
       );
+    });
+
+    test('rawStates emite el GameState crudo en cada cambio', () {
+      final s1 = _state();
+      final s2 = _state(phase: TurnPhase.nopeWindow);
+      gateway.onStart = (_, __) => s1;
+      gateway.onApply = (_) => s2;
+
+      final notifier = container.read(gameProvider.notifier);
+      final emitted = <GameState>[];
+      notifier.rawStates.listen(emitted.add);
+
+      notifier.startLocalGame(const [], const GameConfig(playerCount: 2));
+      notifier.drawCard('p1');
+
+      expect(emitted, [s1, s2]);
+    });
+
+    test('applyAction aplica la acción y devuelve null si tiene éxito', () {
+      final s1 = _state();
+      final s2 = _state();
+      gateway.onStart = (_, __) => s1;
+      gateway.onApply = (_) => s2;
+
+      final notifier = container.read(gameProvider.notifier);
+      notifier.startLocalGame(const [], const GameConfig(playerCount: 2));
+
+      final error = notifier.applyAction(const DrawCardAction(playerId: 'p1'));
+
+      expect(error, isNull);
+      expect((container.read(gameProvider) as GameRunning).state, s2);
+    });
+
+    test('applyAction devuelve el mensaje de error si la acción es inválida',
+        () {
+      gateway.onStart = (_, __) => _state();
+      gateway.onApply =
+          (_) => throw const InvalidActionException('no es tu turno');
+
+      final notifier = container.read(gameProvider.notifier);
+      notifier.startLocalGame(const [], const GameConfig(playerCount: 2));
+
+      final error = notifier.applyAction(const DrawCardAction(playerId: 'p1'));
+
+      expect(error, 'no es tu turno');
+      expect((container.read(gameProvider) as GameRunning).error,
+          'no es tu turno');
+    });
+
+    test(
+      'eliminateForDisconnect llama al gateway y actualiza el estado',
+      () {
+        final running = _state();
+        final afterElimination = _state();
+        gateway.onStart = (_, __) => running;
+        gateway.onEliminateForDisconnect = (id) => afterElimination;
+
+        final notifier = container.read(gameProvider.notifier);
+        notifier.startLocalGame(const [], const GameConfig(playerCount: 2));
+        notifier.eliminateForDisconnect('p2');
+
+        expect(
+          (container.read(gameProvider) as GameRunning).state,
+          afterElimination,
+        );
+      },
+    );
+
+    test('eliminateForDisconnect no hace nada en GameIdle', () {
+      var called = false;
+      gateway.onEliminateForDisconnect = (id) {
+        called = true;
+        return _state();
+      };
+
+      container.read(gameProvider.notifier).eliminateForDisconnect('p2');
+
+      expect(called, isFalse);
+      expect(container.read(gameProvider), isA<GameIdle>());
     });
 
     group('acciones — cada método dispatchea el TurnAction correcto', () {
