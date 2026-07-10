@@ -11,6 +11,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.4.5] — 2026-07-09
+
+### Añadido — Fase 5: eliminación por desconexión en el motor
+- `GameEngine.markPlayerDisconnected`/`markPlayerReconnected`/`eliminatePlayerForDisconnect` — tres operaciones puras más (ninguna es un `TurnAction`, no pasan por `GameRules.validate`, mismo patrón que `resolveNopeWindow`) para que el `ReconnectionManager` tenga con qué actuar cuando expira el grace period: reutiliza el mismo camino de `eliminationOrder`/`WinCondition` que ya usa la eliminación por bomba
+- 170 tests totales pasando
+
+---
+
 ## [0.4.4] — 2026-07-09
 
 ### Añadido — Fase 5: ReconnectionManager
