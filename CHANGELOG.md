@@ -11,6 +11,18 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.4.8] — 2026-07-09
+
+### Añadido — Fase 5: puente host↔red
+- `gameNetworkBridgeProvider` — conecta `GameNotifier` (motor real, solo host) con `WsServer` (red): aplica `ActionMessage`s entrantes, contesta `ActionRejectedMessage` solo a quien mandó una acción inválida, y retransmite cada `GameState`/`GameEvent` como `GameStateMessage`/`GameEventMessage`; conecta también `WsServer.onPlayerDisconnected`/`onPlayerReconnected` a un `ReconnectionManager`
+- `IGameGateway`/`LocalGameGateway`/`GameNotifier` ganan `markPlayerDisconnected`/`markPlayerReconnected`
+
+### Corregido
+- `WsServer._onJoin` disparaba `onPlayerReconnected` para cualquier unión de un `playerId` ya conocido (no solo reconexiones reales tras una caída); `GameNotifier.markPlayerDisconnected`/`markPlayerReconnected` ahora omiten la retransmisión si el motor devolvió el mismo estado (no-op), encontrado por el test de integración del puente
+- 196 tests totales pasando
+
+---
+
 ## [0.4.7] — 2026-07-09
 
 ### Añadido — Fase 5: RemoteGameNotifier
