@@ -292,3 +292,46 @@ verdad de forma práctica necesita Fase 5 (para que el no-host también
 pueda jugar) o el modo bot/offline de Fase 6 (para seguir jugando ambas
 manos desde el host sin depender de la suerte del mazo). Audio tampoco se
 verificó (necesita oídos, no capturas).
+
+---
+
+## Fase 5 — Red y reconexión (pendiente de verificación manual)
+
+Cerrada en código (154→200 tests, ver `CHANGELOG.md` 0.4.2 a 0.5.0) pero
+todavía no se corrió de verdad en 2 dispositivos. Es justo el punto que
+debería desbloquear lo que quedó pendiente al final de la Fase 4: con el
+no-host jugando de verdad, ya se puede intentar forzar una Exploding Kitten
+o llegar a un ganador sin depender de la suerte del primer robo del host.
+
+Pasos sugeridos (mismo montaje de 2 emuladores/dispositivos de la sección
+de arriba; si el descubrimiento UDP no funciona en tu red, usar el puente
+`adb forward`/`adb reverse` documentado en la sección de Fase 4):
+
+1. Crear sala en el host, unir al segundo dispositivo, iniciar partida.
+2. Confirmar que el no-host ve su propia mano y la mesa real (no el
+   placeholder fijo que mostraba antes de esta fase) apenas arranca la
+   partida.
+3. Jugar unos turnos alternando quién dispara la acción (robar, jugar
+   cartas) desde **cada** dispositivo — no solo desde el host — y
+   confirmar que el otro dispositivo ve el cambio de estado casi al
+   instante (mazo, mano del rival por conteo, turno).
+4. Intentar una acción inválida desde el no-host (p. ej. jugar fuera de
+   turno) y confirmar que le llega un error transitorio a él, sin afectar
+   al resto.
+5. Jugar hasta que salga una Exploding Kitten en cualquiera de los dos
+   dispositivos: confirmar `InsertBombOverlay`/`ExplosionOverlay` (Fase 4,
+   bloqueados hasta ahora) y que el resultado se refleja en ambos
+   dispositivos.
+6. Llegar a un ganador: confirmar que `GameOverScreen` muestra el ranking
+   correcto en **ambos** dispositivos (antes de esta fase, el no-host se
+   quedaba con "no hay ningún resultado de partida" para siempre) y que
+   solo el host ve el botón "Revancha".
+7. Forzar una desconexión real: cerrar la app (no "salir de sala") en el
+   dispositivo no-host a mitad de partida. En el host, confirmar que
+   `PlayersHudWidget` muestra "Reconectando…" para ese jugador. Reabrir la
+   app en el no-host antes de 60s (`GameConstants.reconnectTimeoutSeconds`)
+   y confirmar que vuelve a la partida en curso. Repetir dejando pasar más
+   de 60s sin reabrir: el jugador debe quedar eliminado y la partida debe
+   seguir con el resto.
+8. Revisar la consola de ambos dispositivos en busca de excepciones o
+   crashes durante todo lo anterior.
