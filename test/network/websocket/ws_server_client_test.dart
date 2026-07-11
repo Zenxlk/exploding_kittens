@@ -345,4 +345,60 @@ void main() {
       await server.close();
     });
   });
+
+  // ── reconexión automática ────────────────────────────────────────────────
+  group('WsClient — reconexión automática', () {
+    test(
+      'una caída no explícita (no close()) reconecta sola con back-off '
+      'cuando el servidor vuelve a estar disponible',
+      () async {
+        final firstServer = await startServer();
+        final port = firstServer.port;
+        final client = await connectClient(port: port);
+        await client.roomStream.first.timeout(const Duration(seconds: 3));
+
+        // Caída no solicitada por el cliente (se apaga el servidor, no un
+        // close() del propio cliente) -> debe reconectar sola, no quedarse
+        // en disconnected para siempre.
+        final disconnected = client.status
+            .firstWhere((s) => s == WsConnectionStatus.disconnected)
+            .timeout(const Duration(seconds: 3));
+        await firstServer.close();
+        await disconnected;
+        expect(client.isConnected, isFalse);
+
+        // El servidor "vuelve" en el mismo puerto; el back-off inicial es de
+        // 1s, así que debería reconectar sin que el test tenga que forzar
+        // nada más.
+        final secondServer = await WsServer.start(
+          hostId: 'h1',
+          hostName: 'Host',
+          port: port,
+        );
+
+        await client.status
+            .firstWhere((s) => s == WsConnectionStatus.connected)
+            .timeout(const Duration(seconds: 5));
+        expect(client.isConnected, isTrue);
+
+        await client.close(playerId: 'p1');
+        await secondServer.close();
+      },
+    );
+
+    test('close() explícito no dispara una reconexión automática', () async {
+      final server = await startServer();
+      final client = await connectClient(port: server.port);
+      await client.roomStream.first.timeout(const Duration(seconds: 3));
+
+      await client.close(playerId: 'p1');
+      await server.close();
+
+      // Si close() disparara una reconexión, esto fallaría por escribir en
+      // un stream ya cerrado; simplemente confirmamos que sigue desconectado
+      // tras esperar más que el back-off inicial.
+      await Future<void>.delayed(const Duration(seconds: 2));
+      expect(client.isConnected, isFalse);
+    });
+  });
 }

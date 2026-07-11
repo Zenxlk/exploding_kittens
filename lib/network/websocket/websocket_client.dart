@@ -24,18 +24,31 @@ enum WsConnectionStatus { connecting, connected, disconnected }
 //   3. Call send() to dispatch actions
 //   4. Call close() when leaving the room
 //
-// TODO(improvement): add automatic reconnection with exponential back-off
-// before delegating to ReconnectionManager (Phase 5). Right now a disconnect
-// emits WsConnectionStatus.disconnected and the UI must react.
+// A disconnect that wasn't triggered by close() (network drop, host
+// momentarily unreachable) schedules an automatic reconnect attempt with
+// exponential back-off (1s, 2s, 4s, ... capped at 16s, reset on success).
+// messages/status/roomStream keep working across a reconnect — callers never
+// need to re-subscribe. This is the client-side half of Phase 5 reconnection;
+// WsServer.onPlayerDisconnected + ReconnectionManager is the host-side half.
 class WsClient {
   WsClient._();
 
   WebSocketChannel? _channel;
   bool _connected = false;
+  bool _explicitClose = false;
   LobbyRoom? _lastRoom;
   final _messageController = StreamController<WsMessage>.broadcast();
   final _statusController = StreamController<WsConnectionStatus>.broadcast();
   Timer? _pingTimer;
+  Timer? _reconnectTimer;
+  Duration _reconnectBackoff = _initialBackoff;
+
+  static const _initialBackoff = Duration(seconds: 1);
+  static const _maxBackoff = Duration(seconds: 16);
+
+  Uri? _uri;
+  String? _playerId;
+  String? _playerName;
 
   // Raw stream of every parsed WsMessage received from the server.
   Stream<WsMessage> get messages => _messageController.stream;
@@ -75,6 +88,10 @@ class WsClient {
     required String playerId,
     required String playerName,
   }) async {
+    _uri = uri;
+    _playerId = playerId;
+    _playerName = playerName;
+
     _statusController.add(WsConnectionStatus.connecting);
 
     _channel = IOWebSocketChannel.connect(uri);
@@ -83,6 +100,7 @@ class WsClient {
     await _channel!.ready;
 
     _connected = true;
+    _reconnectBackoff = _initialBackoff;
     _statusController.add(WsConnectionStatus.connected);
 
     _channel!.stream.listen(
@@ -134,12 +152,39 @@ class WsClient {
     if (!_statusController.isClosed) {
       _statusController.add(WsConnectionStatus.disconnected);
     }
+    if (!_explicitClose) _scheduleReconnect();
+  }
+
+  // ── reconexión (Fase 5) ──────────────────────────────────────────────────
+
+  void _scheduleReconnect() {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(_reconnectBackoff, _attemptReconnect);
+  }
+
+  Future<void> _attemptReconnect() async {
+    if (_explicitClose) return;
+    final uri = _uri;
+    final playerId = _playerId;
+    final playerName = _playerName;
+    if (uri == null || playerId == null || playerName == null) return;
+
+    try {
+      await _connect(uri: uri, playerId: playerId, playerName: playerName);
+    } catch (_) {
+      _reconnectBackoff = _reconnectBackoff * 2;
+      if (_reconnectBackoff > _maxBackoff) _reconnectBackoff = _maxBackoff;
+      _scheduleReconnect();
+    }
   }
 
   // ── lifecycle ─────────────────────────────────────────────────────────────
 
   // Sends LeaveRoom, closes the channel and disposes streams.
   Future<void> close({required String playerId}) async {
+    _explicitClose = true;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
     send(LeaveRoomMessage(playerId: playerId));
     _pingTimer?.cancel();
     _pingTimer = null;

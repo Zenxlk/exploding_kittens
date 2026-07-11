@@ -279,6 +279,13 @@ class WsServer {
   }
 
   Future<void> close() async {
+    // HttpServer.close(force: true) does NOT close sockets that already
+    // completed the WebSocket upgrade (they're detached from HttpServer's own
+    // connection tracking) — without this, connected clients would never see
+    // a disconnect and their sockets would just leak until the OS reaps them.
+    for (final ws in {..._clients.values, ..._pending}) {
+      unawaited(ws.close().catchError((_) {}));
+    }
     await _httpServer?.close(force: true);
     _httpServer = null;
     await _roomController.close();
