@@ -72,8 +72,8 @@ class LobbyRepository implements ILobbyRepository {
       );
 
       // 4. Keep the beacon's player count in sync with room changes.
-      //    TODO(improvement): cancel this subscription in leaveRoom to avoid
-      //    calling updatePlayerCount after the advertiser has been stopped.
+      //    _cleanup() cancels this before stopping the advertiser, and the
+      //    call below is null-safe either way.
       _playerCountSub = _client!.roomStream.listen((room) {
         _advertiser?.updatePlayerCount(
           roomId: room.id,
