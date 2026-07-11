@@ -86,7 +86,7 @@ y su estado de implementación en este proyecto.
 |-------|-------------|
 | Mira las 3 cartas de arriba del mazo (privado) | ✅ |
 | No cambia el orden del mazo | ✅ |
-| El jugador activo es el único que ve las cartas | ⚠️ El motor sí las marca privadas (`GameEvent` dirigido), pero `GameState.seeTheFutureCards` viaja compartido — verificado en Fase 5 que hoy se le muestra el overlay a **ambos** jugadores en red. Bug conocido, ver `docs/VERIFICATION_LOG.md` |
+| El jugador activo es el único que ve las cartas | ✅ `GameState.seeTheFutureCards` sigue viajando compartido en la red (no hay canal privado por jugador todavía), pero `GameTableView` ahora solo muestra el overlay si es el turno del jugador local — cerrado el hallazgo de Fase 5 en `docs/VERIFICATION_LOG.md` |
 
 ### Cartas Gato (Tacocat, Rainbow Ralphing Cat, Bearded Dragon, Cattermelon, Hairy Potato Cat)
 | Regla | Implementada |
@@ -111,8 +111,8 @@ y su estado de implementación en este proyecto.
 ## Reglas pendientes de implementar
 
 > Fases 1 a 5 están completas (ver `ROADMAP.md`); lo que queda pendiente de
-> reglas es exclusivamente Fase 6 (expansiones) más el trío de gatos y la
-> privacidad de See the Future, señalados arriba con ⚠️.
+> reglas es exclusivamente Fase 6 (expansiones) más el trío de gatos,
+> señalado arriba con ⚠️.
 
 | Regla | Fase | Notas |
 |-------|------|-------|
@@ -128,6 +128,6 @@ y su estado de implementación en este proyecto.
 | Aspecto | Juego físico | Esta implementación |
 |---------|-------------|---------------------|
 | Favor — quién elige la carta | El objetivo elige | El objetivo elige, vía `FavorTargetOverlay` |
-| Ver el futuro — privacidad | El jugador lo ve en secreto | Debería ser privado por WebSocket al jugador activo, pero hoy se filtra al resto — ver la fila ⚠️ de See the Future arriba |
+| Ver el futuro — privacidad | El jugador lo ve en secreto | Filtrado por turno en el cliente; el dato en sí sigue viajando compartido en `GameState` (sin canal privado por jugador todavía) |
 | Inserción de bomba | El jugador físicamente la mete | El jugador elige posición en `InsertBombOverlay` |
 | Reconocimiento de cartas | Visual directo | Requiere trust en modo red (sin verificación criptográfica en MVP) |

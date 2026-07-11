@@ -316,11 +316,13 @@ sesión (misma red virtual `netsimd`, sin necesitar el puente
    `SeeTheFutureOverlay` se disparó correctamente tras el viaje
    cliente→host→broadcast. Captura:
    `docs/screenshots/fase5/02_no_host_juega_see_the_future.png`.
-   - Hallazgo menor (no arreglado, preexistente de Fase 4): el overlay de
-     `SeeTheFuture` se le muestra a **ambos** jugadores, no solo a quien lo
-     jugó — es fiel al `GameState.seeTheFutureCards` compartido tal cual
-     ya funcionaba en un solo dispositivo; en el juego real debería ser
-     privado. Candidato para Fase 6.
+   - Hallazgo menor (preexistente de Fase 4): el overlay de `SeeTheFuture`
+     se le mostraba a **ambos** jugadores, no solo a quien lo jugó — era
+     fiel al `GameState.seeTheFutureCards` compartido tal cual ya
+     funcionaba en un solo dispositivo. **Arreglado** en `dev/gameplay-fixes`
+     filtrando el overlay por turno en `GameTableView` (el dato en sí
+     sigue viajando compartido en `GameState`, sin canal privado por
+     jugador — ver `docs/GAME_RULES.md`).
 3. **`InsertBombOverlay`/`ExplosionOverlay` en el no-host** — bloqueados
    desde Fase 4, ya confirmados: el no-host robó la Exploding Kitten, se
    le mostró `InsertBombOverlay`, y mientras tanto el host vio "Esperando
