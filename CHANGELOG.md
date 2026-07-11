@@ -11,6 +11,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.5.7] — 2026-07-11
+
+### Añadido — Fase 6: dos mejoras técnicas pendientes
+- El `playerId` del jugador local ahora se persiste con `shared_preferences` (`playerIdProvider`), en vez de generarse de nuevo en cada rebuild — sin esto, reconectar tras un crash siempre parecía un jugador nuevo para el host, que empareja las reconexiones por `playerId`
+- Música de menú (`AssetPaths.musicMenu`) ahora suena en Splash/Home/Lobby/Ajustes vía el nuevo `MenuMusicMixin` — antes solo `GameScreen`/`GameOverScreen` tenían música. A diferencia de esas dos pantallas, no se corta al salir de cada una (todas piden la misma pista y `AudioService` no reinicia una que ya está sonando), así que navegar entre menús no corta ni reinicia la música
+
+### Limpieza
+- `HomeScreen` y `SplashScreen` pasaron de `Stateless(Widget)` a `Consumer(Stateful)Widget` para poder alojar el mixin de música
+
+---
+
 ## [0.5.6] — 2026-07-11
 
 ### Corregido

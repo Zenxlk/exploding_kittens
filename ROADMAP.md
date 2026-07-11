@@ -93,8 +93,8 @@ empezar la siguiente.
 ### Mejoras técnicas pendientes
 - [ ] Migrar `MdnsAdvertiser` / `MdnsDiscoverer` de UDP broadcast a mDNS/Bonjour real (`nsd` o `multicast_dns`)
 - [ ] `WifiManager.MulticastLock` vía platform channel en Android 10+
-- [ ] Persistir `playerId` con `shared_preferences` para reconexión tras crash
-- [ ] Reproducir `AssetPaths.musicMenu` en Home/Splash/Lobby/Settings (hoy solo `GameScreen`/`GameOverScreen` tienen música vía `AudioService`)
+- [x] Persistir `playerId` con `shared_preferences` para reconexión tras crash
+- [x] Reproducir `AssetPaths.musicMenu` en Home/Splash/Lobby/Settings (`MenuMusicMixin`; antes solo `GameScreen`/`GameOverScreen` tenían música vía `AudioService`)
 
 ### Bots / modo offline
 - [ ] Interfaz `BotStrategy` con implementación básica (aleatoria)
