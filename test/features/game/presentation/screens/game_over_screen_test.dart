@@ -1,5 +1,6 @@
 import 'package:exploding_kittens/core/audio/audio_service.dart';
 import 'package:exploding_kittens/core/audio/i_audio_service.dart';
+import 'package:exploding_kittens/core/router/route_names.dart';
 import 'package:exploding_kittens/features/game/presentation/providers/game_providers.dart';
 import 'package:exploding_kittens/features/game/presentation/screens/game_over_screen.dart';
 import 'package:exploding_kittens/features/lobby/domain/models/lobby_player.dart';
@@ -9,14 +10,24 @@ import 'package:exploding_kittens/game_engine/models/game/game_result.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeLobbyNotifier extends LobbyNotifier {
   _FakeLobbyNotifier(this._initial);
   final LobbyState _initial;
+  bool leaveRoomCalled = false;
 
   @override
   LobbyState build() => _initial;
+
+  // No se delega al LobbyNotifier real: solo interesa comprobar que la
+  // pantalla lo llama antes de navegar (el fix del "servidor fantasma" —
+  // ver docs/VERIFICATION_LOG.md), no ejercitar el repositorio real.
+  @override
+  Future<void> leaveRoom() async {
+    leaveRoomCalled = true;
+  }
 }
 
 class _FakeAudioService implements IAudioService {
@@ -70,13 +81,34 @@ const _result = GameResult(
   eliminationOrder: ['p3', 'p2'],
 );
 
+// GameOverScreen navega con go_router's context.go (incluido el fix del
+// "servidor fantasma": Volver al menú), así que necesita un GoRouter real
+// en el árbol, no solo un Navigator.
 Widget _wrap({
   required GameSessionState gameState,
   required LobbyState lobbyState,
+  required _FakeLobbyNotifier lobbyNotifier,
 }) {
+  final router = GoRouter(
+    initialLocation: RouteNames.gameOver,
+    routes: [
+      GoRoute(
+        path: RouteNames.gameOver,
+        builder: (_, __) => const GameOverScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.home,
+        builder: (_, __) => const Scaffold(body: Text('home-screen')),
+      ),
+      GoRoute(
+        path: RouteNames.game,
+        builder: (_, __) => const Scaffold(body: Text('game-screen')),
+      ),
+    ],
+  );
   return ProviderScope(
     overrides: [
-      lobbyProvider.overrideWith(() => _FakeLobbyNotifier(lobbyState)),
+      lobbyProvider.overrideWith(() => lobbyNotifier),
       gameProvider.overrideWith(() => _FakeGameNotifier(gameState)),
       // El mismo estado en los dos: cada test decide con `localPlayerId` si
       // es host o no, y GameOverScreen ya elige el provider correcto según
@@ -84,7 +116,7 @@ Widget _wrap({
       remoteGameProvider.overrideWith(() => _FakeRemoteGameNotifier(gameState)),
       audioServiceProvider.overrideWithValue(_FakeAudioService()),
     ],
-    child: const MaterialApp(home: GameOverScreen()),
+    child: MaterialApp.router(routerConfig: router),
   );
 }
 
@@ -98,7 +130,11 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        _wrap(gameState: const GameIdle(), lobbyState: const LobbyIdle()),
+        _wrap(
+          gameState: const GameIdle(),
+          lobbyState: const LobbyIdle(),
+          lobbyNotifier: _FakeLobbyNotifier(const LobbyIdle()),
+        ),
       );
 
       expect(
@@ -108,6 +144,27 @@ void main() {
     });
 
     testWidgets(
+      'sin resultado de partida, "Volver al menú" deja la sala antes de '
+      'navegar',
+      (tester) async {
+        final lobbyNotifier = _FakeLobbyNotifier(const LobbyIdle());
+        await tester.pumpWidget(
+          _wrap(
+            gameState: const GameIdle(),
+            lobbyState: const LobbyIdle(),
+            lobbyNotifier: lobbyNotifier,
+          ),
+        );
+
+        await tester.tap(find.text('Volver al menú'));
+        await tester.pumpAndSettle();
+
+        expect(lobbyNotifier.leaveRoomCalled, isTrue);
+        expect(find.text('home-screen'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
       'el host ve el ranking en orden real de eliminación y el botón de '
       'revancha',
       (tester) async {
@@ -115,6 +172,9 @@ void main() {
           _wrap(
             gameState: const GameFinished(_result),
             lobbyState: const LobbyInRoom(room: _room, localPlayerId: 'host'),
+            lobbyNotifier: _FakeLobbyNotifier(
+              const LobbyInRoom(room: _room, localPlayerId: 'host'),
+            ),
           ),
         );
 
@@ -135,6 +195,9 @@ void main() {
           _wrap(
             gameState: const GameFinished(_result),
             lobbyState: const LobbyInRoom(room: _room, localPlayerId: 'p2'),
+            lobbyNotifier: _FakeLobbyNotifier(
+              const LobbyInRoom(room: _room, localPlayerId: 'p2'),
+            ),
           ),
         );
 
@@ -143,6 +206,31 @@ void main() {
           find.textContaining('Esperando a que el host inicie'),
           findsOneWidget,
         );
+      },
+    );
+
+    testWidgets(
+      'con resultado de partida, "Volver al menú" deja la sala antes de '
+      'navegar',
+      (tester) async {
+        final lobbyState = const LobbyInRoom(
+          room: _room,
+          localPlayerId: 'p2',
+        );
+        final lobbyNotifier = _FakeLobbyNotifier(lobbyState);
+        await tester.pumpWidget(
+          _wrap(
+            gameState: const GameFinished(_result),
+            lobbyState: lobbyState,
+            lobbyNotifier: lobbyNotifier,
+          ),
+        );
+
+        await tester.tap(find.text('Volver al menú'));
+        await tester.pumpAndSettle();
+
+        expect(lobbyNotifier.leaveRoomCalled, isTrue);
+        expect(find.text('home-screen'), findsOneWidget);
       },
     );
   });

@@ -82,7 +82,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
             ),
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: () => context.go(RouteNames.home),
+              onPressed: () => _goHome(context),
               child: const Text('Volver al menú'),
             ),
           ],
@@ -139,13 +139,22 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
               ),
             const SizedBox(height: 12),
             TextButton(
-              onPressed: () => context.go(RouteNames.home),
+              onPressed: () => _goHome(context),
               child: const Text('Volver al menú'),
             ),
           ],
         ),
       ),
     );
+  }
+
+  // Sin esto, el WsServer del host (o la conexión del cliente) quedaba vivo
+  // al volver al menú y crear/unirse a otra sala reusaba el mismo
+  // LobbyRepository sin cerrar lo anterior — "servidor fantasma" que
+  // bloqueaba el join de la sala nueva (ver docs/VERIFICATION_LOG.md).
+  Future<void> _goHome(BuildContext context) async {
+    await ref.read(lobbyProvider.notifier).leaveRoom();
+    if (context.mounted) context.go(RouteNames.home);
   }
 
   void _rematch(LobbyInRoom lobbyState) {
