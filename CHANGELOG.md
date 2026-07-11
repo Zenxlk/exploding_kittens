@@ -11,6 +11,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.5.2] — 2026-07-11
+
+### Corregido
+- Reportado por el usuario: quedarse solo con cartas de gato sueltas (sin pareja) se sentía como que el juego se congelaba. `CardRules.canPlay` ahora rechaza una carta de gato jugada sola vía `PlayCardAction` (antes pasaba la validación igual, se descartaba sin efecto y el turno no avanzaba — un agujero negro solo evitado por la UI); y el mensaje de la barra de selección ahora indica explícitamente que se puede tocar el mazo para robar y pasar el turno
+
+---
+
 ## [0.5.1] — 2026-07-11
 
 ### Corregido

@@ -155,7 +155,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 // Hardcodeado a propósito (sin package_info_plus todavía):
                 // mantener sincronizado a mano con pubspec.yaml en cada
                 // commit chore(version).
-                trailing: Text('0.5.1',
+                trailing: Text('0.5.2',
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.onBackground.withValues(alpha: 0.5),
                     )),
