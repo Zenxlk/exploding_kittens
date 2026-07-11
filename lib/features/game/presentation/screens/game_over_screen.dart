@@ -57,6 +57,13 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
   @override
   Widget build(BuildContext context) {
     ref.listen(settingsProvider, (_, __) => _syncMusic());
+    // El host navega a GameScreen manualmente dentro de _rematch(); un
+    // no-host no dispara esa acción, solo refleja lo que le llega —
+    // necesita su propio disparador para no quedarse varado aquí en cuanto
+    // remoteGameProvider deja de estar en GameFinished (nueva partida).
+    ref.listen<GameSessionState>(remoteGameProvider, (_, next) {
+      if (next is GameRunning) context.go(RouteNames.game);
+    });
 
     final lobbyState = ref.watch(lobbyProvider);
     final isHostDevice = lobbyState is! LobbyInRoom || lobbyState.isHost;
