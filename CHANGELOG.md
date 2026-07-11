@@ -11,6 +11,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.4.10] — 2026-07-09
+
+### Añadido — Fase 5: reconexión automática del cliente
+- `WsClient` reconecta solo con back-off exponencial (1s→16s) tras una caída no solicitada (`close()` explícito no la dispara); `messages`/`status`/`roomStream` siguen funcionando sin que quien los escucha tenga que volver a suscribirse
+
+### Corregido
+- `WsServer.close()` no cerraba los sockets ya conectados (`HttpServer.close(force: true)` no toca las conexiones que ya completaron el upgrade a WebSocket) — se filtraban sin avisar a los clientes del cierre; ahora se cierran explícitamente
+- 200 tests totales pasando
+
+---
+
 ## [0.4.9] — 2026-07-09
 
 ### Añadido — Fase 5: GameScreen/GameOverScreen sincronizados
