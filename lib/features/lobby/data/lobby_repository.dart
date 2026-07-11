@@ -19,9 +19,6 @@ import 'package:exploding_kittens/network/wifi/mdns_discoverer.dart';
 // TODO(improvement): split into HostLobbyRepository and ClientLobbyRepository
 // to keep each class focused; the current unified class has two implicit modes
 // (host / client) that share state awkwardly.
-//
-// TODO(improvement): persist playerId across sessions with shared_preferences
-// so the same player can reconnect after a crash without appearing as a new user.
 class LobbyRepository implements ILobbyRepository {
   WsServer? _server;
   WsClient? _client;
