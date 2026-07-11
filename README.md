@@ -20,9 +20,9 @@ desarrollada en Flutter por **ZenXLK**. Soporta partidas locales por WiFi para
 | 1 | Motor de juego (reglas oficiales, mazo, turnos) | ✅ Completa |
 | 2 | UI base y navegación | ✅ Completa |
 | 3 | Lobby y partidas locales por WiFi | ✅ Completa |
-| 4 | Pantalla de juego completa con animaciones | ⏳ Pendiente |
-| 5 | Red, reconexión y modo online | ⏳ Pendiente |
-| 6 | Bots / modo offline | 🗓 Futuro |
+| 4 | Pantalla de juego completa con animaciones | ✅ Completa |
+| 5 | Red y reconexión | ✅ Completa |
+| 6 | Bots, modo online y mejoras técnicas | 🗓 Futuro |
 
 ## Requisitos
 
@@ -34,8 +34,8 @@ desarrollada en Flutter por **ZenXLK**. Soporta partidas locales por WiFi para
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/Zenxlk/Exploding_Kittens.git
-cd Exploding_Kittens
+git clone https://github.com/Zenxlk/exploding_kittens.git
+cd exploding_kittens
 
 # Instalar dependencias
 flutter pub get
@@ -50,7 +50,7 @@ flutter run
 ## Tecnologías
 
 - **Flutter + Dart** — UI multiplataforma
-- **Riverpod 2** — gestión de estado
+- **Riverpod 3** — gestión de estado
 - **GoRouter** — navegación declarativa
 - **WebSocket** (`web_socket_channel`) — comunicación en red local y futura online
 - **UDP broadcast** — descubrimiento de salas en la red local (lobby)
