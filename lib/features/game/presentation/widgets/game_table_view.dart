@@ -387,12 +387,14 @@ class _SelectionBar extends StatelessWidget {
           canAct ? onChooseTarget : null,
         ),
       _CatCardWaitingForPair() => (
-          'Toca otra carta del mismo tipo para formar un par',
+          'Un gato solo no se puede jugar: toca otra carta igual para '
+          'formar un par, o toca el mazo para robar y pasar el turno',
           'Jugar',
           null,
         ),
       _UnsupportedSelection() => (
-          'Esta carta se juega en otro momento',
+          'Esta carta no se juega así — toca el mazo para robar y pasar '
+          'el turno',
           'Jugar',
           null,
         ),

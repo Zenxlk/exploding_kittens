@@ -174,7 +174,10 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(
-          find.text('Esta carta se juega en otro momento'),
+          find.text(
+            'Esta carta no se juega así — toca el mazo para robar y pasar '
+            'el turno',
+          ),
           findsOneWidget,
         );
         final button = tester.widget<FilledButton>(find.byType(FilledButton));
@@ -207,7 +210,10 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(
-          find.text('Toca otra carta del mismo tipo para formar un par'),
+          find.text(
+            'Un gato solo no se puede jugar: toca otra carta igual para '
+            'formar un par, o toca el mazo para robar y pasar el turno',
+          ),
           findsOneWidget,
         );
       },
