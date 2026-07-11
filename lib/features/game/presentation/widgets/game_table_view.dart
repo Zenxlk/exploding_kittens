@@ -388,13 +388,13 @@ class _SelectionBar extends StatelessWidget {
         ),
       _CatCardWaitingForPair() => (
           'Un gato solo no se puede jugar: toca otra carta igual para '
-          'formar un par, o toca el mazo para robar y pasar el turno',
+              'formar un par, o toca el mazo para robar y pasar el turno',
           'Jugar',
           null,
         ),
       _UnsupportedSelection() => (
           'Esta carta no se juega así — toca el mazo para robar y pasar '
-          'el turno',
+              'el turno',
           'Jugar',
           null,
         ),
