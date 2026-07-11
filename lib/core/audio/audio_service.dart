@@ -70,6 +70,25 @@ class AudioService implements IAudioService {
   }
 
   @override
+  Future<void> pauseMusic() async {
+    try {
+      await _musicPlayer.pause();
+    } catch (_) {
+      // Pausar música que ya falló al iniciar no es un error a reportar.
+    }
+  }
+
+  @override
+  Future<void> resumeMusic() async {
+    if (_currentMusicAsset == null) return;
+    try {
+      await _musicPlayer.resume();
+    } catch (_) {
+      // Reanudar música que ya falló al iniciar no es un error a reportar.
+    }
+  }
+
+  @override
   Future<void> dispose() async {
     await _sfxPlayer.dispose();
     await _musicPlayer.dispose();

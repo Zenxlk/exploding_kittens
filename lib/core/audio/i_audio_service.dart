@@ -19,5 +19,14 @@ abstract interface class IAudioService {
 
   Future<void> stopMusic();
 
+  /// Pausa la música de fondo sin perder la posición ni la pista actual —
+  /// usado cuando la app pasa a segundo plano, para no seguir sonando con
+  /// la pantalla apagada.
+  Future<void> pauseMusic();
+
+  /// Reanuda la música pausada por [pauseMusic]. Si no había ninguna pista
+  /// sonando, no hace nada.
+  Future<void> resumeMusic();
+
   Future<void> dispose();
 }

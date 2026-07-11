@@ -28,6 +28,12 @@ class _RecordingAudioService implements IAudioService {
   Future<void> stopMusic() async {}
 
   @override
+  Future<void> pauseMusic() async {}
+
+  @override
+  Future<void> resumeMusic() async {}
+
+  @override
   Future<void> dispose() async {}
 }
 
