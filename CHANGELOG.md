@@ -7,7 +7,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 ## [Unreleased]
 
 ### En progreso
-- Fase 5: Red y reconexión
+- Fase 6: mejoras técnicas, bots y expansiones (ver ROADMAP.md)
+
+---
+
+## [0.5.0] — 2026-07-09
+
+### Añadido — Fase 5 completa: red y reconexión
+- Con las piezas de las versiones 0.4.2 a 0.4.10 (serialización del motor, transporte en `WsServer`/`WsMessage`, `ReconnectionManager`, eliminación por desconexión en el motor, `RemoteGameNotifier`, el puente host↔red, `GameScreen`/`GameOverScreen` sincronizados y la reconexión automática de `WsClient`) se cierra la Fase 5: los dispositivos no-host ya juegan la partida real sincronizada por WebSocket, no solo el host.
+- 200 tests totales pasando
+
+**Con esto se cierra la Fase 5 — Red y reconexión.** Decisión de diseño clave: en vez de forzar un `RemoteGameGateway` dentro de la interfaz síncrona `IGameGateway` existente (hubiera obligado a convertir `apply()`/`startGame()` a streams y reescribir los tests ya existentes de `GameNotifier`), se optó por `RemoteGameNotifier` como clase separada que refleja el mismo `GameSessionState` — cero riesgo sobre lo construido en Fase 4. Queda pendiente, documentado en ROADMAP.md, todo lo de Fase 6 (mDNS real, bots, modo online, expansiones, publicación).
 
 ---
 

@@ -74,15 +74,17 @@ empezar la siguiente.
 
 ---
 
-## Fase 5 — Red y reconexión ⏳
+## Fase 5 — Red y reconexión ✅
 
-- [ ] `WebSocketServer` — host recibe acciones, aplica al engine, retransmite estado
-- [ ] `WebSocketClient` — clientes envían acciones, reciben `GameState`
-- [ ] `GameStateSerializer` — `GameState` ↔ JSON para transmisión
-- [ ] `EventSerializer` — `GameEvent` ↔ JSON
-- [ ] `ReconnectionManager` — grace period, backoff exponencial, restauración de estado
-- [ ] Manejo de `PlayerStatus.disconnected` en UI
-- [ ] Tests de serialización y reconexión
+- [x] `WebSocketServer` — host recibe acciones, aplica al engine, retransmite estado (`gameNetworkBridgeProvider` conecta `WsServer.actionMessages` con `GameNotifier.applyAction`, y `GameNotifier.rawStates`/`events` de vuelta con `WsServer.broadcast`)
+- [x] `WebSocketClient` — clientes envían acciones, reciben `GameState` (`RemoteGameNotifier`, mismo `GameSessionState` que produce `GameNotifier` para el host)
+- [x] `GameStateSerializer` — `GameState` ↔ JSON para transmisión (`toJson`/`fromJson` manuales en todos los modelos del motor, mismo estilo que los del lobby)
+- [x] `EventSerializer` — `GameEvent` ↔ JSON (necesario porque los no-host no tienen motor local; su único origen de sonidos/animaciones es lo que el host reenvía)
+- [x] `ReconnectionManager` — grace period + reconexión con back-off exponencial (`ReconnectionManager` en el host para el grace period de 60s; `WsClient` reconecta solo con back-off 1s→16s tras una caída no solicitada)
+- [x] Manejo de `PlayerStatus.disconnected` en UI (`PlayersHudWidget` muestra "Reconectando…" + icono de wifi apagado)
+- [x] Tests de serialización y reconexión (round-trip por modelo, integración real servidor+cliente en loopback para el puente y la reconexión)
+
+> Nota: se decidió no forzar un `RemoteGameGateway` dentro de `IGameGateway` (hubiera obligado a convertir `apply()`/`startGame()` a streams y reescribir los tests ya existentes de `GameNotifier`) — `RemoteGameNotifier` es una clase separada que refleja el mismo `GameSessionState`, ver `docs/VERIFICATION_LOG.md` para el detalle de la decisión y la verificación manual.
 
 ---
 
