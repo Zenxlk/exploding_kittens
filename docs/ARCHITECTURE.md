@@ -86,11 +86,11 @@ TurnPhase.nopeWindow     ← ventana de GameConstants.nopeWindowMs ms
 TurnPhase.resolving      ← se aplica el efecto
     │
     ▼
-TurnPhase.drawRequired   ← jugador debe robar
-    │
-    ▼
-TurnPhase.ended          ← TurnManager.advance() rota al siguiente
+TurnPhase.playing        ← TurnManager.advance() rota al siguiente jugador
 ```
+
+`TurnPhase` también declara `drawRequired` y `ended`, pero ningún camino del
+motor los asigna hoy — quedaron del diseño inicial sin uso real.
 
 Attack chain: `TurnModel.actionsLeft > 1` mantiene al mismo jugador.
 Nope chain: `TurnModel.nopeChainCount` impar = acción cancelada.
@@ -132,10 +132,9 @@ exactamente el mismo camino de código (`WsClient` + `roomStream`).
 
 | Dirección | Mensajes |
 |-----------|----------|
-| Cliente → Servidor | `JoinRoomMessage`, `SetReadyMessage`, `LeaveRoomMessage`, `StartGameMessage` |
-| Servidor → Cliente | `RoomStateMessage`, `GameStartingMessage`, `PlayerKickedMessage`, `WsErrorMessage` |
+| Cliente → Servidor | `JoinRoomMessage`, `SetReadyMessage`, `LeaveRoomMessage`, `StartGameMessage`, `ActionMessage` |
+| Servidor → Cliente | `RoomStateMessage`, `GameStartingMessage`, `PlayerKickedMessage`, `WsErrorMessage`, `GameStateMessage`, `GameEventMessage`, `ActionRejectedMessage`, `PlayerReconnectedMessage` |
 | Ambos | `PingMessage` / `PongMessage` (heartbeat) |
-| Stubs Fase 5 | `GameStateMessage`, `ActionMessage`, `PlayerReconnectedMessage` |
 
 `WsServer` mantiene el `LobbyRoom` autoritativo y retransmite `RoomStateMessage`
 tras cada cambio (join, ready, leave). `WsClient` (sobre `web_socket_channel`)
@@ -151,58 +150,96 @@ class `LobbyState`: `LobbyIdle → LobbyConnecting → LobbyInRoom`, con
 
 ---
 
-## Red (Fase 5 — pendiente sobre transporte ya existente)
+## Red y reconexión (Fase 5 — completa)
 
 ### Diseño cliente–servidor simétrico
 
 `WsServer` y `WsClient` (implementados en Fase 3 para el lobby, ver arriba) son
-el mismo transporte que usará el juego en partida: el **host** levanta
+el mismo transporte que usa el juego en partida: el **host** levanta
 `WsServer` en `AppConstants.localGamePort` (8765) y también se conecta como
 cliente a sí mismo. Todos los jugadores (incluido el host) usan exactamente el
 mismo `WsClient`.
 
 ```
-Host:    WsServer  ←→  GameEngine  ←→  WsClient (host)
-Clients:                WsClient (cliente 1..N)
+Host:    WsServer  ←→  GameEngine (GameNotifier)  ←→  WsClient (host)
+Clients:                RemoteGameNotifier  ←→  WsClient (cliente 1..N)
 ```
 
-Cuando se migre a modo online, solo cambia la URL de conexión del cliente.
-`WsMessage` ya reserva los tipos `GameStateMessage` / `ActionMessage` /
-`PlayerReconnectedMessage` para esta fase; falta la lógica que los procese.
+Solo el host corre un `GameEngine` real. `gameNetworkBridgeProvider` conecta
+ambos lados en el host: reenvía `WsServer.actionMessages` hacia
+`GameNotifier.applyAction()` (respondiendo `ActionRejectedMessage` si la
+acción es inválida), y retransmite `GameNotifier.rawStates`/`events` como
+`GameStateMessage`/`GameEventMessage` por `WsServer.broadcast()`. Cada
+no-host corre un `RemoteGameNotifier` que expone exactamente el mismo
+`GameSessionState` que `GameNotifier`, pero manda sus acciones por
+`ActionMessage` en vez de aplicarlas contra un motor local — así ninguna de
+las pantallas de partida necesita saber si están hablando con el host o con
+un no-host. Cuando se migre a modo online, solo cambia la URL de conexión
+del cliente.
 
-### Serialización (pendiente)
+### Serialización
 
-`GameStateSerializer` convertirá `GameState` ↔ JSON para viajar dentro de
-`GameStateMessage.stateJson`. El estado completo se retransmitirá a todos los
-clientes tras cada acción para garantizar consistencia. Los eventos
-individuales (`GameEvent` ↔ JSON) se usarán para triggers de animación en los
-clientes.
+`GameState` (y cada modelo que compone: `CardModel`, `PlayerModel`,
+`DeckModel`, `TurnModel`, `GameConfig`, `GameResult`, `TurnAction`,
+`GameEvent`) tiene `toJson()`/`fromJson()` propios, mismo estilo manual que
+ya usaban los modelos del lobby (sin `freezed`/`json_serializable`, pese a
+estar en pubspec). No hay una clase `*Serializer` separada. El `GameState`
+completo viaja dentro de `GameStateMessage.stateJson` tras cada acción; los
+`GameEvent` individuales viajan en `GameEventMessage` para disparar
+animaciones/sonidos en los no-host, que no tienen motor local propio.
 
-### Reconexión (pendiente)
+### Reconexión
 
-`ReconnectionManager` gestionará el grace period de
-`GameConstants.reconnectTimeoutSeconds` segundos. Al reconectar, el servidor
-enviará el `GameState` completo (vía `PlayerReconnectedMessage` +
-`GameStateMessage`) y el cliente restaurará la UI desde él.
+`ReconnectionManager` (en `network/reconnection/`, sin dependencias de
+Flutter ni del motor) lleva un `Timer` por jugador desconectado con el
+grace period de `GameConstants.reconnectTimeoutSeconds` (60s por defecto).
+El puente del host lo conecta a `WsServer.onPlayerDisconnected`/
+`onPlayerReconnected`: al desconectarse, marca al jugador
+`PlayerStatus.disconnected` de inmediato (visible en `PlayersHudWidget`); si
+expira sin volver, llama `GameNotifier.eliminateForDisconnect()`, que
+reutiliza el mismo camino de eliminación que una Exploding Kitten sin
+Defuse. `WsClient` reconecta solo con back-off exponencial (1s→16s) tras una
+caída no solicitada.
 
 ---
 
 ## Gestión de estado (Riverpod)
 
+Los providers manuales (`Notifier`/`NotifierProvider`, sin `@riverpod`) son
+el patrón usado en todo el proyecto — `lobbyProvider`/`LobbyNotifier` lo
+estableció en Fase 3 y `gameProvider`/`GameNotifier` lo sigue en Fase 4:
+
 ```dart
-// Provider principal de partida (Fase 4)
-@riverpod
-class GameStateNotifier extends _$GameStateNotifier {
-  late GameEngine _engine;
+// Provider principal de partida (Fase 4), lib/features/game/presentation/providers/game_providers.dart
+final gameProvider =
+    NotifierProvider<GameNotifier, GameSessionState>(GameNotifier.new);
+
+class GameNotifier extends Notifier<GameSessionState> {
+  GameNotifier({IGameGateway? gateway})
+      : _gateway = gateway ?? LocalGameGateway();
+
+  final IGameGateway _gateway;
 
   @override
-  GameState build() { ... }
+  GameSessionState build() => const GameIdle();
 
-  void apply(TurnAction action) {
-    state = _engine.apply(action);
+  void startLocalGame(List<PlayerModel> players, GameConfig config) {
+    _setFromGameState(_gateway.startGame(players, config));
+  }
+
+  String? _apply(TurnAction action) {
+    try {
+      _setFromGameState(_gateway.apply(action));
+      return null;
+    } on InvalidActionException catch (e) {
+      return e.message; // ver GameRunning.error
+    }
   }
 }
 ```
+
+`riverpod_generator` sigue en pubspec por si algún provider futuro lo
+necesita, pero hoy ningún provider del proyecto usa codegen.
 
 Los providers de animación y audio escuchan `GameEventBus.instance.stream`
 de forma independiente para no bloquear el árbol de widgets.
