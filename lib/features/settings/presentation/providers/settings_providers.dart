@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/app_settings.dart';
 
@@ -59,3 +60,11 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
 // ── Provider público ────────────────────────────────────────────────────────
 final settingsProvider =
     AsyncNotifierProvider<SettingsNotifier, AppSettings>(SettingsNotifier.new);
+
+// Versión real de la app (de pubspec.yaml, vía los metadatos nativos del
+// build) — reemplaza el string hardcodeado que había que sincronizar a
+// mano en cada commit chore(version).
+final appVersionProvider = FutureProvider<String>((ref) async {
+  final info = await PackageInfo.fromPlatform();
+  return info.version;
+});

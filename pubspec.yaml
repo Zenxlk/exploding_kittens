@@ -46,6 +46,7 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   nsd: ^5.0.1
+  package_info_plus: ^10.2.0
 
 dev_dependencies:
   flutter_test:

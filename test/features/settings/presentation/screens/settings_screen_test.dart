@@ -5,6 +5,7 @@ import 'package:exploding_kittens/features/settings/presentation/screens/setting
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _RecordingAudioService implements IAudioService {
@@ -48,6 +49,13 @@ Widget _wrapWithProviders({IAudioService? audioService}) {
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    PackageInfo.setMockInitialValues(
+      appName: 'Exploding Kittens',
+      packageName: 'com.zenxlk.exploding_kittens',
+      version: '9.9.9',
+      buildNumber: '99',
+      buildSignature: '',
+    );
   });
 
   group('SettingsScreen', () {
@@ -63,6 +71,7 @@ void main() {
       expect(find.text('Nombre de jugador'), findsOneWidget);
       expect(find.text('Efectos de sonido'), findsOneWidget);
       expect(find.text('Música de fondo'), findsOneWidget);
+      expect(find.text('9.9.9'), findsOneWidget);
 
       final nameField = tester.widget<TextField>(find.byType(TextField));
       expect(nameField.controller!.text, 'Jugador');

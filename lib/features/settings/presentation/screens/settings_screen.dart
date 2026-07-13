@@ -155,13 +155,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               _SettingsTile(
                 title: 'Versión',
                 icon: Icons.info_outline_rounded,
-                // Hardcodeado a propósito (sin package_info_plus todavía):
-                // mantener sincronizado a mano con pubspec.yaml en cada
-                // commit chore(version).
-                trailing: Text('0.5.11',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.onBackground.withValues(alpha: 0.5),
-                    )),
+                trailing: Text(
+                  ref.watch(appVersionProvider).value ?? '',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.onBackground.withValues(alpha: 0.5),
+                  ),
+                ),
               ),
 
               _SettingsTile(
