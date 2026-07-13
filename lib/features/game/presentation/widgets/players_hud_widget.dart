@@ -82,9 +82,7 @@ class _PlayerBadge extends StatelessWidget {
                   backgroundColor:
                       isCurrentTurn ? AppColors.primary : AppColors.surface,
                   child: Text(
-                    player.name.isNotEmpty
-                        ? player.name[0].toUpperCase()
-                        : '?',
+                    player.name.isNotEmpty ? player.name[0].toUpperCase() : '?',
                     style: AppTextStyles.title,
                   ),
                 ),
