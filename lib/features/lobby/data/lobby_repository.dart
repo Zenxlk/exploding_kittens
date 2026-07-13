@@ -1,30 +1,25 @@
 import 'dart:async';
 
 import 'package:exploding_kittens/core/errors/failures.dart';
+import 'package:exploding_kittens/features/lobby/data/client_room_discovery.dart';
+import 'package:exploding_kittens/features/lobby/data/host_beacon_sync.dart';
 import 'package:exploding_kittens/features/lobby/domain/i_lobby_repository.dart';
 import 'package:exploding_kittens/features/lobby/domain/models/discovered_room.dart';
 import 'package:exploding_kittens/features/lobby/domain/models/lobby_room.dart';
 import 'package:exploding_kittens/network/websocket/websocket_client.dart';
 import 'package:exploding_kittens/network/websocket/websocket_message.dart';
 import 'package:exploding_kittens/network/websocket/websocket_server.dart';
-import 'package:exploding_kittens/network/wifi/mdns_advertiser.dart';
-import 'package:exploding_kittens/network/wifi/mdns_discoverer.dart';
 
-// Implements ILobbyRepository by coordinating:
-//   WsServer      — local TCP server (host only)
-//   WsClient      — WebSocket client (all players, including host via 127.0.0.1)
-//   MdnsAdvertiser — UDP broadcast beacon (host only)
-//   MdnsDiscoverer — UDP beacon listener (joining players)
-//
-// TODO(improvement): split into HostLobbyRepository and ClientLobbyRepository
-// to keep each class focused; the current unified class has two implicit modes
-// (host / client) that share state awkwardly.
+// Implementa ILobbyRepository coordinando:
+//   WsServer            — servidor TCP local (solo host)
+//   WsClient             — cliente WebSocket (todos, incluido el host vía 127.0.0.1)
+//   HostBeaconSync       — beacon UDP de MdnsAdvertiser (solo host)
+//   ClientRoomDiscovery  — escucha de beacons de MdnsDiscoverer (solo cliente)
 class LobbyRepository implements ILobbyRepository {
   WsServer? _server;
   WsClient? _client;
-  MdnsAdvertiser? _advertiser;
-  MdnsDiscoverer? _discoverer;
-  StreamSubscription<LobbyRoom>? _playerCountSub;
+  final _hostBeacon = HostBeaconSync();
+  final _clientDiscovery = ClientRoomDiscovery();
   String? _localPlayerId;
 
   @override
@@ -47,55 +42,41 @@ class LobbyRepository implements ILobbyRepository {
     try {
       _localPlayerId = playerId;
 
-      // 1. Start the WebSocket server.
+      // 1. Arranca el servidor WebSocket.
       _server = await WsServer.start(hostId: playerId, hostName: playerName);
       final serverRoom = _server!.currentRoom!;
 
-      // 2. Host connects to their own server via loopback.
-      //    This allows the host to use the same WsClient path as any player.
+      // 2. El host se conecta a su propio servidor vía loopback.
+      //    Esto permite que el host use el mismo camino WsClient que cualquier jugador.
       _client = await WsClient.connect(
         hostAddress: '127.0.0.1',
         playerId: playerId,
         playerName: playerName,
       );
 
-      // 3. Start advertising the room on the local network.
-      _advertiser = MdnsAdvertiser();
-      await _advertiser!.start(
+      // 3. Empieza a anunciar la sala en la red local, y mantiene el conteo
+      //    de jugadores del beacon al día con cada cambio de sala.
+      await _hostBeacon.start(
         roomId: serverRoom.id,
         hostName: playerName,
         playerCount: serverRoom.players.length,
         maxPlayers: serverRoom.maxPlayers,
+        roomUpdates: _client!.roomStream,
       );
 
-      // 4. Keep the beacon's player count in sync with room changes.
-      //    _cleanup() cancels this before stopping the advertiser, and the
-      //    call below is null-safe either way.
-      _playerCountSub = _client!.roomStream.listen((room) {
-        _advertiser?.updatePlayerCount(
-          playerCount: room.players.length,
-          maxPlayers: room.maxPlayers,
-        );
-      });
-
-      // The server already holds the authoritative initial state; return it
-      // directly to avoid waiting on the stream and hitting broadcast timing.
+      // El servidor ya tiene el estado inicial autoritativo; se devuelve
+      // directo para no esperar el stream y toparse con timing del broadcast.
       return Success(serverRoom);
     } catch (e) {
       await _cleanup();
-      return FailureResult(NetworkFailure('Failed to create room: $e'));
+      return FailureResult(NetworkFailure('No se pudo crear la sala: $e'));
     }
   }
 
   // ── client ────────────────────────────────────────────────────────────────
 
   @override
-  Stream<List<DiscoveredRoom>> discoverRooms() async* {
-    await _discoverer?.stop();
-    _discoverer = MdnsDiscoverer();
-    await _discoverer!.start();
-    yield* _discoverer!.rooms;
-  }
+  Stream<List<DiscoveredRoom>> discoverRooms() => _clientDiscovery.discover();
 
   @override
   Future<Result<LobbyRoom>> joinRoom({
@@ -106,9 +87,8 @@ class LobbyRepository implements ILobbyRepository {
     try {
       _localPlayerId = playerId;
 
-      // Stop discovery once the player has chosen a room.
-      await _discoverer?.stop();
-      _discoverer = null;
+      // Detiene la búsqueda una vez que el jugador eligió una sala.
+      await _clientDiscovery.stop();
 
       _client = await WsClient.connect(
         hostAddress: hostAddress,
@@ -116,20 +96,20 @@ class LobbyRepository implements ILobbyRepository {
         playerName: playerName,
       );
 
-      // Use the cached lastRoom if the RoomStateMessage arrived before we
-      // could subscribe, otherwise wait for the next one.
+      // Usa el lastRoom en caché si el RoomStateMessage llegó antes de
+      // poder suscribirse; si no, espera el próximo.
       final room = _client!.lastRoom ??
           await _client!.roomStream.first.timeout(
             const Duration(seconds: 5),
             onTimeout: () => throw TimeoutException(
-              'Did not receive room state from server',
+              'No llegó el estado de la sala desde el servidor',
             ),
           );
 
       return Success(room);
     } catch (e) {
       await _cleanup();
-      return FailureResult(NetworkFailure('Failed to join room: $e'));
+      return FailureResult(NetworkFailure('No se pudo unir a la sala: $e'));
     }
   }
 
@@ -138,7 +118,7 @@ class LobbyRepository implements ILobbyRepository {
   @override
   Future<Result<void>> setReady({required bool ready}) async {
     if (_client == null || !_client!.isConnected) {
-      return FailureResult(const NetworkFailure('Not connected to a room'));
+      return FailureResult(const NetworkFailure('No conectado a una sala'));
     }
     _client!.send(SetReadyMessage(ready: ready));
     return const Success(null);
@@ -147,7 +127,7 @@ class LobbyRepository implements ILobbyRepository {
   @override
   Future<Result<void>> startGame() async {
     if (_client == null || !_client!.isConnected) {
-      return FailureResult(const NetworkFailure('Not connected to a room'));
+      return FailureResult(const NetworkFailure('No conectado a una sala'));
     }
     _client!.send(const StartGameMessage());
     return const Success(null);
@@ -165,14 +145,10 @@ class LobbyRepository implements ILobbyRepository {
   // ── internals ─────────────────────────────────────────────────────────────
 
   Future<void> _cleanup() async {
-    await _playerCountSub?.cancel();
-    _playerCountSub = null;
-    _advertiser?.stop();
-    _advertiser = null;
+    await _hostBeacon.stop();
     await _server?.close();
     _server = null;
-    await _discoverer?.stop();
-    _discoverer = null;
+    await _clientDiscovery.stop();
     _client = null;
     _localPlayerId = null;
   }
