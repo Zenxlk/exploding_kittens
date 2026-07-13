@@ -73,8 +73,6 @@ class LobbyRepository implements ILobbyRepository {
       //    call below is null-safe either way.
       _playerCountSub = _client!.roomStream.listen((room) {
         _advertiser?.updatePlayerCount(
-          roomId: room.id,
-          hostName: playerName,
           playerCount: room.players.length,
           maxPlayers: room.maxPlayers,
         );

@@ -24,16 +24,21 @@ import 'package:exploding_kittens/features/lobby/domain/models/discovered_room.d
 class MdnsAdvertiser {
   RawDatagramSocket? _socket;
   Timer? _timer;
+  DiscoveredRoom? _room;
+  int _discoveryPort = AppConstants.discoveryPort;
   bool get isRunning => _socket != null;
 
   // Starts broadcasting the room beacon. Throws [NetworkFailure] if the
-  // device is not connected to a WiFi network.
+  // device is not connected to a WiFi network. [discoveryPort] is the UDP
+  // port beacons are sent to — overridable so tests can use their own port
+  // and avoid colliding with other test files exercising the real one.
   Future<void> start({
     required String roomId,
     required String hostName,
     required int playerCount,
     required int maxPlayers,
     int port = AppConstants.localGamePort,
+    int discoveryPort = AppConstants.discoveryPort,
     Duration interval = const Duration(seconds: 3),
   }) async {
     final ip = await NetworkInfo().getWifiIP();
@@ -41,10 +46,11 @@ class MdnsAdvertiser {
       throw const NetworkFailure('Could not determine WiFi IP address');
     }
 
+    _discoveryPort = discoveryPort;
     _socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
     _socket!.broadcastEnabled = true;
 
-    final room = DiscoveredRoom(
+    _room = DiscoveredRoom(
       roomId: roomId,
       hostName: hostName,
       hostAddress: ip,
@@ -53,32 +59,35 @@ class MdnsAdvertiser {
       maxPlayers: maxPlayers,
     );
 
-    _sendBeacon(room);
-    _timer = Timer.periodic(interval, (_) => _sendBeacon(room));
+    _sendBeacon(_room!);
+    // Reads _room fresh on every tick (not a value captured once here) so
+    // that updatePlayerCount's changes stick — otherwise this kept
+    // re-announcing the player count the room started with, overwriting
+    // updatePlayerCount's beacon every `interval`.
+    _timer = Timer.periodic(interval, (_) {
+      final room = _room;
+      if (room != null) _sendBeacon(room);
+    });
   }
 
   // Call this whenever the player count changes so listeners see fresh data.
-  // TODO(improvement): accept a full DiscoveredRoom instead of rebuilding
-  // it here — avoids duplicating the roomId/hostName state in the caller.
   Future<void> updatePlayerCount({
-    required String roomId,
-    required String hostName,
     required int playerCount,
     required int maxPlayers,
-    int port = AppConstants.localGamePort,
   }) async {
-    final ip = await NetworkInfo().getWifiIP();
-    if (ip == null || _socket == null) return;
+    final current = _room;
+    if (current == null || _socket == null) return;
 
-    final room = DiscoveredRoom(
-      roomId: roomId,
-      hostName: hostName,
+    final ip = await NetworkInfo().getWifiIP() ?? current.hostAddress;
+    _room = DiscoveredRoom(
+      roomId: current.roomId,
+      hostName: current.hostName,
       hostAddress: ip,
-      port: port,
+      port: current.port,
       playerCount: playerCount,
       maxPlayers: maxPlayers,
     );
-    _sendBeacon(room);
+    _sendBeacon(_room!);
   }
 
   void _sendBeacon(DiscoveredRoom room) {
@@ -88,7 +97,7 @@ class MdnsAdvertiser {
       _socket!.send(
         payload,
         InternetAddress('255.255.255.255'),
-        AppConstants.discoveryPort,
+        _discoveryPort,
       );
     } catch (_) {}
   }
@@ -98,5 +107,6 @@ class MdnsAdvertiser {
     _socket?.close();
     _timer = null;
     _socket = null;
+    _room = null;
   }
 }

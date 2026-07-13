@@ -2,16 +2,19 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:exploding_kittens/core/constants/app_constants.dart';
 import 'package:exploding_kittens/features/lobby/domain/models/discovered_room.dart';
 import 'package:exploding_kittens/network/wifi/mdns_discoverer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-// Integration tests: real UDP loopback, MdnsDiscoverer binds the real
-// (fixed) AppConstants.discoveryPort — matches how it's actually used, the
-// port can't be OS-assigned since every device on the network needs to know
-// it in advance. staleAfter/pruneInterval are shortened so the pruning
-// tests don't need to wait the real ~10s.
+// Integration tests: real UDP loopback. In production MdnsDiscoverer binds
+// the fixed AppConstants.discoveryPort (every device needs to know it in
+// advance), but this test uses its own dedicated port instead — otherwise
+// it collides with mdns_advertiser_test.dart's real production-port
+// receiver when flutter test runs both files in parallel (the default).
+// staleAfter/pruneInterval are shortened so the pruning tests don't need to
+// wait the real ~10s.
+const _testDiscoveryPort = 18901;
+
 void main() {
   group('MdnsDiscoverer', () {
     late RawDatagramSocket sender;
@@ -38,13 +41,13 @@ void main() {
       sender.send(
         payload,
         InternetAddress('127.0.0.1'),
-        AppConstants.discoveryPort,
+        _testDiscoveryPort,
       );
     }
 
     test('un beacon nuevo aparece en rooms', () async {
       final discoverer = MdnsDiscoverer();
-      await discoverer.start();
+      await discoverer.start(port: _testDiscoveryPort);
       addTearDown(discoverer.stop);
 
       final firstEmit = discoverer.rooms.first;
@@ -62,7 +65,7 @@ void main() {
           staleAfter: const Duration(milliseconds: 150),
           pruneInterval: const Duration(milliseconds: 30),
         );
-        await discoverer.start();
+        await discoverer.start(port: _testDiscoveryPort);
         addTearDown(discoverer.stop);
 
         final events = <List<DiscoveredRoom>>[];
@@ -94,7 +97,7 @@ void main() {
           staleAfter: const Duration(milliseconds: 150),
           pruneInterval: const Duration(milliseconds: 30),
         );
-        await discoverer.start();
+        await discoverer.start(port: _testDiscoveryPort);
         addTearDown(discoverer.stop);
 
         final refresher = Timer.periodic(

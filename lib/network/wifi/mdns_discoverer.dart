@@ -38,11 +38,13 @@ class MdnsDiscoverer {
   // Emits the current list every time a new beacon arrives or a room is pruned.
   Stream<List<DiscoveredRoom>> get rooms => _roomsController.stream;
 
-  // Binds to discoveryPort and starts collecting beacons.
-  Future<void> start() async {
+  // Binds to discoveryPort and starts collecting beacons. [port] is
+  // overridable so tests can bind their own port and avoid colliding with
+  // other test files exercising this same fixed production port.
+  Future<void> start({int port = AppConstants.discoveryPort}) async {
     _socket = await RawDatagramSocket.bind(
       InternetAddress.anyIPv4,
-      AppConstants.discoveryPort,
+      port,
       reuseAddress: true,
     );
 
