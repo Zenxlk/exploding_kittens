@@ -73,11 +73,25 @@ class MdnsDiscoverer {
           jsonDecode(utf8.decode(datagram.data)) as Map<String, dynamic>;
       if (json['type'] != 'room_beacon') return;
 
-      // Confía en el hostAddress del beacon; usa datagram.address como
-      // respaldo si la IP autoreportada falta o está mal formada.
-      // TODO(improvement): validar hostAddress contra datagram.address para
-      // detectar beacons falsificados (caso límite en redes compartidas/VPN).
-      final room = DiscoveredRoom.fromJson(json);
+      // No confía en el hostAddress autoreportado del beacon: siempre usa
+      // la IP de origen que el socket observó (datagram.address), que un
+      // remitente en la misma red no puede falsificar sin privilegios de
+      // socket crudo. Para un beacon legítimo ambos valores ya coinciden
+      // (es la IP real del host anunciándose por broadcast), así que esto
+      // no cambia el comportamiento normal — solo cierra el caso de un
+      // beacon con un hostAddress mentiroso o mal configurado.
+      var room = DiscoveredRoom.fromJson(json);
+      final observedAddress = datagram.address.address;
+      if (room.hostAddress != observedAddress) {
+        room = DiscoveredRoom(
+          roomId: room.roomId,
+          hostName: room.hostName,
+          hostAddress: observedAddress,
+          port: room.port,
+          playerCount: room.playerCount,
+          maxPlayers: room.maxPlayers,
+        );
+      }
       _rooms[room.roomId] = room;
       _lastSeen[room.roomId] = DateTime.now();
 

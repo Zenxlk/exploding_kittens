@@ -90,6 +90,31 @@ void main() {
     );
 
     test(
+      'ignora el hostAddress autoreportado y usa la IP real del remitente',
+      () async {
+        const spoofed = DiscoveredRoom(
+          roomId: 'room-2',
+          hostName: 'Beto',
+          hostAddress: '10.0.0.99', // mentira: no es de donde vino el paquete
+          port: 8765,
+          playerCount: 1,
+          maxPlayers: 5,
+        );
+
+        final discoverer = MdnsDiscoverer();
+        await discoverer.start(port: _testDiscoveryPort);
+        addTearDown(discoverer.stop);
+
+        final firstEmit = discoverer.rooms.first;
+        sendBeacon(spoofed);
+
+        final rooms = await firstEmit.timeout(const Duration(seconds: 2));
+        expect(rooms.single.hostAddress, '127.0.0.1');
+        expect(rooms.single.roomId, 'room-2');
+      },
+    );
+
+    test(
       'una sala que sigue mandando beacons no se poda aunque pase '
       'staleAfter',
       () async {
