@@ -54,10 +54,10 @@ class LobbyError extends LobbyState {
 
 // ── Utility providers ─────────────────────────────────────────────────────────
 
-// The local player's network identity. Persisted so it survives an app
-// restart/crash — without this, reconnecting after a crash (Phase 5 grace
-// period) would always look like a brand-new player joining, since the host
-// matches reconnections by playerId.
+// Identidad de red del jugador local. Se persiste para que sobreviva a un
+// reinicio/crash de la app — sin esto, reconectar tras un crash (grace
+// period de Fase 5) siempre parecería un jugador nuevo entrando, ya que el
+// host empareja las reconexiones por playerId.
 const _playerIdPrefsKey = 'lobby_player_id';
 
 final playerIdProvider = FutureProvider<String>((ref) async {

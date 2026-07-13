@@ -9,18 +9,18 @@ import 'package:exploding_kittens/core/errors/failures.dart';
 
 import 'package:exploding_kittens/features/lobby/domain/models/discovered_room.dart';
 
-// Announces a room on the local network via UDP broadcast.
+// Anuncia una sala en la red local vía UDP broadcast.
 //
-// Every [interval] a JSON beacon is sent to 255.255.255.255:[discoveryPort]
-// so that MdnsDiscoverer instances on the same subnet can find it.
+// Cada [interval] se manda un beacon JSON a 255.255.255.255:[discoveryPort]
+// para que las instancias de MdnsDiscoverer en la misma subred la encuentren.
 //
-// TODO(improvement): replace with the `nsd` package (pub.dev/packages/nsd)
-// for proper mDNS / DNS-SD registration that shows up in system service
-// browsers and works with Apple Bonjour.
+// TODO(improvement): reemplazar por el paquete `nsd` (pub.dev/packages/nsd)
+// para un registro mDNS/DNS-SD real que aparezca en los navegadores de
+// servicios del sistema y funcione con Apple Bonjour.
 //
-// TODO(improvement): on Android 10+ receiving UDP broadcast requires
-// acquiring a WifiManager.MulticastLock via a platform channel. Add this
-// before shipping to the Play Store.
+// TODO(improvement): en Android 10+, recibir UDP broadcast requiere
+// adquirir un WifiManager.MulticastLock vía platform channel. Agregarlo
+// antes de publicar en la Play Store.
 class MdnsAdvertiser {
   RawDatagramSocket? _socket;
   Timer? _timer;
@@ -28,10 +28,10 @@ class MdnsAdvertiser {
   int _discoveryPort = AppConstants.discoveryPort;
   bool get isRunning => _socket != null;
 
-  // Starts broadcasting the room beacon. Throws [NetworkFailure] if the
-  // device is not connected to a WiFi network. [discoveryPort] is the UDP
-  // port beacons are sent to — overridable so tests can use their own port
-  // and avoid colliding with other test files exercising the real one.
+  // Empieza a transmitir el beacon de la sala. Lanza [NetworkFailure] si el
+  // dispositivo no está conectado a WiFi. [discoveryPort] es el puerto UDP
+  // al que se mandan los beacons — sobreescribible para que los tests usen
+  // el suyo propio y no choquen con otros archivos de test que usan el real.
   Future<void> start({
     required String roomId,
     required String hostName,
@@ -60,17 +60,18 @@ class MdnsAdvertiser {
     );
 
     _sendBeacon(_room!);
-    // Reads _room fresh on every tick (not a value captured once here) so
-    // that updatePlayerCount's changes stick — otherwise this kept
-    // re-announcing the player count the room started with, overwriting
-    // updatePlayerCount's beacon every `interval`.
+    // Lee _room actualizado en cada tick (no un valor capturado una sola
+    // vez acá) para que los cambios de updatePlayerCount se mantengan —
+    // antes esto seguía anunciando el playerCount con el que arrancó la
+    // sala, pisando el beacon de updatePlayerCount cada `interval`.
     _timer = Timer.periodic(interval, (_) {
       final room = _room;
       if (room != null) _sendBeacon(room);
     });
   }
 
-  // Call this whenever the player count changes so listeners see fresh data.
+  // Llamar cada vez que cambie la cantidad de jugadores para que quien
+  // escucha vea datos frescos.
   Future<void> updatePlayerCount({
     required int playerCount,
     required int maxPlayers,

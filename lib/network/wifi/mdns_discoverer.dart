@@ -6,20 +6,21 @@ import 'package:exploding_kittens/core/constants/app_constants.dart';
 
 import 'package:exploding_kittens/features/lobby/domain/models/discovered_room.dart';
 
-// Discovers rooms on the local network by listening for UDP beacons
-// sent by MdnsAdvertiser.
+// Descubre salas en la red local escuchando los beacons UDP que manda
+// MdnsAdvertiser.
 //
-// Usage:
+// Uso:
 //   final discoverer = MdnsDiscoverer();
 //   discoverer.rooms.listen((rooms) => setState(() => _rooms = rooms));
 //   await discoverer.start();
-//   // ... show UI
+//   // ... mostrar la UI
 //   await discoverer.stop();
 //
-// TODO(improvement): also query mDNS PTR records for AppConstants.mdnsServiceType
-// using the `multicast_dns` package once proper mDNS advertising is in place
-// (see MdnsAdvertiser). Combine both sources with rx_dart merge or a plain
-// StreamGroup so either mechanism works.
+// TODO(improvement): también consultar registros PTR de mDNS para
+// AppConstants.mdnsServiceType usando el paquete `multicast_dns` una vez que
+// el anuncio mDNS real esté implementado (ver MdnsAdvertiser). Combinar
+// ambas fuentes con rx_dart merge o un StreamGroup simple para que
+// funcione cualquiera de los dos mecanismos.
 class MdnsDiscoverer {
   MdnsDiscoverer({
     Duration staleAfter = const Duration(seconds: 10),
@@ -30,17 +31,17 @@ class MdnsDiscoverer {
   final Duration _staleAfter;
   final Duration _pruneInterval;
   final _roomsController = StreamController<List<DiscoveredRoom>>.broadcast();
-  final _rooms = <String, DiscoveredRoom>{}; // roomId → room
-  final _lastSeen = <String, DateTime>{}; // roomId → last beacon time
+  final _rooms = <String, DiscoveredRoom>{}; // roomId → sala
+  final _lastSeen = <String, DateTime>{}; // roomId → último beacon recibido
   RawDatagramSocket? _socket;
   Timer? _pruneTimer;
 
-  // Emits the current list every time a new beacon arrives or a room is pruned.
+  // Emite la lista actual cada vez que llega un beacon nuevo o se poda una sala.
   Stream<List<DiscoveredRoom>> get rooms => _roomsController.stream;
 
-  // Binds to discoveryPort and starts collecting beacons. [port] is
-  // overridable so tests can bind their own port and avoid colliding with
-  // other test files exercising this same fixed production port.
+  // Se conecta a discoveryPort y empieza a recolectar beacons. [port] es
+  // sobreescribible para que los tests usen su propio puerto y no choquen
+  // con otros archivos de test que usan este mismo puerto fijo de producción.
   Future<void> start({int port = AppConstants.discoveryPort}) async {
     _socket = await RawDatagramSocket.bind(
       InternetAddress.anyIPv4,
@@ -58,11 +59,11 @@ class MdnsDiscoverer {
       cancelOnError: false,
     );
 
-    // The host stops sending beacons on close but never announces it's
-    // gone, so without this a closed room stayed listed until the app
-    // restarted. Whichever beacon is oldest by more than `_staleAfter`
-    // (~3 missed beacons at the advertiser's default 3s interval) gets
-    // dropped.
+    // El host deja de mandar beacons al cerrar, pero nunca avisa que se
+    // fue, así que sin esto una sala cerrada quedaba listada hasta
+    // reiniciar la app. Cualquier beacon con más de `_staleAfter` de
+    // antigüedad (~3 beacons perdidos con el intervalo por defecto de 3s
+    // del advertiser) se descarta.
     _pruneTimer = Timer.periodic(_pruneInterval, (_) => _pruneStale());
   }
 
@@ -72,17 +73,17 @@ class MdnsDiscoverer {
           jsonDecode(utf8.decode(datagram.data)) as Map<String, dynamic>;
       if (json['type'] != 'room_beacon') return;
 
-      // Trust the beacon's hostAddress; use datagram.address as a fallback
-      // if the self-reported IP is missing or malformed.
-      // TODO(improvement): validate hostAddress against datagram.address to
-      // detect spoofed beacons (edge case in shared/VPN networks).
+      // Confía en el hostAddress del beacon; usa datagram.address como
+      // respaldo si la IP autoreportada falta o está mal formada.
+      // TODO(improvement): validar hostAddress contra datagram.address para
+      // detectar beacons falsificados (caso límite en redes compartidas/VPN).
       final room = DiscoveredRoom.fromJson(json);
       _rooms[room.roomId] = room;
       _lastSeen[room.roomId] = DateTime.now();
 
       _emit();
     } catch (_) {
-      // Ignore malformed or non-beacon datagrams.
+      // Ignora datagramas mal formados o que no son un beacon.
     }
   }
 

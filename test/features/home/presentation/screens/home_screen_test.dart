@@ -37,10 +37,11 @@ class _RecordingAudioService implements IAudioService {
   Future<void> dispose() async {}
 }
 
-// HomeScreen navigates via go_router's context.push, so it needs a real
-// GoRouter in the tree (not just a Navigator) for the button taps to work.
-// Wrapped in ProviderScope too: the "Cómo jugar" button routes to a real
-// RulesScreen (a ConsumerWidget), not a stub, since it's cheap to render.
+// HomeScreen navega con go_router's context.push, así que necesita un
+// GoRouter real en el árbol (no solo un Navigator) para que los taps de los
+// botones funcionen. También envuelto en ProviderScope: el botón "Cómo
+// jugar" lleva a un RulesScreen real (un ConsumerWidget), no un stub, ya
+// que es barato de renderizar.
 Widget _wrapWithRouter({IAudioService? audioService}) {
   final router = GoRouter(
     initialLocation: RouteNames.home,

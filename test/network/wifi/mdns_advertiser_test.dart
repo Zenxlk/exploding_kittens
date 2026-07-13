@@ -6,13 +6,14 @@ import 'package:exploding_kittens/network/wifi/mdns_advertiser.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-// Integration tests: real UDP loopback (verified that broadcast to
-// 255.255.255.255 is deliverable to a listener on the same loopback
-// namespace in this environment). NetworkInfo().getWifiIP() is mocked at
-// its method channel since it needs a real platform to answer otherwise.
-// Uses its own dedicated port rather than the real AppConstants.discoveryPort
-// so it doesn't collide with mdns_discoverer_test.dart's receiver when
-// flutter test runs both files in parallel (the default).
+// Tests de integración: UDP real en loopback (se verificó que el broadcast
+// a 255.255.255.255 sí llega a un listener en el mismo namespace de
+// loopback de este entorno). NetworkInfo().getWifiIP() se mockea en su
+// method channel porque necesita una plataforma real para responder si no.
+// Usa su propio puerto dedicado en vez del AppConstants.discoveryPort real
+// para no chocar con el receptor de mdns_discoverer_test.dart cuando
+// flutter test corre ambos archivos en paralelo (el comportamiento por
+// defecto).
 const _networkInfoChannel = MethodChannel(
   'dev.fluttercommunity.plus/network_info',
 );

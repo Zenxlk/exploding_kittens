@@ -6,13 +6,13 @@ import 'package:exploding_kittens/features/lobby/domain/models/discovered_room.d
 import 'package:exploding_kittens/network/wifi/mdns_discoverer.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-// Integration tests: real UDP loopback. In production MdnsDiscoverer binds
-// the fixed AppConstants.discoveryPort (every device needs to know it in
-// advance), but this test uses its own dedicated port instead — otherwise
-// it collides with mdns_advertiser_test.dart's real production-port
-// receiver when flutter test runs both files in parallel (the default).
-// staleAfter/pruneInterval are shortened so the pruning tests don't need to
-// wait the real ~10s.
+// Tests de integración: UDP real en loopback. En producción MdnsDiscoverer
+// se conecta al AppConstants.discoveryPort fijo (todo dispositivo necesita
+// conocerlo de antemano), pero este test usa su propio puerto dedicado —
+// si no, choca con el receptor de mdns_advertiser_test.dart en el puerto
+// real de producción cuando flutter test corre ambos archivos en paralelo
+// (el comportamiento por defecto). staleAfter/pruneInterval se acortan para
+// que los tests de poda no necesiten esperar los ~10s reales.
 const _testDiscoveryPort = 18901;
 
 void main() {
