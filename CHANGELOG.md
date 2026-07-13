@@ -11,6 +11,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.5.12] — 2026-07-13
+
+### Añadido
+- `SettingsScreen` ahora lee la versión real del build con `package_info_plus` (`appVersionProvider`) en vez de un string hardcodeado que había que actualizar a mano en cada commit `chore(version)` — este es el último bump que lo necesitó
+
+### Limpieza
+- Eliminado `AppConstants.discoveryPort`, sin uso desde la migración a mDNS real de la versión anterior
+
+---
+
 ## [0.5.11] — 2026-07-13
 
 ### Añadido — Fase 6: mDNS real
