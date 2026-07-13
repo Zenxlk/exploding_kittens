@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:exploding_kittens/core/constants/game_constants.dart';
 import 'package:exploding_kittens/core/theme/app_colors.dart';
 import 'package:exploding_kittens/core/theme/app_text_styles.dart';
+import 'package:exploding_kittens/features/game/presentation/widgets/card_choice_overlay.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/deck_widget.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/discard_pile_widget.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/explosion_overlay.dart';
@@ -15,6 +16,7 @@ import 'package:exploding_kittens/features/game/presentation/widgets/see_the_fut
 import 'package:exploding_kittens/game_engine/models/card/card_model.dart';
 import 'package:exploding_kittens/game_engine/models/card/card_type.dart';
 import 'package:exploding_kittens/game_engine/models/game/game_state.dart';
+import 'package:exploding_kittens/game_engine/models/turn/turn_action.dart';
 import 'package:exploding_kittens/game_engine/models/turn/turn_model.dart';
 
 /// Cartas que se juegan con un botón simple, sin objetivo: Nope y Defuse se
@@ -104,6 +106,7 @@ class GameTableView extends StatefulWidget {
     required this.onPlayCatPair,
     required this.onPlayNope,
     required this.onDefuseBomb,
+    required this.onChooseCard,
     this.assetPathFor,
     this.cardBackAssetPath,
   });
@@ -117,6 +120,10 @@ class GameTableView extends StatefulWidget {
       onPlayCatPair;
   final ValueChanged<CardModel> onPlayNope;
   final void Function(CardModel defuseCard, int insertAtPosition) onDefuseBomb;
+  // Genérico a propósito (no "onGiveFavorCard"): hoy solo lo dispara el
+  // objetivo de un Favor eligiendo qué carta de su propia mano entregar,
+  // pero está pensado para cualquier otra "elegí una carta concreta" futura.
+  final ValueChanged<String> onChooseCard;
   final String? Function(CardType type)? assetPathFor;
   final String? cardBackAssetPath;
 
@@ -219,6 +226,14 @@ class _GameTableViewState extends State<GameTableView> {
     final resolvingMyBomb = _isMyTurn &&
         widget.gameState.turn.phase == TurnPhase.resolving &&
         widget.gameState.pendingBomb != null;
+    final pendingAction = widget.gameState.pendingAction;
+    final awaitingFavorChoice =
+        widget.gameState.turn.phase == TurnPhase.awaitingCardChoice &&
+                pendingAction is PlayFavorAction
+            ? pendingAction
+            : null;
+    final mustChooseFavorCard =
+        awaitingFavorChoice?.targetPlayerId == widget.localPlayerId;
 
     return Stack(
       children: [
@@ -260,6 +275,14 @@ class _GameTableViewState extends State<GameTableView> {
               _clearSelection();
             },
           ),
+        if (mustChooseFavorCard && awaitingFavorChoice != null)
+          CardChoiceOverlay(
+            title: 'Elegí una carta para darle a '
+                '${widget.gameState.playerById(awaitingFavorChoice.playerId)?.name ?? '…'}',
+            candidates: hand,
+            assetPathFor: widget.assetPathFor,
+            onSelect: widget.onChooseCard,
+          ),
         if (_explodingPlayerName != null)
           ExplosionOverlay(
             eliminatedPlayerName: _explodingPlayerName!,
@@ -280,7 +303,11 @@ class _GameTableViewState extends State<GameTableView> {
           players: widget.gameState.players,
           currentPlayerId: widget.gameState.turn.currentPlayerId,
         ),
-        _StatusBanner(gameState: widget.gameState, isMyTurn: _isMyTurn),
+        _StatusBanner(
+          gameState: widget.gameState,
+          isMyTurn: _isMyTurn,
+          localPlayerId: widget.localPlayerId,
+        ),
         Expanded(
           child: Center(
             child: SingleChildScrollView(
@@ -332,22 +359,19 @@ class _GameTableViewState extends State<GameTableView> {
 }
 
 class _StatusBanner extends StatelessWidget {
-  const _StatusBanner({required this.gameState, required this.isMyTurn});
+  const _StatusBanner({
+    required this.gameState,
+    required this.isMyTurn,
+    required this.localPlayerId,
+  });
 
   final GameState gameState;
   final bool isMyTurn;
+  final String localPlayerId;
 
   @override
   Widget build(BuildContext context) {
-    final text = switch (gameState.turn.phase) {
-      TurnPhase.nopeWindow => 'Ventana de Nope abierta…',
-      TurnPhase.resolving when !isMyTurn =>
-        'Esperando a que ${gameState.currentPlayer?.name ?? '…'} '
-            'esconda la bomba…',
-      _ when !isMyTurn => 'Turno de ${gameState.currentPlayer?.name ?? '…'}',
-      _ => null,
-    };
-
+    final text = _messageFor();
     if (text == null) return const SizedBox.shrink();
 
     return Padding(
@@ -358,6 +382,32 @@ class _StatusBanner extends StatelessWidget {
         textAlign: TextAlign.center,
       ),
     );
+  }
+
+  String? _messageFor() {
+    switch (gameState.turn.phase) {
+      case TurnPhase.nopeWindow:
+        return 'Ventana de Nope abierta…';
+      case TurnPhase.resolving when !isMyTurn:
+        return 'Esperando a que ${gameState.currentPlayer?.name ?? '…'} '
+            'esconda la bomba…';
+      case TurnPhase.awaitingCardChoice:
+        final pending = gameState.pendingAction;
+        // Al que le toca elegir ve el CardChoiceOverlay en su lugar (cubre
+        // toda la pantalla), así que este mensaje es solo para el resto.
+        if (pending is PlayFavorAction &&
+            pending.targetPlayerId != localPlayerId) {
+          final targetName =
+              gameState.playerById(pending.targetPlayerId)?.name ?? '…';
+          return 'Esperando a que $targetName elija una carta…';
+        }
+        return null;
+      default:
+        if (!isMyTurn) {
+          return 'Turno de ${gameState.currentPlayer?.name ?? '…'}';
+        }
+        return null;
+    }
   }
 }
 

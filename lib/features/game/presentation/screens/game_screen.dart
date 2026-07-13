@@ -175,6 +175,13 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 : ref
                     .read(remoteGameProvider.notifier)
                     .defuse(localPlayerId, card, position),
+            onChooseCard: (cardId) => isHost
+                ? ref
+                    .read(gameProvider.notifier)
+                    .chooseCard(localPlayerId, cardId)
+                : ref
+                    .read(remoteGameProvider.notifier)
+                    .chooseCard(localPlayerId, cardId),
             assetPathFor: resolver?.faceAssetFor,
             cardBackAssetPath: resolver?.cardBackAsset(),
           ),

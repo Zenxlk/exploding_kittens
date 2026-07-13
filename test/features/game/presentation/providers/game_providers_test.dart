@@ -465,6 +465,16 @@ void main() {
           expect(action.insertAtPosition, 3);
         },
       );
+
+      test('chooseCard aplica ChooseCardAction con el id de la carta elegida',
+          () {
+        container.read(gameProvider.notifier).chooseCard('p2', 'card-1');
+
+        expect(captured, isA<ChooseCardAction>());
+        final action = captured as ChooseCardAction;
+        expect(action.playerId, 'p2');
+        expect(action.cardId, 'card-1');
+      });
     });
   });
 }

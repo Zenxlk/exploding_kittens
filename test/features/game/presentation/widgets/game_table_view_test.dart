@@ -8,6 +8,7 @@ import 'package:exploding_kittens/game_engine/models/game/game_config.dart';
 import 'package:exploding_kittens/game_engine/models/game/game_state.dart';
 import 'package:exploding_kittens/game_engine/models/player/player_model.dart';
 import 'package:exploding_kittens/game_engine/models/player/player_status.dart';
+import 'package:exploding_kittens/game_engine/models/turn/turn_action.dart';
 import 'package:exploding_kittens/game_engine/models/turn/turn_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -77,6 +78,7 @@ void main() {
             onPlayCatPair: (_, __) {},
             onPlayNope: (_) {},
             onDefuseBomb: (_, __) {},
+            onChooseCard: (_) {},
           ),
         ),
       );
@@ -107,6 +109,7 @@ void main() {
             onPlayCatPair: (_, __) {},
             onPlayNope: (_) {},
             onDefuseBomb: (_, __) {},
+            onChooseCard: (_) {},
           ),
         ),
       );
@@ -133,6 +136,7 @@ void main() {
               onPlayCatPair: (_, __) {},
               onPlayNope: (_) {},
               onDefuseBomb: (_, __) {},
+              onChooseCard: (_) {},
             ),
           ),
         );
@@ -166,6 +170,7 @@ void main() {
               onPlayCatPair: (_, __) {},
               onPlayNope: (_) {},
               onDefuseBomb: (_, __) {},
+              onChooseCard: (_) {},
             ),
           ),
         );
@@ -202,6 +207,7 @@ void main() {
               onPlayCatPair: (_, __) {},
               onPlayNope: (_) {},
               onDefuseBomb: (_, __) {},
+              onChooseCard: (_) {},
             ),
           ),
         );
@@ -245,6 +251,7 @@ void main() {
               onPlayCatPair: (_, __) {},
               onPlayNope: (_) {},
               onDefuseBomb: (_, __) {},
+              onChooseCard: (_) {},
             ),
           ),
         );
@@ -294,6 +301,7 @@ void main() {
               },
               onPlayNope: (_) {},
               onDefuseBomb: (_, __) {},
+              onChooseCard: (_) {},
             ),
           ),
         );
@@ -312,6 +320,96 @@ void main() {
 
         expect(playedCards, [tacoA, tacoB]);
         expect(targetId, 'rival');
+      },
+    );
+
+    testWidgets(
+      'al objetivo de un Favor pendiente le aparece el selector de carta '
+      'para elegir cuál entregar',
+      (tester) async {
+        const cardA = CardModel(id: 'a', type: CardType.skip);
+        const cardB = CardModel(id: 'b', type: CardType.attack);
+        const target = PlayerModel(
+          id: 'me',
+          name: 'Ana',
+          hand: [cardA, cardB],
+        );
+        const asker = PlayerModel(id: 'asker', name: 'Beto', hand: []);
+        String? chosenId;
+
+        await tester.pumpWidget(
+          _wrap(
+            GameTableView(
+              gameState: _state(
+                players: const [asker, target],
+                currentPlayerId: 'asker',
+                phase: TurnPhase.awaitingCardChoice,
+                pendingAction: const PlayFavorAction(
+                  playerId: 'asker',
+                  card: CardModel(id: 'favor-1', type: CardType.favor),
+                  targetPlayerId: 'me',
+                ),
+              ),
+              localPlayerId: 'me',
+              onDraw: () {},
+              onPlaySimpleCard: (_) {},
+              onPlayFavor: (_, __) {},
+              onPlayCatPair: (_, __) {},
+              onPlayNope: (_) {},
+              onDefuseBomb: (_, __) {},
+              onChooseCard: (id) => chosenId = id,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Elegí una carta para darle a Beto'), findsOneWidget);
+
+        await tester.tap(find.byType(CardWidget).last);
+        await tester.pumpAndSettle();
+
+        expect(chosenId, 'b');
+      },
+    );
+
+    testWidgets(
+      'a quien no es el objetivo de un Favor pendiente no le aparece el '
+      'selector de carta',
+      (tester) async {
+        const target = PlayerModel(id: 'other', name: 'Ana', hand: []);
+        const asker = PlayerModel(id: 'me', name: 'Beto', hand: []);
+
+        await tester.pumpWidget(
+          _wrap(
+            GameTableView(
+              gameState: _state(
+                players: const [asker, target],
+                currentPlayerId: 'me',
+                phase: TurnPhase.awaitingCardChoice,
+                pendingAction: const PlayFavorAction(
+                  playerId: 'me',
+                  card: CardModel(id: 'favor-1', type: CardType.favor),
+                  targetPlayerId: 'other',
+                ),
+              ),
+              localPlayerId: 'me',
+              onDraw: () {},
+              onPlaySimpleCard: (_) {},
+              onPlayFavor: (_, __) {},
+              onPlayCatPair: (_, __) {},
+              onPlayNope: (_) {},
+              onDefuseBomb: (_, __) {},
+              onChooseCard: (_) {},
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('Elegí una carta'), findsNothing);
+        expect(
+          find.textContaining('Esperando a que Ana elija una carta'),
+          findsOneWidget,
+        );
       },
     );
 
@@ -336,6 +434,7 @@ void main() {
               onPlayCatPair: (_, __) {},
               onPlayNope: (_) {},
               onDefuseBomb: (_, __) {},
+              onChooseCard: (_) {},
             ),
           ),
         );
@@ -378,6 +477,7 @@ void main() {
               onPlayCatPair: (_, __) {},
               onPlayNope: (_) {},
               onDefuseBomb: (_, __) {},
+              onChooseCard: (_) {},
             ),
           ),
         );
@@ -408,6 +508,7 @@ void main() {
                 onPlayCatPair: (_, __) {},
                 onPlayNope: (_) {},
                 onDefuseBomb: (_, __) {},
+                onChooseCard: (_) {},
               ),
             );
 
@@ -456,6 +557,7 @@ void main() {
               onPlayCatPair: (_, __) {},
               onPlayNope: (_) {},
               onDefuseBomb: (_, __) {},
+              onChooseCard: (_) {},
             ),
           ),
         );
@@ -489,6 +591,7 @@ void main() {
               onPlayCatPair: (_, __) {},
               onPlayNope: (card) => played = card,
               onDefuseBomb: (_, __) {},
+              onChooseCard: (_) {},
             ),
           ),
         );
@@ -522,6 +625,7 @@ void main() {
               onPlayCatPair: (_, __) {},
               onPlayNope: (_) {},
               onDefuseBomb: (_, __) {},
+              onChooseCard: (_) {},
             ),
           ),
         );
@@ -565,6 +669,7 @@ void main() {
                 defusedCard = card;
                 position = pos;
               },
+              onChooseCard: (_) {},
             ),
           ),
         );
@@ -604,6 +709,7 @@ void main() {
               onPlayCatPair: (_, __) {},
               onPlayNope: (_) {},
               onDefuseBomb: (_, __) {},
+              onChooseCard: (_) {},
             ),
           ),
         );
@@ -631,6 +737,7 @@ void main() {
                 onPlayCatPair: (_, __) {},
                 onPlayNope: (_) {},
                 onDefuseBomb: (_, __) {},
+                onChooseCard: (_) {},
               ),
             );
 
@@ -666,6 +773,7 @@ void main() {
                 onPlayCatPair: (_, __) {},
                 onPlayNope: (_) {},
                 onDefuseBomb: (_, __) {},
+                onChooseCard: (_) {},
               ),
             );
 

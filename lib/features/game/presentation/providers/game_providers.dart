@@ -151,6 +151,9 @@ class GameNotifier extends Notifier<GameSessionState> {
         ),
       );
 
+  void chooseCard(String playerId, String cardId) =>
+      _apply(ChooseCardAction(playerId: playerId, cardId: cardId));
+
   /// Aplica un `TurnAction` ya construido — usado por el puente host↔red
   /// (Fase 5) para procesar la acción que llegó de un cliente no-host por
   /// `ActionMessage`, en vez de ir método por método como hace la UI local.
@@ -338,6 +341,9 @@ class RemoteGameNotifier extends Notifier<GameSessionState> {
           insertAtPosition: insertAtPosition,
         ),
       );
+
+  void chooseCard(String playerId, String cardId) =>
+      _dispatch(ChooseCardAction(playerId: playerId, cardId: cardId));
 
   void _dispatch(TurnAction action) =>
       _send?.call(ActionMessage(actionJson: action.toJson()));
