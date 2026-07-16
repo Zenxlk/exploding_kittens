@@ -11,6 +11,24 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.5.16] — 2026-07-15
+
+### Añadido
+- Animaciones de mesa que faltaban (reportado por el usuario: robar y mezclar no animaban nada): `GameTableView` ahora se puede suscribir al mismo `Stream<GameEvent>` que ya usa `GameSoundController`, fuente necesaria porque un diff de `GameState` no alcanza para detectar mezclar (no cambia nada renderizable) ni para distinguir un robo propio de una carta ganada por Favor/pareja/trío
+- El mazo hace un bamboleo corto al mezclar (`DeckShuffledEvent`) y un pulso más corto y distinto al robar (`CardDrawnEvent`)
+- La carta recién robada aparece con una animación de entrada (fade + slide) en la mano local, sin confundirse con las que llegan por Favor/pareja/trío
+- La pila de descarte transiciona con un fundido al cambiar de carta arriba (antes cambiaba de golpe)
+- El resaltado de turno en la HUD de jugadores ahora transiciona suavemente en vez de cambiar de golpe
+- La pantalla de fin de partida tiene una entrada escalonada (ganador, ranking, botones)
+
+### Corregido
+- Las cartas de la mano (y las candidatas del selector de Favor/trío) no tenían `Key` por id: al quitar una carta del medio, Flutter podía reusar el estado (y la animación de flip en curso) de la carta equivocada
+
+### Fuera de alcance
+- Animar el robo de carta por Favor/pareja/trío queda para otra tanda: requiere un nuevo `GameEvent` en `game_engine/` (con su serialización de red), no solo cambios de UI
+
+---
+
 ## [0.5.15] — 2026-07-13
 
 ### Añadido
