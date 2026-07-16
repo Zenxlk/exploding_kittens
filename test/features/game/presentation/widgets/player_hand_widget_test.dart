@@ -47,5 +47,30 @@ void main() {
 
       expect(tapped, hand.last);
     });
+
+    testWidgets(
+      'al quitar una carta del medio, las que quedan conservan su identidad por id',
+      (tester) async {
+        const hand = [
+          CardModel(id: 'a', type: CardType.skip),
+          CardModel(id: 'b', type: CardType.attack),
+          CardModel(id: 'c', type: CardType.nope),
+        ];
+        await tester.pumpWidget(_wrap(const PlayerHandWidget(hand: hand)));
+
+        // Se juega/descarta la carta del medio ('b'): sin key por id,
+        // Flutter reutilizaría por índice el State (y su animación de flip
+        // en curso) de 'b' para 'c', que pasa a ocupar ese mismo índice.
+        const handSinB = [
+          CardModel(id: 'a', type: CardType.skip),
+          CardModel(id: 'c', type: CardType.nope),
+        ];
+        await tester.pumpWidget(_wrap(const PlayerHandWidget(hand: handSinB)));
+
+        expect(find.byKey(const ValueKey('a')), findsOneWidget);
+        expect(find.byKey(const ValueKey('c')), findsOneWidget);
+        expect(find.byKey(const ValueKey('b')), findsNothing);
+      },
+    );
   });
 }

@@ -50,6 +50,7 @@ class CardChoiceOverlay extends StatelessWidget {
               children: [
                 for (final card in candidates)
                   CardWidget(
+                    key: ValueKey(card.id),
                     type: card.type,
                     faceUp: faceUp,
                     assetPath: faceUp ? assetPathFor?.call(card.type) : null,

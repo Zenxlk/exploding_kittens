@@ -54,6 +54,7 @@ class PlayerHandWidget extends StatelessWidget {
                   left: overlap * i,
                   top: selectedCardIds.contains(hand[i].id) ? 0 : _selectedLift,
                   child: CardWidget(
+                    key: ValueKey(hand[i].id),
                     type: hand[i].type,
                     assetPath: assetPathFor?.call(hand[i].type),
                     isSelected: selectedCardIds.contains(hand[i].id),
