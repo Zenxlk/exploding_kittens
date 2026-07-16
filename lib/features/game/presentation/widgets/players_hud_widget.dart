@@ -45,6 +45,8 @@ class _PlayerBadge extends StatelessWidget {
   final PlayerModel player;
   final bool isCurrentTurn;
 
+  static const _turnTransitionDuration = Duration(milliseconds: 250);
+
   bool get _isEliminated => player.status == PlayerStatus.eliminated;
   bool get _isDisconnected => player.status == PlayerStatus.disconnected;
 
@@ -59,15 +61,18 @@ class _PlayerBadge extends StatelessWidget {
         children: [
           SizedBox(
             height: 16,
-            child: isCurrentTurn
-                ? const Icon(Icons.arrow_drop_down,
-                    size: 20, color: AppColors.warning)
-                : null,
+            child: AnimatedOpacity(
+              duration: _turnTransitionDuration,
+              opacity: isCurrentTurn ? 1 : 0,
+              child: const Icon(Icons.arrow_drop_down,
+                  size: 20, color: AppColors.warning),
+            ),
           ),
           Stack(
             clipBehavior: Clip.none,
             children: [
-              Container(
+              AnimatedContainer(
+                duration: _turnTransitionDuration,
                 padding: EdgeInsets.all(isCurrentTurn ? 3 : 0),
                 decoration: isCurrentTurn
                     ? const BoxDecoration(
@@ -76,7 +81,7 @@ class _PlayerBadge extends StatelessWidget {
                           BorderSide(color: AppColors.warning, width: 2.5),
                         ),
                       )
-                    : null,
+                    : const BoxDecoration(shape: BoxShape.circle),
                 child: CircleAvatar(
                   radius: 22,
                   backgroundColor:

@@ -89,5 +89,45 @@ void main() {
         expect(find.byIcon(Icons.style), findsOneWidget);
       },
     );
+
+    testWidgets(
+      'el anillo de turno transiciona con AnimatedContainer al cambiar de jugador',
+      (tester) async {
+        const players = [
+          PlayerModel(id: 'p1', name: 'Ana', hand: []),
+          PlayerModel(id: 'p2', name: 'Beto', hand: []),
+        ];
+
+        await tester.pumpWidget(
+          _wrap(
+            const PlayersHudWidget(players: players, currentPlayerId: 'p1'),
+          ),
+        );
+
+        // CircleAvatar también usa un AnimatedContainer internamente (sin
+        // padding); el anillo de turno es el único que fija `padding`.
+        List<BoxDecoration> ringDecorations() => tester
+            .widgetList<AnimatedContainer>(find.byType(AnimatedContainer))
+            .where((c) => c.padding != null)
+            .map((c) => c.decoration as BoxDecoration)
+            .toList();
+
+        expect(ringDecorations()[0].border, isNotNull); // Ana tiene el turno
+        expect(ringDecorations()[1].border, isNull); // Beto no
+
+        await tester.pumpWidget(
+          _wrap(
+            const PlayersHudWidget(players: players, currentPlayerId: 'p2'),
+          ),
+        );
+        // Pump a mitad de la transición (no pumpAndSettle todavía) para
+        // confirmar que no lanza mientras el AnimatedContainer interpola.
+        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pumpAndSettle();
+
+        expect(ringDecorations()[0].border, isNull); // Ana ya no
+        expect(ringDecorations()[1].border, isNotNull); // Beto ahora sí
+      },
+    );
   });
 }
