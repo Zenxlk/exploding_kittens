@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:exploding_kittens/core/constants/game_constants.dart';
+import 'package:exploding_kittens/core/constants/layout_constants.dart';
+import 'package:exploding_kittens/core/extensions/context_extensions.dart';
 import 'package:exploding_kittens/core/theme/app_colors.dart';
 import 'package:exploding_kittens/core/theme/app_text_styles.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/card_choice_overlay.dart';
@@ -427,67 +429,121 @@ class _GameTableViewState extends State<GameTableView> {
     _Selection selection,
     CardModel? topDiscard,
   ) {
+    final isLandscape = context.isLandscape;
+
+    final hud = PlayersHudWidget(
+      players: widget.gameState.players,
+      currentPlayerId: widget.gameState.turn.currentPlayerId,
+    );
+    final statusBanner = _StatusBanner(
+      gameState: widget.gameState,
+      isMyTurn: _isMyTurn,
+      localPlayerId: widget.localPlayerId,
+    );
+    final deckAndDiscard = _buildDeckAndDiscard(
+      topDiscard,
+      gap: isLandscape
+          ? LayoutConstants.deckDiscardGapLandscape
+          : LayoutConstants.deckDiscardGapPortrait,
+    );
+    final selectionBar = _SelectionBar(
+      selection: selection,
+      canAct: _canAct,
+      onPlaySimple: () {
+        widget.onPlaySimpleCard((selection as _QuickPlaySelection).card);
+        _clearSelection();
+      },
+      onChooseTarget: () => setState(() => _choosingTarget = true),
+      onCancel: _clearSelection,
+    );
+    final playerHand = PlayerHandWidget(
+      hand: hand,
+      selectedCardIds: _selectedCardIds,
+      playableCardIds: _canAct
+          ? hand
+              .where((c) => _quickPlayTypes.contains(c.type))
+              .map((c) => c.id)
+              .toSet()
+          : const {},
+      justDrawnCardIds: _justDrawnCardIds,
+      assetPathFor: widget.assetPathFor,
+      onCardTap: _onCardTap,
+      cardWidth: _handCardWidth(context),
+    );
+
+    if (!isLandscape) {
+      return Column(
+        children: [
+          hud,
+          statusBanner,
+          Expanded(child: Center(child: deckAndDiscard)),
+          selectionBar,
+          playerHand,
+        ],
+      );
+    }
+
+    // En landscape la altura es escasa y el ancho sobra: la mano deja de
+    // estar anclada abajo a lo ancho de toda la pantalla (competiría por
+    // esa poca altura) y pasa a su propia columna a la derecha, junto al
+    // bloque mazo/descarte + status/selección a la izquierda.
     return Column(
       children: [
-        PlayersHudWidget(
-          players: widget.gameState.players,
-          currentPlayerId: widget.gameState.turn.currentPlayerId,
-        ),
-        _StatusBanner(
-          gameState: widget.gameState,
-          isMyTurn: _isMyTurn,
-          localPlayerId: widget.localPlayerId,
-        ),
+        hud,
         Expanded(
-          child: Center(
-            child: SingleChildScrollView(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DeckWidget(
-                    drawPileCount: widget.gameState.deck.drawPileCount,
-                    cardBackAssetPath: widget.cardBackAssetPath,
-                    onTap: _canAct ? widget.onDraw : null,
-                    shuffleTrigger: _shuffleTrigger,
-                    pulseTrigger: _deckPulseTrigger,
-                  ),
-                  const SizedBox(width: 24),
-                  DiscardPileWidget(
-                    topCard: topDiscard,
-                    topCardAssetPath: topDiscard == null
-                        ? null
-                        : widget.assetPathFor?.call(topDiscard.type),
-                  ),
-                ],
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                flex: 3,
+                child: Column(
+                  children: [
+                    statusBanner,
+                    Expanded(child: Center(child: deckAndDiscard)),
+                    selectionBar,
+                  ],
+                ),
               ),
-            ),
+              Expanded(
+                flex: 2,
+                child: Center(child: playerHand),
+              ),
+            ],
           ),
-        ),
-        _SelectionBar(
-          selection: selection,
-          canAct: _canAct,
-          onPlaySimple: () {
-            widget.onPlaySimpleCard((selection as _QuickPlaySelection).card);
-            _clearSelection();
-          },
-          onChooseTarget: () => setState(() => _choosingTarget = true),
-          onCancel: _clearSelection,
-        ),
-        PlayerHandWidget(
-          hand: hand,
-          selectedCardIds: _selectedCardIds,
-          playableCardIds: _canAct
-              ? hand
-                  .where((c) => _quickPlayTypes.contains(c.type))
-                  .map((c) => c.id)
-                  .toSet()
-              : const {},
-          justDrawnCardIds: _justDrawnCardIds,
-          assetPathFor: widget.assetPathFor,
-          onCardTap: _onCardTap,
         ),
       ],
     );
+  }
+
+  Widget _buildDeckAndDiscard(CardModel? topDiscard, {required double gap}) {
+    return SingleChildScrollView(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DeckWidget(
+            drawPileCount: widget.gameState.deck.drawPileCount,
+            cardBackAssetPath: widget.cardBackAssetPath,
+            onTap: _canAct ? widget.onDraw : null,
+            shuffleTrigger: _shuffleTrigger,
+            pulseTrigger: _deckPulseTrigger,
+          ),
+          SizedBox(width: gap),
+          DiscardPileWidget(
+            topCard: topDiscard,
+            topCardAssetPath: topDiscard == null
+                ? null
+                : widget.assetPathFor?.call(topDiscard.type),
+          ),
+        ],
+      ),
+    );
+  }
+
+  double _handCardWidth(BuildContext context) {
+    if (context.isTablet) return LayoutConstants.handCardWidthTablet;
+    return context.isLandscape
+        ? LayoutConstants.handCardWidthLandscapePhone
+        : LayoutConstants.handCardWidthPortraitPhone;
   }
 }
 
@@ -599,16 +655,25 @@ class _SelectionBar extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Text(message, style: AppTextStyles.caption),
-          ),
-          TextButton(onPressed: onCancel, child: const Text('Cancelar')),
-          FilledButton(
-            onPressed: onConfirm,
-            style: FilledButton.styleFrom(backgroundColor: AppColors.success),
-            child: Text(buttonLabel),
+          Text(message, style: AppTextStyles.caption),
+          const SizedBox(height: 4),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              TextButton(onPressed: onCancel, child: const Text('Cancelar')),
+              FilledButton(
+                onPressed: onConfirm,
+                style:
+                    FilledButton.styleFrom(backgroundColor: AppColors.success),
+                child: Text(buttonLabel),
+              ),
+            ],
           ),
         ],
       ),

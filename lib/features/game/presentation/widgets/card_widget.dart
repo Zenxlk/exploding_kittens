@@ -157,19 +157,30 @@ class _CardFace extends StatelessWidget {
             )
           : Padding(
               padding: const EdgeInsets.all(6),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, color: Colors.white, size: width * 0.4),
-                  const SizedBox(height: 4),
-                  Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.cardLabel,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+              // FittedBox absorbe el desborde vertical en tarjetas muy
+              // angostas (mano en landscape phone); el SizedBox interior
+              // fija el ancho de layout para que el texto siga ajustando a
+              // 2 líneas en vez de perder el wrap al quedar sin restricción.
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: SizedBox(
+                  width: width - 12,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(icon, color: Colors.white, size: width * 0.4),
+                      const SizedBox(height: 4),
+                      Text(
+                        label,
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.cardLabel,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
     );
