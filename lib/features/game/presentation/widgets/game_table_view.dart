@@ -440,11 +440,13 @@ class _GameTableViewState extends State<GameTableView> {
       isMyTurn: _isMyTurn,
       localPlayerId: widget.localPlayerId,
     );
-    final deckAndDiscard = _buildDeckAndDiscard(
-      topDiscard,
-      gap: isLandscape
-          ? LayoutConstants.deckDiscardGapLandscape
-          : LayoutConstants.deckDiscardGapPortrait,
+    final deckAndDiscard = _buildPlayDropZone(
+      _buildDeckAndDiscard(
+        topDiscard,
+        gap: isLandscape
+            ? LayoutConstants.deckDiscardGapLandscape
+            : LayoutConstants.deckDiscardGapPortrait,
+      ),
     );
     final selectionBar = _SelectionBar(
       selection: selection,
@@ -512,6 +514,35 @@ class _GameTableViewState extends State<GameTableView> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Envuelve el bloque de mazo/descarte como destino de arrastre: soltar
+  /// ahí una carta de [_quickPlayTypes] la juega directo (ver
+  /// [PlayerHandWidget] para el lado que arma el `Draggable`). Cartas que
+  /// necesitan objetivo, o cualquier arrastre fuera de mi turno, quedan
+  /// rechazadas — `onWillAcceptWithDetails` decide qué resalta el borde.
+  Widget _buildPlayDropZone(Widget child) {
+    return DragTarget<CardModel>(
+      onWillAcceptWithDetails: (details) =>
+          _canAct && _quickPlayTypes.contains(details.data.type),
+      onAcceptWithDetails: (details) {
+        widget.onPlaySimpleCard(details.data);
+        _clearSelection();
+      },
+      builder: (context, candidateData, rejectedData) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: candidateData.isNotEmpty
+                ? Border.all(color: AppColors.success, width: 2)
+                : null,
+          ),
+          child: child,
+        );
+      },
     );
   }
 

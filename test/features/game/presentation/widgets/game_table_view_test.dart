@@ -186,6 +186,88 @@ void main() {
     );
 
     testWidgets(
+      'arrastrar una carta jugable hasta el mazo la juega directo, sin '
+      'pasar por el botón Jugar',
+      (tester) async {
+        _pinPortrait(tester);
+        const skip = CardModel(id: 'a', type: CardType.skip);
+        const me = PlayerModel(id: 'me', name: 'Ana', hand: [skip]);
+        CardModel? played;
+
+        await tester.pumpWidget(
+          _wrap(
+            GameTableView(
+              gameState: _state(players: const [me], currentPlayerId: 'me'),
+              localPlayerId: 'me',
+              onDraw: () {},
+              onPlaySimpleCard: (card) => played = card,
+              onPlayFavor: (_, __) {},
+              onPlayCatPair: (_, __) {},
+              onPlayNope: (_) {},
+              onDefuseBomb: (_, __) {},
+              onPlayCatTrio: (_, __) {},
+              onChooseCard: (_) {},
+            ),
+          ),
+        );
+
+        final gesture = await tester.startGesture(
+          tester.getCenter(find.byType(CardWidget)),
+        );
+        await tester.pump(const Duration(milliseconds: 50));
+        await gesture.moveTo(tester.getCenter(find.byType(DeckWidget)));
+        await tester.pump(const Duration(milliseconds: 50));
+        await gesture.up();
+        await tester.pumpAndSettle();
+
+        expect(played, skip);
+        expect(find.text('Jugar'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'arrastrar una carta que necesita objetivo hasta el mazo no la '
+      'juega: la selecciona, igual que un tap',
+      (tester) async {
+        _pinPortrait(tester);
+        const favor = CardModel(id: 'a', type: CardType.favor);
+        const me = PlayerModel(id: 'me', name: 'Ana', hand: [favor]);
+        const rival = PlayerModel(id: 'rival', name: 'Beto', hand: []);
+        CardModel? played;
+
+        await tester.pumpWidget(
+          _wrap(
+            GameTableView(
+              gameState:
+                  _state(players: const [me, rival], currentPlayerId: 'me'),
+              localPlayerId: 'me',
+              onDraw: () {},
+              onPlaySimpleCard: (card) => played = card,
+              onPlayFavor: (_, __) {},
+              onPlayCatPair: (_, __) {},
+              onPlayNope: (_) {},
+              onDefuseBomb: (_, __) {},
+              onPlayCatTrio: (_, __) {},
+              onChooseCard: (_) {},
+            ),
+          ),
+        );
+
+        final gesture = await tester.startGesture(
+          tester.getCenter(find.byType(CardWidget)),
+        );
+        await tester.pump(const Duration(milliseconds: 50));
+        await gesture.moveTo(tester.getCenter(find.byType(DeckWidget)));
+        await tester.pump(const Duration(milliseconds: 50));
+        await gesture.up();
+        await tester.pumpAndSettle();
+
+        expect(played, isNull);
+        expect(find.text('Elegir objetivo'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
       'una carta sin soporte todavía deja el botón Jugar deshabilitado',
       (tester) async {
         _pinPortrait(tester);
