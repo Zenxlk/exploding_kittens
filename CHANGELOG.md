@@ -11,6 +11,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.5.18] — 2026-07-18
+
+### Añadido
+- Drag & drop en `PlayerHandWidget`, además de la selección por tap: soltar una carta jugable de inmediato (Skip/Attack/Shuffle/See the Future) sobre el `DragTarget` de mazo/descarte la juega directo, sin pasar por el botón "Jugar". Soltar cualquier otra carta (o una jugable fuera de esa zona) simplemente la selecciona, igual que un tap — Favor y par/trío de gatos siguen su flujo de selección + overlay de objetivo sin cambios
+
+---
+
 ## [0.5.17] — 2026-07-18
 
 ### Añadido
