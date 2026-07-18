@@ -11,6 +11,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.5.17] — 2026-07-18
+
+### Añadido
+- Diseño responsivo en `GameTableView`: árboles diferenciados para portrait y landscape (`context.isLandscape`) en vez de un único `Column`/`Row` con reflow — en landscape la mano ya no compite por altura anclada abajo a todo el ancho, pasa a una columna propia junto al bloque mazo/descarte
+- Ancho de carta de mano y separación mazo/descarte ahora escalan por escenario (`LayoutConstants`, phone portrait/landscape y tablet vía `context.isTablet`, medido contra el lado corto de la pantalla para que rotar un phone no cruce el umbral por accidente)
+
+### Corregido
+- `CardWidget` podía desbordar en tarjetas muy angostas (mano en landscape phone): el ícono y la etiqueta ahora van dentro de un `FittedBox` que absorbe el desborde vertical sin perder el wrap a 2 líneas del texto
+
+---
+
 ## [0.5.16] — 2026-07-15
 
 ### Añadido
