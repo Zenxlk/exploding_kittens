@@ -111,7 +111,8 @@ void main() {
           _wrap(
             Column(
               children: [
-                PlayerHandWidget(hand: hand, onCardTap: (card) => tapped = card),
+                PlayerHandWidget(
+                    hand: hand, onCardTap: (card) => tapped = card),
                 DragTarget<CardModel>(
                   onAcceptWithDetails: (details) => accepted = details.data,
                   builder: (context, candidateData, rejectedData) =>
@@ -126,7 +127,8 @@ void main() {
           tester.getCenter(find.byType(CardWidget)),
         );
         await tester.pump(const Duration(milliseconds: 50));
-        await gesture.moveTo(tester.getCenter(find.byType(DragTarget<CardModel>)));
+        await gesture
+            .moveTo(tester.getCenter(find.byType(DragTarget<CardModel>)));
         await tester.pump(const Duration(milliseconds: 50));
         await gesture.up();
         await tester.pumpAndSettle();
