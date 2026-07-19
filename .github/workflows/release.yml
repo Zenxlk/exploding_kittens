@@ -39,6 +39,13 @@ jobs:
       - name: Build APK (debug)
         run: flutter build apk --debug
 
+      - name: Build APK (release)
+        # Mismo caso que el AppBundle de abajo: sin keystore propio, firma
+        # con las claves de debug. Instalable igual (sideload), y a
+        # diferencia del debug build no lleva el banner de debug ni el
+        # overhead de JIT/assertions — es el que se comparte para probar.
+        run: flutter build apk --release
+
       - name: Build AppBundle (release)
         # Sin keystore de release configurado (android/key.properties), esto
         # firma con las claves de debug — el .aab se genera igual mediante
@@ -53,12 +60,67 @@ jobs:
           path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 14
 
+      - name: Upload release APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: apk-release-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
       - name: Upload release AppBundle
         uses: actions/upload-artifact@v7
         with:
           name: appbundle-release-${{ github.sha }}
           path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
+
+  publish_github_release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs: build_android
+    # Solo en tags v* — un push a main sin tag se queda en los artifacts de
+    # arriba (build_android), no genera una Release pública.
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download debug APK artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: apk-debug-${{ github.sha }}
+          path: dist
+
+      - name: Download release APK artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: apk-release-${{ github.sha }}
+          path: dist
+
+      - name: Download release AppBundle artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: appbundle-release-${{ github.sha }}
+          path: dist
+
+      - name: Rename artifacts for the release
+        run: |
+          mv dist/app-debug.apk "dist/exploding-kittens-${{ github.ref_name }}-debug.apk"
+          mv dist/app-release.apk "dist/exploding-kittens-${{ github.ref_name }}-release.apk"
+          mv dist/app-release.aab "dist/exploding-kittens-${{ github.ref_name }}.aab"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          # Los dos .apk son instalables directo (sideload) — firmados con
+          # las claves de debug hasta que exista firma de release real (ver
+          # comentario del job de arriba). El .aab queda también por si se
+          # necesita para Play Store más adelante.
+          files: |
+            dist/exploding-kittens-${{ github.ref_name }}-debug.apk
+            dist/exploding-kittens-${{ github.ref_name }}-release.apk
+            dist/exploding-kittens-${{ github.ref_name }}.aab
+          generate_release_notes: true
 
   # Publicación en Google Play Internal Testing track. Deshabilitado hasta
   # que exista firma de release real y el secret PLAY_STORE_SERVICE_ACCOUNT_JSON
