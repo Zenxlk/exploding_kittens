@@ -50,6 +50,12 @@ class WsClient {
   String? _playerId;
   String? _playerName;
 
+  // Issued by the server on this playerId's first join in the current
+  // room (SessionTokenMessage). Sent back on every later join_room so a
+  // reconnect after a network drop can prove it's the same player — see
+  // cards_game_service's docs/TOKENS.md for the server-side contract.
+  String? _sessionToken;
+
   // Raw stream of every parsed WsMessage received from the server.
   Stream<WsMessage> get messages => _messageController.stream;
 
@@ -110,8 +116,14 @@ class WsClient {
       cancelOnError: true,
     );
 
-    // Announce presence to the server right after connecting.
-    send(JoinRoomMessage(playerId: playerId, name: playerName));
+    // Announce presence to the server right after connecting. token is
+    // null on a fresh join; on a reconnect it's whatever this playerId was
+    // issued earlier in this room, proving it's the same player.
+    send(JoinRoomMessage(
+      playerId: playerId,
+      name: playerName,
+      token: _sessionToken,
+    ));
 
     // Heartbeat — detects silent connection drops.
     _pingTimer = Timer.periodic(
@@ -139,6 +151,9 @@ class WsClient {
       // subscriber was attached when the first RoomStateMessage arrived.
       if (msg is RoomStateMessage) {
         _lastRoom = LobbyRoom.fromJson(msg.roomJson);
+      }
+      if (msg is SessionTokenMessage) {
+        _sessionToken = msg.token;
       }
       _messageController.add(msg);
     } catch (_) {}
@@ -186,6 +201,7 @@ class WsClient {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     send(LeaveRoomMessage(playerId: playerId));
+    _sessionToken = null;
     _pingTimer?.cancel();
     _pingTimer = null;
     _connected = false;

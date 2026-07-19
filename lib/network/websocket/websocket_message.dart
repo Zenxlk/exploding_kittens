@@ -3,9 +3,9 @@
 // Naming convention:
 //   Client → Server : JoinRoom, SetReady, LeaveRoom, StartGame, Action,
 //                      PlayerReconnected
-//   Server → Client : RoomState, GameStarting, PlayerKicked, WsError,
-//                      GameState (broadcast), GameEvent (broadcast),
-//                      ActionRejected (targeted)
+//   Server → Client : RoomState, SessionToken (targeted), GameStarting,
+//                      PlayerKicked, WsError, GameState (broadcast),
+//                      GameEvent (broadcast), ActionRejected (targeted)
 //   Both directions : Ping, Pong
 
 sealed class WsMessage {
@@ -25,6 +25,7 @@ sealed class WsMessage {
       'game_starting' => const GameStartingMessage(),
       'player_kicked' => PlayerKickedMessage._fromJson(json),
       'ws_error' => WsErrorMessage._fromJson(json),
+      'session_token' => SessionTokenMessage._fromJson(json),
       // ── heartbeat ────────────────────────────────────────────────────────
       'ping' => const PingMessage(),
       'pong' => const PongMessage(),
@@ -43,17 +44,29 @@ sealed class WsMessage {
 // ── Client → Server ──────────────────────────────────────────────────────────
 
 final class JoinRoomMessage extends WsMessage {
-  const JoinRoomMessage({required this.playerId, required this.name});
+  const JoinRoomMessage(
+      {required this.playerId, required this.name, this.token});
 
   final String playerId;
   final String name;
 
+  // Session token issued by the server on this playerId's first join in
+  // the room (see SessionTokenMessage). Required on reconnect — omitted on
+  // a fresh join, when there's nothing to prove yet.
+  final String? token;
+
   factory JoinRoomMessage._fromJson(Map<String, dynamic> j) => JoinRoomMessage(
-      playerId: j['playerId'] as String, name: j['name'] as String);
+      playerId: j['playerId'] as String,
+      name: j['name'] as String,
+      token: j['token'] as String?);
 
   @override
-  Map<String, dynamic> toJson() =>
-      {'type': 'join_room', 'playerId': playerId, 'name': name};
+  Map<String, dynamic> toJson() => {
+        'type': 'join_room',
+        'playerId': playerId,
+        'name': name,
+        if (token != null) 'token': token,
+      };
 }
 
 final class SetReadyMessage extends WsMessage {
@@ -102,6 +115,22 @@ final class RoomStateMessage extends WsMessage {
 
   @override
   Map<String, dynamic> toJson() => {'type': 'room_state', 'room': roomJson};
+}
+
+// Sent to a specific client the first time it claims a playerId in the
+// room (fresh join, not reconnect) — never broadcast, since it's a secret.
+// The client must store it and send it back in JoinRoomMessage.token on
+// every later join_room for that same playerId.
+final class SessionTokenMessage extends WsMessage {
+  const SessionTokenMessage({required this.token});
+
+  final String token;
+
+  factory SessionTokenMessage._fromJson(Map<String, dynamic> j) =>
+      SessionTokenMessage(token: j['token'] as String);
+
+  @override
+  Map<String, dynamic> toJson() => {'type': 'session_token', 'token': token};
 }
 
 // Sent by the server when the host triggers startGame successfully.
