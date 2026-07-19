@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -400,5 +401,64 @@ void main() {
       await Future<void>.delayed(const Duration(seconds: 2));
       expect(client.isConnected, isFalse);
     });
+  });
+
+  // ── tokens de sesión ─────────────────────────────────────────────────────
+  //
+  // WsServer (el host LAN) no emite session_token — el backend que sí lo hace
+  // es cards_game_service (Go), fuera de este repo. Estos tests verifican
+  // solo el lado de WsClient: que guarda el token que le llega y lo manda de
+  // vuelta en el siguiente join_room, contra un WebSocket "servidor" mínimo
+  // hecho a mano en vez de WsServer.
+  group('WsClient — session token', () {
+    test(
+      'guarda el session_token recibido y lo manda en el próximo join_room',
+      () async {
+        final receivedJoins = <Map<String, dynamic>>[];
+        WebSocket? serverSocket;
+        final httpServer = await HttpServer.bind('127.0.0.1', 0);
+        final firstJoin = Completer<void>();
+        final secondJoin = Completer<void>();
+
+        httpServer.listen((req) async {
+          final socket = await WebSocketTransformer.upgrade(req);
+          serverSocket = socket;
+          socket.listen((data) {
+            final frame = jsonDecode(data as String) as Map<String, dynamic>;
+            if (frame['type'] != 'join_room') return;
+            receivedJoins.add(frame);
+            if (receivedJoins.length == 1) {
+              socket.add(jsonEncode(
+                const SessionTokenMessage(token: 'tok-abc').toJson(),
+              ));
+              firstJoin.complete();
+            } else if (receivedJoins.length == 2 && !secondJoin.isCompleted) {
+              secondJoin.complete();
+            }
+          });
+        });
+
+        final client = await WsClient.connect(
+          hostAddress: '127.0.0.1',
+          playerId: 'p1',
+          playerName: 'Alice',
+          port: httpServer.port,
+        );
+
+        await firstJoin.future.timeout(const Duration(seconds: 3));
+        expect(receivedJoins[0].containsKey('token'), isFalse);
+
+        // Simular una caída (no un close() del cliente): el servidor cierra
+        // el socket -> el cliente debe reconectar solo y esta vez mandar el
+        // token que le llegó en el primer join.
+        await serverSocket!.close();
+        await secondJoin.future.timeout(const Duration(seconds: 5));
+
+        expect(receivedJoins[1]['token'], 'tok-abc');
+
+        await client.close(playerId: 'p1');
+        await httpServer.close(force: true);
+      },
+    );
   });
 }

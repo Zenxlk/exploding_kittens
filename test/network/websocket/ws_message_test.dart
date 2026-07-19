@@ -9,8 +9,19 @@ void main() {
     }
 
     // ── client → server ────────────────────────────────────────────────────
-    test('JoinRoomMessage', () {
+    test('JoinRoomMessage sin token (primer join)', () {
       roundTrip(const JoinRoomMessage(playerId: 'p1', name: 'Alice'));
+    });
+
+    test('JoinRoomMessage.toJson omite token cuando es null', () {
+      const msg = JoinRoomMessage(playerId: 'p1', name: 'Alice');
+      expect(msg.toJson().containsKey('token'), isFalse);
+    });
+
+    test('JoinRoomMessage con token (reconexión)', () {
+      roundTrip(
+        const JoinRoomMessage(playerId: 'p1', name: 'Alice', token: 'tok-123'),
+      );
     });
 
     test('SetReadyMessage true/false', () {
@@ -32,6 +43,10 @@ void main() {
       final msg = RoomStateMessage(roomJson: payload);
       final restored = WsMessage.fromJson(msg.toJson()) as RoomStateMessage;
       expect(restored.roomJson, equals(payload));
+    });
+
+    test('SessionTokenMessage', () {
+      roundTrip(const SessionTokenMessage(token: 'tok-123'));
     });
 
     test('GameStartingMessage', () {
