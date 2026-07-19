@@ -54,6 +54,13 @@ class WsClient {
   // room (SessionTokenMessage). Sent back on every later join_room so a
   // reconnect after a network drop can prove it's the same player — see
   // cards_game_service's docs/TOKENS.md for the server-side contract.
+  //
+  // TODO(online-mode): this is in-memory only, unlike playerId (persisted
+  // via playerIdProvider/shared_preferences, see lobby_providers.dart).
+  // An app crash/restart keeps the same playerId but loses this token, so
+  // the online backend would reject the reconnect as an already-claimed
+  // playerId with no proof. Needs its own persisted storage once the
+  // online-mode UI actually wires up to a real backend.
   String? _sessionToken;
 
   // Raw stream of every parsed WsMessage received from the server.
