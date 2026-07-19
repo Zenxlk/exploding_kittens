@@ -44,7 +44,8 @@ sealed class WsMessage {
 // ── Client → Server ──────────────────────────────────────────────────────────
 
 final class JoinRoomMessage extends WsMessage {
-  const JoinRoomMessage({required this.playerId, required this.name, this.token});
+  const JoinRoomMessage(
+      {required this.playerId, required this.name, this.token});
 
   final String playerId;
   final String name;

@@ -432,8 +432,7 @@ void main() {
                 const SessionTokenMessage(token: 'tok-abc').toJson(),
               ));
               firstJoin.complete();
-            } else if (receivedJoins.length == 2 &&
-                !secondJoin.isCompleted) {
+            } else if (receivedJoins.length == 2 && !secondJoin.isCompleted) {
               secondJoin.complete();
             }
           });
