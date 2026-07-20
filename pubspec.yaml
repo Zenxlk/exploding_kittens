@@ -23,7 +23,7 @@ dependencies:
 
   # ── Red ─────────────────────────────────────────────
   web_socket_channel: ^3.0.0
-  network_info_plus: ^8.2.0
+  network_info_plus: ^8.2.1
   multicast_dns: ^0.3.2+1
 
   # ── Animaciones ─────────────────────────────────────
