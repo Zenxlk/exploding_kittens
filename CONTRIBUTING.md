@@ -46,6 +46,10 @@ docs:          documentación
 
 Scopes: `core` · `engine` · `features` · `network` · `assets` · `ci`
 
+Los commits del mantenedor del proyecto se escriben en español, pero esto
+**no es un requisito para quien contribuya**: los PRs son bienvenidos en
+cualquier idioma, el tuyo incluido.
+
 ## Estándares de código
 
 - Dart 3 — usar `sealed class`, pattern matching y records donde aplique.
