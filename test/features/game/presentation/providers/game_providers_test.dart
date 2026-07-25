@@ -18,13 +18,17 @@ GameState _state({
   TurnPhase phase = TurnPhase.playing,
   GamePhase gamePhase = GamePhase.playing,
   GameResult? result,
+  String currentPlayerId = 'p1',
 }) {
   return GameState(
     id: 'g1',
     config: const GameConfig(playerCount: 2),
-    players: const [PlayerModel(id: 'p1', name: 'A', hand: [])],
+    players: const [
+      PlayerModel(id: 'p1', name: 'A', hand: []),
+      PlayerModel(id: 'p2', name: 'B', hand: []),
+    ],
     deck: const DeckModel(drawPile: [], discardPile: []),
-    turn: TurnModel(currentPlayerId: 'p1', phase: phase),
+    turn: TurnModel(currentPlayerId: currentPlayerId, phase: phase),
     phase: gamePhase,
     result: result,
   );
@@ -205,6 +209,132 @@ void main() {
         );
       },
     );
+
+    group('turn timer', () {
+      late _FakeGameGateway timerGateway;
+      late ProviderContainer timerContainer;
+
+      setUp(() {
+        timerGateway = _FakeGameGateway();
+        timerContainer = ProviderContainer(
+          overrides: [
+            gameProvider.overrideWith(
+              () => GameNotifier(
+                gateway: timerGateway,
+                turnTimeout: const Duration(milliseconds: 5),
+              ),
+            ),
+          ],
+        );
+        addTearDown(timerContainer.dispose);
+      });
+
+      test(
+        'roba automáticamente cuando expira sin que el jugador actúe',
+        () async {
+          final running = _state();
+          final drawnState = _state();
+          timerGateway.onStart = (_, __) => running;
+          timerGateway.onApply = (_) => drawnState;
+
+          timerContainer.read(gameProvider.notifier).startLocalGame(
+            const [],
+            const GameConfig(playerCount: 2),
+          );
+
+          await Future.delayed(const Duration(milliseconds: 30));
+
+          expect(timerGateway.applyCalls, 1);
+          expect(
+            (timerContainer.read(gameProvider) as GameRunning).state,
+            drawnState,
+          );
+        },
+      );
+
+      test(
+        'al pasar el turno, el auto-robo al expirar apunta al nuevo '
+        'jugador, no al anterior',
+        () async {
+          final firstTurn = _state();
+          timerGateway.onStart = (_, __) => firstTurn;
+
+          final notifier = timerContainer.read(gameProvider.notifier);
+          notifier.startLocalGame(const [], const GameConfig(playerCount: 2));
+
+          final secondTurn = _state(currentPlayerId: 'p2');
+          TurnAction? lastAction;
+          timerGateway.onApply = (action) {
+            lastAction = action;
+            return secondTurn;
+          };
+          notifier.drawCard('p1');
+
+          await Future.delayed(const Duration(milliseconds: 30));
+
+          // El timer de 'p1' se canceló al pasar el turno a 'p2'; el que
+          // expiró y disparó el auto-robo es el nuevo timer de 'p2'.
+          expect(timerGateway.applyCalls, 2);
+          expect(lastAction, isA<DrawCardAction>());
+          expect((lastAction as DrawCardAction).playerId, 'p2');
+        },
+      );
+
+      test(
+        'jugar una carta que mantiene al mismo jugador no reinicia el timer',
+        () async {
+          // Timeout amplio a propósito (y no el de 5ms del resto del grupo):
+          // este caso hace dos `apply` intermedios en momentos concretos
+          // antes de la expiración, así que necesita margen real para no
+          // volverse flaky bajo carga (comparten proceso con el resto de la
+          // suite de widget tests).
+          final localGateway = _FakeGameGateway();
+          final localContainer = ProviderContainer(
+            overrides: [
+              gameProvider.overrideWith(
+                () => GameNotifier(
+                  gateway: localGateway,
+                  turnTimeout: const Duration(milliseconds: 60),
+                ),
+              ),
+            ],
+          );
+          addTearDown(localContainer.dispose);
+
+          final playing = _state();
+          localGateway.onStart = (_, __) => playing;
+
+          final notifier = localContainer.read(gameProvider.notifier);
+          notifier.startLocalGame(const [], const GameConfig(playerCount: 2));
+
+          // Simula jugar una carta de acción a mitad de turno: sigue siendo
+          // el turno de 'p1', solo cambia de sub-fase.
+          final nopeWindow = _state(phase: TurnPhase.nopeWindow);
+          localGateway.onApply = (_) => nopeWindow;
+          notifier.playNope(
+              'p1', const CardModel(id: 'n', type: CardType.nope));
+
+          final backToPlaying = _state();
+          localGateway.onApply = (_) => backToPlaying;
+          await Future.delayed(const Duration(milliseconds: 10));
+          notifier.chooseCard('p1', 'x');
+
+          final autoDrawn = _state();
+          localGateway.onApply = (_) => autoDrawn;
+
+          await Future.delayed(const Duration(milliseconds: 200));
+
+          // El cronómetro original (arrancado en startLocalGame) sigue
+          // corriendo pese a las dos acciones intermedias del mismo
+          // jugador, y dispara un único auto-robo.
+          expect(localGateway.applyCalls, 3);
+          expect(
+            (localContainer.read(gameProvider) as GameRunning).state,
+            autoDrawn,
+          );
+        },
+      );
+    });
 
     test('events expone el mismo stream de eventos del gateway', () {
       expect(

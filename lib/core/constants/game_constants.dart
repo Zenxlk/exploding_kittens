@@ -21,4 +21,7 @@ abstract final class GameConstants {
 
   // Segundos para reconexión antes de eliminar al jugador
   static const int reconnectTimeoutSeconds = 60;
+
+  // Segundos por turno antes de robar una carta automáticamente
+  static const int turnTimeoutSeconds = 30;
 }
