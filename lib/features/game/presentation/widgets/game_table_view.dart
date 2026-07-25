@@ -17,6 +17,7 @@ import 'package:exploding_kittens/features/game/presentation/widgets/nope_window
 import 'package:exploding_kittens/features/game/presentation/widgets/player_hand_widget.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/players_hud_widget.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/see_the_future_overlay.dart';
+import 'package:exploding_kittens/features/game/presentation/widgets/turn_timer_bar.dart';
 import 'package:exploding_kittens/game_engine/events/game_event.dart';
 import 'package:exploding_kittens/game_engine/models/card/card_model.dart';
 import 'package:exploding_kittens/game_engine/models/card/card_type.dart';
@@ -435,6 +436,10 @@ class _GameTableViewState extends State<GameTableView> {
       players: widget.gameState.players,
       currentPlayerId: widget.gameState.turn.currentPlayerId,
     );
+    final turnTimerBar = TurnTimerBar(
+      currentPlayerId: widget.gameState.turn.currentPlayerId,
+      currentPlayerName: widget.gameState.currentPlayer?.name ?? '…',
+    );
     final statusBanner = _StatusBanner(
       gameState: widget.gameState,
       isMyTurn: _isMyTurn,
@@ -475,6 +480,7 @@ class _GameTableViewState extends State<GameTableView> {
       return Column(
         children: [
           hud,
+          turnTimerBar,
           statusBanner,
           Expanded(child: Center(child: deckAndDiscard)),
           selectionBar,
@@ -490,6 +496,7 @@ class _GameTableViewState extends State<GameTableView> {
     return Column(
       children: [
         hud,
+        turnTimerBar,
         Expanded(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -7,6 +7,7 @@ import 'package:exploding_kittens/features/game/presentation/widgets/discard_pil
 import 'package:exploding_kittens/features/game/presentation/widgets/game_table_view.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/player_hand_widget.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/players_hud_widget.dart';
+import 'package:exploding_kittens/features/game/presentation/widgets/turn_timer_bar.dart';
 import 'package:exploding_kittens/game_engine/events/game_event.dart';
 import 'package:exploding_kittens/game_engine/models/card/card_model.dart';
 import 'package:exploding_kittens/game_engine/models/card/card_type.dart';
@@ -1297,6 +1298,40 @@ void main() {
         tester.widget<CardWidget>(find.byType(CardWidget)).width,
         LayoutConstants.handCardWidthLandscapePhone,
       );
+    });
+
+    testWidgets(
+        'muestra el TurnTimerBar con el jugador que tiene el turno actual',
+        (tester) async {
+      _pinPortrait(tester);
+      const me = PlayerModel(id: 'me', name: 'Ana', hand: []);
+      const other = PlayerModel(id: 'other', name: 'Beto', hand: []);
+
+      await tester.pumpWidget(
+        _wrap(
+          GameTableView(
+            gameState: _state(
+              players: const [me, other],
+              currentPlayerId: 'other',
+            ),
+            localPlayerId: 'me',
+            onDraw: () {},
+            onPlaySimpleCard: (_) {},
+            onPlayFavor: (_, __) {},
+            onPlayCatPair: (_, __) {},
+            onPlayNope: (_) {},
+            onDefuseBomb: (_, __) {},
+            onPlayCatTrio: (_, __) {},
+            onChooseCard: (_) {},
+          ),
+        ),
+      );
+
+      final bar = tester.widget<TurnTimerBar>(find.byType(TurnTimerBar));
+      expect(bar.currentPlayerId, 'other');
+      expect(bar.currentPlayerName, 'Beto');
+
+      await tester.pumpAndSettle();
     });
   });
 }
