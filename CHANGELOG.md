@@ -11,6 +11,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.5.19] — 2026-07-24
+
+### Añadido
+- Fuentes reales (licencia OFL) reemplazando el placeholder vacío `ExplodingFont-Regular.ttf`: `Bangers` para `AppTextStyles.headline` (letras estilo cómic), `Baloo2` para el resto del tema (`title`/`body`/`caption`/`cardLabel`, legible en tamaños chicos) — ver `assets/fonts/ATTRIBUTION.md`
+
+---
+
 ## [0.5.18] — 2026-07-24
 
 ### Añadido

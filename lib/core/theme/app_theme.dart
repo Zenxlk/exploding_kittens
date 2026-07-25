@@ -13,7 +13,7 @@ abstract final class AppTheme {
           onSurface: AppColors.onBackground,
         ),
         scaffoldBackgroundColor: AppColors.background,
-        fontFamily: 'ExplodingFont',
+        fontFamily: 'Baloo2',
         cardTheme: const CardThemeData(
           color: AppColors.surface,
           elevation: 4,
