@@ -11,6 +11,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.5.18] — 2026-07-24
+
+### Añadido
+- Timer de 30 segundos por turno: si el jugador activo no actúa a tiempo, se le roba una carta automáticamente (mismo efecto que un robo manual, termina el turno con normalidad). El cronómetro es único por turno completo — jugar cartas de acción a mitad de turno (Skip, Attack, Favor, par/trío de gatos, Shuffle, See the Future) no lo reinicia, solo pasar el turno a otro jugador lo hace
+- `TurnTimerBar`: cuenta regresiva visual en la mesa de juego, puramente cosmética (igual que `NopeWindowOverlay`), visible tanto para el host como para los clientes no-host sin cableado adicional
+
+---
+
 ## [0.5.17] — 2026-07-18
 
 ### Añadido
