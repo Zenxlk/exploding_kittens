@@ -119,6 +119,7 @@ class LobbyNotifier extends Notifier<LobbyState> {
   Future<void> createRoom() async {
     final settings = await ref.read(settingsProvider.future);
     final playerId = await ref.read(playerIdProvider.future);
+    final session = await ref.read(authSessionProvider.future);
     _localPlayerId = playerId;
 
     state = const LobbyConnecting();
@@ -126,6 +127,7 @@ class LobbyNotifier extends Notifier<LobbyState> {
     final result = await _repo.createRoom(
       playerName: settings.playerName,
       playerId: playerId,
+      authToken: session?.accessToken,
     );
 
     switch (result) {
@@ -152,6 +154,7 @@ class LobbyNotifier extends Notifier<LobbyState> {
   Future<void> joinRoom(String hostAddress) async {
     final settings = await ref.read(settingsProvider.future);
     final playerId = await ref.read(playerIdProvider.future);
+    final session = await ref.read(authSessionProvider.future);
     _localPlayerId = playerId;
 
     await _discoverySub?.cancel();
@@ -163,6 +166,7 @@ class LobbyNotifier extends Notifier<LobbyState> {
       hostAddress: hostAddress,
       playerName: settings.playerName,
       playerId: playerId,
+      authToken: session?.accessToken,
     );
 
     switch (result) {
