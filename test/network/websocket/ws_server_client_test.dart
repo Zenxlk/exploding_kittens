@@ -530,4 +530,63 @@ void main() {
       },
     );
   });
+
+  // ── connectToUri (modo online, Fase 7) ───────────────────────────────────
+  group('WsClient — connectToUri', () {
+    test(
+      'conecta a una Uri completa (con path) en vez de host/port sueltos',
+      () async {
+        final server = await startServer();
+        final client = await WsClient.connectToUri(
+          uri: Uri.parse('ws://127.0.0.1:${server.port}/ws/AB12CD'),
+          playerId: 'p1',
+          playerName: 'Alice',
+        );
+
+        await server.roomStream
+            .firstWhere((r) => r.players.length == 2)
+            .timeout(const Duration(seconds: 3));
+
+        expect(client.isConnected, isTrue);
+
+        await client.close(playerId: 'p1');
+        await server.close();
+      },
+    );
+
+    test(
+      'una reconexión automática vuelve a conectar a la misma Uri (con path)',
+      () async {
+        final firstServer = await startServer();
+        final port = firstServer.port;
+        final uri = Uri.parse('ws://127.0.0.1:$port/ws/AB12CD');
+        final client = await WsClient.connectToUri(
+          uri: uri,
+          playerId: 'p1',
+          playerName: 'Alice',
+        );
+        await client.roomStream.first.timeout(const Duration(seconds: 3));
+
+        final disconnected = client.status
+            .firstWhere((s) => s == WsConnectionStatus.disconnected)
+            .timeout(const Duration(seconds: 3));
+        await firstServer.close();
+        await disconnected;
+
+        final secondServer = await WsServer.start(
+          hostId: 'h1',
+          hostName: 'Host',
+          port: port,
+        );
+
+        await client.status
+            .firstWhere((s) => s == WsConnectionStatus.connected)
+            .timeout(const Duration(seconds: 5));
+        expect(client.isConnected, isTrue);
+
+        await client.close(playerId: 'p1');
+        await secondServer.close();
+      },
+    );
+  });
 }
