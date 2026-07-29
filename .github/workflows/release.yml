@@ -36,6 +36,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # Mismo motivo que en ci.yml: .env es un asset declarado y no
+      # versionado. Placeholder vacío a propósito — cablear credenciales
+      # reales de Supabase acá (vía secrets) es un paso aparte, todavía no
+      # hecho; hasta entonces los builds de release quedan en modo invitado,
+      # igual que hoy.
+      - name: Create placeholder .env
+        run: cp .env.example .env
+
       - name: Build APK (debug)
         run: flutter build apk --debug
 

@@ -1,7 +1,7 @@
 name: exploding_kittens
 description: "Exploding Kittens — Mobile game by ZenXLK"
 publish_to: 'none'
-version: 0.5.19+47
+version: 0.6.0+48
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -48,6 +48,10 @@ dependencies:
   nsd: ^5.0.1
   package_info_plus: ^10.2.0
 
+  # ── Autenticación (Fase 7) ───────────────────────────
+  supabase_flutter: ^2.16.0
+  flutter_dotenv: ^6.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -74,6 +78,9 @@ flutter:
     - assets/sounds/
     - assets/animations/
     - assets/images/
+    # .env no versionado (ver .gitignore); si falta, SupabaseConfig.isConfigured
+    # da false y la app arranca en modo 100% invitado, sin romper el build.
+    - .env
 
   fonts:
     - family: Bangers

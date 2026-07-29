@@ -24,6 +24,32 @@ void main() {
       );
     });
 
+    test('JoinRoomMessage.toJson omite authToken cuando es null', () {
+      const msg = JoinRoomMessage(playerId: 'p1', name: 'Alice');
+      expect(msg.toJson().containsKey('authToken'), isFalse);
+    });
+
+    test('JoinRoomMessage con authToken (sesión de Supabase)', () {
+      roundTrip(
+        const JoinRoomMessage(
+          playerId: 'p1',
+          name: 'Alice',
+          authToken: 'jwt-abc',
+        ),
+      );
+    });
+
+    test('JoinRoomMessage con token y authToken a la vez', () {
+      roundTrip(
+        const JoinRoomMessage(
+          playerId: 'p1',
+          name: 'Alice',
+          token: 'tok-123',
+          authToken: 'jwt-abc',
+        ),
+      );
+    });
+
     test('SetReadyMessage true/false', () {
       roundTrip(const SetReadyMessage(ready: true));
       roundTrip(const SetReadyMessage(ready: false));

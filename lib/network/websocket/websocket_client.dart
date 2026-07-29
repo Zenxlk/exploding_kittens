@@ -50,6 +50,12 @@ class WsClient {
   String? _playerId;
   String? _playerName;
 
+  // JWT de Supabase (features/auth), si el jugador está autenticado —
+  // seteado en _connect() igual que _playerId/_playerName, así que
+  // _attemptReconnect() lo reenvía solo por reutilizar esos mismos campos.
+  // Null en modo invitado, sin cambio de comportamiento.
+  String? _authToken;
+
   // Issued by the server on this playerId's first join in the current
   // room (SessionTokenMessage). Sent back on every later join_room so a
   // reconnect after a network drop can prove it's the same player — see
@@ -79,12 +85,14 @@ class WsClient {
     required String playerId,
     required String playerName,
     int port = AppConstants.localGamePort,
+    String? authToken,
   }) async {
     final client = WsClient._();
     await client._connect(
       uri: Uri.parse('ws://$hostAddress:$port'),
       playerId: playerId,
       playerName: playerName,
+      authToken: authToken,
     );
     return client;
   }
@@ -93,10 +101,12 @@ class WsClient {
     required Uri uri,
     required String playerId,
     required String playerName,
+    String? authToken,
   }) async {
     _uri = uri;
     _playerId = playerId;
     _playerName = playerName;
+    _authToken = authToken;
 
     _statusController.add(WsConnectionStatus.connecting);
 
@@ -123,6 +133,7 @@ class WsClient {
       playerId: playerId,
       name: playerName,
       token: _sessionToken,
+      authToken: _authToken,
     ));
 
     // Heartbeat — detects silent connection drops.
@@ -182,10 +193,19 @@ class WsClient {
     final uri = _uri;
     final playerId = _playerId;
     final playerName = _playerName;
+    // Capturado antes de _connect(): reasigna _authToken a partir de este
+    // mismo parámetro, así que sin capturarlo antes se perdería en el
+    // segundo intento de reconexión en adelante (quedaría null).
+    final authToken = _authToken;
     if (uri == null || playerId == null || playerName == null) return;
 
     try {
-      await _connect(uri: uri, playerId: playerId, playerName: playerName);
+      await _connect(
+        uri: uri,
+        playerId: playerId,
+        playerName: playerName,
+        authToken: authToken,
+      );
     } catch (_) {
       _reconnectBackoff = _reconnectBackoff * 2;
       if (_reconnectBackoff > _maxBackoff) _reconnectBackoff = _maxBackoff;

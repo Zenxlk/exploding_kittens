@@ -18,9 +18,12 @@ abstract interface class ILobbyRepository {
   WsServer? get wsServer;
 
   // Host: create a new room and start advertising it on the local network.
+  // authToken (Fase 7): JWT de Supabase de la sesión actual, si hay una
+  // (ver features/auth) — null en modo invitado, sin cambio de comportamiento.
   Future<Result<LobbyRoom>> createRoom({
     required String playerName,
     required String playerId,
+    String? authToken,
   });
 
   // Client: scan the local network for available rooms.
@@ -31,6 +34,7 @@ abstract interface class ILobbyRepository {
     required String hostAddress,
     required String playerName,
     required String playerId,
+    String? authToken,
   });
 
   // Toggle the local player's ready state.

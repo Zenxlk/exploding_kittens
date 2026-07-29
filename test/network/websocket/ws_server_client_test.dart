@@ -461,4 +461,73 @@ void main() {
       },
     );
   });
+
+  // ── authToken (Fase 7) ───────────────────────────────────────────────────
+  group('WsClient — authToken', () {
+    test(
+      'sin authToken, join_room no lo incluye (modo invitado sin cambios)',
+      () async {
+        final server = await startServer();
+        final client = await connectClient(port: server.port);
+
+        await server.roomStream
+            .firstWhere((r) => r.players.length == 2)
+            .timeout(const Duration(seconds: 3));
+
+        expect(client.isConnected, isTrue);
+
+        await client.close(playerId: 'p1');
+        await server.close();
+      },
+    );
+
+    test(
+      'con authToken, se manda en el join_room inicial y se reenvía tras '
+      'una reconexión automática',
+      () async {
+        final receivedJoins = <Map<String, dynamic>>[];
+        WebSocket? serverSocket;
+        final httpServer = await HttpServer.bind('127.0.0.1', 0);
+        final firstJoin = Completer<void>();
+        final secondJoin = Completer<void>();
+
+        httpServer.listen((req) async {
+          final socket = await WebSocketTransformer.upgrade(req);
+          serverSocket = socket;
+          socket.listen((data) {
+            final frame = jsonDecode(data as String) as Map<String, dynamic>;
+            if (frame['type'] != 'join_room') return;
+            receivedJoins.add(frame);
+            if (receivedJoins.length == 1) {
+              firstJoin.complete();
+            } else if (receivedJoins.length == 2 && !secondJoin.isCompleted) {
+              secondJoin.complete();
+            }
+          });
+        });
+
+        final client = await WsClient.connect(
+          hostAddress: '127.0.0.1',
+          playerId: 'p1',
+          playerName: 'Alice',
+          port: httpServer.port,
+          authToken: 'jwt-xyz',
+        );
+
+        await firstJoin.future.timeout(const Duration(seconds: 3));
+        expect(receivedJoins[0]['authToken'], 'jwt-xyz');
+
+        // Misma caída simulada que el test de session token de arriba: el
+        // authToken debe sobrevivir a la reconexión automática, no solo al
+        // primer join.
+        await serverSocket!.close();
+        await secondJoin.future.timeout(const Duration(seconds: 5));
+
+        expect(receivedJoins[1]['authToken'], 'jwt-xyz');
+
+        await client.close(playerId: 'p1');
+        await httpServer.close(force: true);
+      },
+    );
+  });
 }
