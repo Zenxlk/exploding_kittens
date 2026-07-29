@@ -6,6 +6,7 @@ import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:exploding_kittens/core/audio/menu_music_mixin.dart';
+import 'package:exploding_kittens/core/config/online_config.dart';
 import 'package:exploding_kittens/core/router/route_names.dart';
 import 'package:exploding_kittens/core/theme/app_colors.dart';
 import 'package:exploding_kittens/core/theme/app_text_styles.dart';
@@ -26,16 +27,78 @@ class LobbyScreen extends ConsumerStatefulWidget {
 
 class _LobbyScreenState extends ConsumerState<LobbyScreen>
     with MenuMusicMixin<LobbyScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.isHost) {
-        ref.read(lobbyProvider.notifier).createRoom();
-      } else {
-        ref.read(lobbyProvider.notifier).startDiscovery();
-      }
-    });
+  // null hasta que el jugador elige LAN u online — a diferencia de antes de
+  // la Fase 7 de modo online, ya no se auto-dispara createRoom()/
+  // startDiscovery() en initState: ahora depende de esta elección explícita
+  // (ver LobbyMode, decidido a propósito así para no forzar a jugadores de
+  // la misma LAN a pasar por Internet solo porque el build tenga un backend
+  // online configurado).
+  LobbyMode? _selectedMode;
+
+  void _onModeSelected(LobbyMode mode) {
+    if (widget.isHost) {
+      setState(() => _selectedMode = mode);
+      ref.read(lobbyProvider.notifier).createRoom(mode: mode);
+    } else if (mode == LobbyMode.lan) {
+      setState(() => _selectedMode = mode);
+      ref.read(lobbyProvider.notifier).startDiscovery();
+    } else {
+      // No hay nada que "conectar" todavía acá — _selectedMode se setea
+      // recién si el jugador confirma un código, para no mostrar el
+      // spinner de _ConnectingView detrás del diálogo antes de tiempo
+      // (_selectedMode no nulo ya salta el selector de modo en build()).
+      _showRoomCodeDialog();
+    }
+  }
+
+  void _showRoomCodeDialog() {
+    final controller = TextEditingController();
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text('Room code', style: AppTextStyles.title),
+        content: TextField(
+          controller: controller,
+          style: AppTextStyles.body,
+          textCapitalization: TextCapitalization.characters,
+          decoration: InputDecoration(
+            hintText: 'AB12CD',
+            hintStyle: AppTextStyles.caption.copyWith(
+              color: AppColors.onBackground.withValues(alpha: 0.4),
+            ),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancel',
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.onBackground.withValues(alpha: 0.5),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              final code = controller.text.trim().toUpperCase();
+              if (code.isNotEmpty) {
+                Navigator.pop(ctx);
+                setState(() => _selectedMode = LobbyMode.online);
+                ref
+                    .read(lobbyProvider.notifier)
+                    .joinRoom(code, mode: LobbyMode.online);
+              }
+            },
+            child: Text(
+              'Connect',
+              style: AppTextStyles.body.copyWith(color: AppColors.primary),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -87,18 +150,82 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen>
           ),
         ),
         body: SafeArea(
-          child: switch (lobbyState) {
-            LobbyIdle() || LobbyConnecting() => _ConnectingView(
-                label: widget.isHost ? 'Creating room…' : 'Connecting…',
+          child: _selectedMode == null
+              ? _ModeSelectionView(
+                  isHost: widget.isHost,
+                  onSelect: _onModeSelected,
+                )
+              : switch (lobbyState) {
+                  LobbyIdle() || LobbyConnecting() => _ConnectingView(
+                      label: widget.isHost ? 'Creating room…' : 'Connecting…',
+                    ),
+                  LobbyDiscovering(:final rooms) => _DiscoveringView(
+                      rooms: rooms,
+                      onJoin: (r) => ref
+                          .read(lobbyProvider.notifier)
+                          .joinRoom(r.hostAddress),
+                    ),
+                  LobbyInRoom() =>
+                    _InRoomView(lobbyState, mode: _selectedMode!),
+                  LobbyError() => _ConnectingView(label: 'Error…'),
+                },
+        ),
+      ),
+    );
+  }
+}
+
+// ── Mode selection (LAN vs online, Fase 7) ───────────────────────────────────
+
+class _ModeSelectionView extends StatelessWidget {
+  const _ModeSelectionView({required this.isHost, required this.onSelect});
+  final bool isHost;
+  final ValueChanged<LobbyMode> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.wifi_tethering_rounded,
+              size: 56,
+              color: AppColors.secondary,
+            ),
+            const Gap(16),
+            Text(
+              isHost ? 'How do you want to host?' : 'How do you want to join?',
+              style: AppTextStyles.title,
+              textAlign: TextAlign.center,
+            ),
+            const Gap(24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => onSelect(LobbyMode.lan),
+                icon: const Icon(Icons.wifi_rounded),
+                label: const Text('Local WiFi'),
               ),
-            LobbyDiscovering(:final rooms) => _DiscoveringView(
-                rooms: rooms,
-                onJoin: (r) =>
-                    ref.read(lobbyProvider.notifier).joinRoom(r.hostAddress),
+            ),
+            const Gap(12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: OnlineConfig.isConfigured
+                    ? () => onSelect(LobbyMode.online)
+                    : null,
+                icon: const Icon(Icons.public_rounded),
+                label: Text(
+                  OnlineConfig.isConfigured
+                      ? 'Online'
+                      : 'Online (not available in this build)',
+                ),
               ),
-            LobbyInRoom() => _InRoomView(lobbyState),
-            LobbyError() => _ConnectingView(label: 'Error…'),
-          },
+            ),
+          ],
         ),
       ),
     );
@@ -318,8 +445,9 @@ class _RoomCard extends StatelessWidget {
 // ── In-room view ──────────────────────────────────────────────────────────────
 
 class _InRoomView extends ConsumerWidget {
-  const _InRoomView(this.lobbyState);
+  const _InRoomView(this.lobbyState, {required this.mode});
   final LobbyInRoom lobbyState;
+  final LobbyMode mode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -329,7 +457,7 @@ class _InRoomView extends ConsumerWidget {
     return Column(
       children: [
         // ── Room info header ────────────────────────────────────────────
-        _RoomHeader(room: room, isHost: isHost),
+        _RoomHeader(room: room, isHost: isHost, mode: mode),
 
         // ── Player list ─────────────────────────────────────────────────
         Expanded(
@@ -354,9 +482,14 @@ class _InRoomView extends ConsumerWidget {
 }
 
 class _RoomHeader extends ConsumerWidget {
-  const _RoomHeader({required this.room, required this.isHost});
+  const _RoomHeader({
+    required this.room,
+    required this.isHost,
+    required this.mode,
+  });
   final LobbyRoom room;
   final bool isHost;
+  final LobbyMode mode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -379,43 +512,27 @@ class _RoomHeader extends ConsumerWidget {
                   ),
                 ),
                 const Gap(2),
-                if (isHost)
+                if (isHost && mode == LobbyMode.online)
+                  // El código de sala es room.id: cards_game_service lo usa
+                  // como identidad de la sala (ver internal/lobby/lobby.go,
+                  // CreateRoom), a diferencia de LAN donde ese id no se
+                  // muestra — ahí se comparte la IP de WiFi en su lugar.
+                  _CopyableValue(
+                    value: room.id,
+                    copiedMessage: 'Room code copied to clipboard',
+                  )
+                else if (isHost)
                   wifiIp.when(
-                    data: (ip) => GestureDetector(
-                      onTap: ip == null
-                          ? null
-                          : () {
-                              Clipboard.setData(ClipboardData(text: ip));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('IP copied to clipboard'),
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
-                            },
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            ip ?? 'No WiFi',
-                            style: AppTextStyles.body.copyWith(
-                              color: ip == null
-                                  ? AppColors.eliminated
-                                  : AppColors.onBackground,
-                            ),
+                    data: (ip) => ip == null
+                        ? Text(
+                            'No WiFi',
+                            style: AppTextStyles.body
+                                .copyWith(color: AppColors.eliminated),
+                          )
+                        : _CopyableValue(
+                            value: ip,
+                            copiedMessage: 'IP copied to clipboard',
                           ),
-                          if (ip != null) ...[
-                            const Gap(6),
-                            Icon(
-                              Icons.copy_rounded,
-                              size: 14,
-                              color:
-                                  AppColors.onBackground.withValues(alpha: 0.4),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
                     loading: () => Text(
                       'Reading IP…',
                       style: AppTextStyles.caption.copyWith(
@@ -455,6 +572,42 @@ class _RoomHeader extends ConsumerWidget {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+// Tocar copia [value] al portapapeles y confirma con un snackbar — usado
+// para la IP de WiFi (LAN) y el código de sala (online), mismo gesto,
+// distinto valor.
+class _CopyableValue extends StatelessWidget {
+  const _CopyableValue({required this.value, required this.copiedMessage});
+  final String value;
+  final String copiedMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Clipboard.setData(ClipboardData(text: value));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(copiedMessage),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(value, style: AppTextStyles.body),
+          const Gap(6),
+          Icon(
+            Icons.copy_rounded,
+            size: 14,
+            color: AppColors.onBackground.withValues(alpha: 0.4),
+          ),
         ],
       ),
     );
