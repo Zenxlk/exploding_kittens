@@ -105,8 +105,14 @@ empezar la siguiente.
 - [ ] Estrategia avanzada de bot (heurística)
 - [ ] Partida local contra 1–4 bots sin red
 
+### Autenticación (Fase 7)
+- [x] Mitad cliente de la identidad persistente de `cards_game_service` (backend hermano, repo separado): `SupabaseAuthService` + `authServiceProvider`/`authSessionProvider` (feature `auth/`, sign-in anónimo en la primera lectura), `JoinRoomMessage.authToken` opcional, `WsClient` lo manda en el join inicial y lo reenvía en cada reconexión automática, y `playerIdProvider` prefiere el `playerId` de la sesión sobre el UUID de invitado — ver `docs/ARCHITECTURE.md`, sección "Autenticación con Supabase", para el diseño completo
+- [ ] Conectar de verdad a `cards_game_service` desplegado por Internet — explícitamente fuera de alcance de lo de arriba, sigue sin existir ningún flujo de UI que arme una URL remota en vez del descubrimiento mDNS (`LobbyRepository` sigue siendo 100% LAN)
+- [ ] Soporte `wss://` (TLS) en `WsClient` — hoy conecta con `ws://` plano, no sirve para un dominio público sin TLS por delante
+- [ ] Vincular una cuenta anónima a una cuenta real (email/Google/etc.) — Supabase lo soporta (`linkIdentity`), no implementado
+
 ### Modo online
-- [ ] Backend de salas (WebSocket server desplegado)
+- [ ] Backend de salas (WebSocket server desplegado) — ver Autenticación (Fase 7) arriba para la mitad cliente ya lista
 - [ ] Sistema de cuentas / nicknames persistentes
 - [ ] Matchmaking por código de sala
 - [ ] Ranking global

@@ -11,6 +11,20 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.6.0] — 2026-07-29
+
+### Añadido
+- Mitad cliente de la identidad persistente de Fase 7 (autenticación con Supabase): nueva feature `auth/` (`SupabaseAuthService`, `authServiceProvider`/`authSessionProvider`, sign-in anónimo en la primera lectura), `JoinRoomMessage.authToken` opcional, `WsClient` lo manda en el join inicial y en cada reconexión automática, y `playerIdProvider` prefiere el `playerId` de la sesión autenticada sobre el UUID de invitado. Sin `.env` configurado (o con Supabase deshabilitado), la app sigue funcionando 100% en modo invitado, sin cambios de comportamiento — ver `docs/ARCHITECTURE.md`, sección "Autenticación con Supabase", para el diseño completo y qué queda explícitamente fuera de esta fase (conectar a `cards_game_service` por Internet, `wss://`, vincular cuenta anónima a una real)
+- `supabase_flutter` + `flutter_dotenv`, `.env.example` y `SupabaseConfig` (`isConfigured` decide si `main.dart` llama a `Supabase.initialize`)
+
+### Corregido
+- Dos bugs del propio boceto de diseño en `docs/ARCHITECTURE.md`: `currentSession ?? signInAnonymously()` mezclaba `AuthSession` con `Future<AuthSession>` sin tipar correctamente, y `SupabaseConfig.url`/`anonKey` llamaban a `dotenv.get()` sin verificar que `dotenv.load()` ya se hubiera ejecutado (lanzaba en cualquier test, que nunca corre `main()`)
+
+### Infraestructura
+- `.env` está declarado como asset en `pubspec.yaml` pero no se versiona; ambos workflows de CI copian `.env.example` a `.env` antes de correr comandos de Flutter para evitar un `asset_does_not_exist` en un checkout limpio. Los builds de release quedan en modo invitado hasta cablear credenciales reales como paso aparte
+
+---
+
 ## [0.5.19] — 2026-07-24
 
 ### Añadido
