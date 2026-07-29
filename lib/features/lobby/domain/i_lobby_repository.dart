@@ -29,7 +29,10 @@ abstract interface class ILobbyRepository {
   // Client: scan the local network for available rooms.
   Stream<List<DiscoveredRoom>> discoverRooms();
 
-  // Client: connect to an existing room by host address.
+  // Client: connect to an existing room. hostAddress es una IP LAN para
+  // LobbyRepository, pero OnlineLobbyRepository lo reinterpreta como el
+  // código de sala devuelto por createRoom del host — mismo campo, distinto
+  // significado según la implementación (ver esa clase para el detalle).
   Future<Result<LobbyRoom>> joinRoom({
     required String hostAddress,
     required String playerName,

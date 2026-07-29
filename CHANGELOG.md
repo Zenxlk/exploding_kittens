@@ -11,6 +11,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.7.0] — 2026-07-29
+
+### Añadido
+- Mitad cliente del modo online (jugar contra `cards_game_service` desplegado por Internet, en vez de solo LAN): `OnlineConfig` (`ONLINE_SERVER_URL`), `WsClient.connectToUri` para conectar a una Uri completa con path, `OnlineRoomsClient` (`POST /rooms`), `OnlineLobbyRepository` (nueva implementación de `ILobbyRepository` contra el backend remoto) y un selector explícito LAN/Online en `LobbyScreen` — elegido por el jugador cada vez, no automático según la sesión de Supabase, para no forzar a jugadores de la misma red WiFi a pasar por Internet sin haberlo pedido. El host online ve el código de sala (copiable) en el header en vez de la IP de WiFi; unirse online pide ese código por diálogo en vez de escanear mDNS
+- `package:http` como dependencia nueva para `OnlineRoomsClient`
+
+### Pendiente
+- Verificación manual contra el backend Go real (`cards_game_service`) — todo lo de arriba tiene tests automatizados (contra dobles: `WsServer` propio como backend, `MockClient`/mocktail), pero ningún test levanta el proceso Go real. Pasos documentados en `docs/VERIFICATION_LOG.md`, sección "Fase 7 — Modo online del lado cliente"
+
+---
+
 ## [0.6.0] — 2026-07-29
 
 ### Añadido

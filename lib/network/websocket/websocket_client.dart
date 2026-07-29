@@ -97,6 +97,27 @@ class WsClient {
     return client;
   }
 
+  // Conecta directo a una Uri completa en vez de armar ws://host:port —
+  // para el modo online (Fase 7), donde el backend expone wss://.../ws/{code}
+  // en vez de una IP LAN con puerto fijo (ver OnlineConfig.wsUri()).
+  // _connect()/_attemptReconnect() ya son genéricos en Uri, así que esto
+  // reutiliza toda la misma máquina de ping/reconexión sin duplicarla.
+  static Future<WsClient> connectToUri({
+    required Uri uri,
+    required String playerId,
+    required String playerName,
+    String? authToken,
+  }) async {
+    final client = WsClient._();
+    await client._connect(
+      uri: uri,
+      playerId: playerId,
+      playerName: playerName,
+      authToken: authToken,
+    );
+    return client;
+  }
+
   Future<void> _connect({
     required Uri uri,
     required String playerId,

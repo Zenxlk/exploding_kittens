@@ -469,3 +469,85 @@ adb -s <serial> shell am force-stop com.zenxlk.exploding_kittens
   no encontrar nada).
 - Si hay dispositivos físicos reales en la misma WiFi a mano, son una
   prueba más representativa que 2 emuladores para multicast real.
+
+---
+
+## Fase 7 — Modo online del lado cliente (pendiente de verificar)
+
+Toda la plomería (`OnlineConfig`, `WsClient.connectToUri`,
+`OnlineRoomsClient`, `OnlineLobbyRepository`, selector de modo en
+`LobbyScreen`) tiene tests automatizados — unitarios contra
+`http.testing.MockClient`/mocktail, e integración contra un `WsServer`
+propio como doble del backend (habla el mismo protocolo `WsMessage`
+carácter por carácter, ver `internal/transport/protocol.go` en
+`cards_game_service`). Lo que falta es correr contra el backend Go real:
+ningún test automatizado levanta ese proceso.
+
+**Qué puede salir distinto en la práctica** que un test con un doble no
+detectaría:
+- El backend real valida `gameType`/límites de longitud
+  (`MaxPlayerIDLen`/`MaxDisplayNameLen`) que `WsServer` no replica.
+- Timers reales del lado servidor (`LobbyIdleTimeout`, grace period de
+  reconexión) con la latencia real de una conexión por Internet, no
+  loopback.
+- `OnlineConfig.wsUri()` mapeando `https://` a `wss://` contra un
+  certificado TLS real — los tests solo prueban el mapeo de string, nunca
+  abren un socket TLS de verdad.
+- Rechazo real de `join_room` con `authToken` inválido/expirado (JWKS
+  real de Supabase) — los tests de `OnlineLobbyRepository` no mandan
+  ningún `authToken`.
+
+```bash
+# 0. Levantar el backend local (o usar una instancia ya desplegada) — ver
+#    cards_game_service/README.md y docs/DEPLOYMENT.md para las variables
+#    de Supabase opcionales (SUPABASE_JWKS_URL/DATABASE_URL). Sin ellas,
+#    arranca igual en modo 100% invitado.
+cd cards_game_service
+go run ./cmd/server
+# escuchando en :8080
+
+# 1. En el checkout de exploding_kittens, configurar .env
+cd exploding_kittens
+cp .env.example .env
+# editar .env: ONLINE_SERVER_URL=http://<ip-de-la-máquina-que-corre-el-server>:8080
+#   (no localhost si se prueba desde un emulador/dispositivo — necesita
+#   una IP alcanzable en la misma red; ver "Cómo reproducir" arriba para
+#   la lógica equivalente con la IP de WiFi)
+
+git checkout dev/fase7-online-mode  # o la rama/PR que corresponda
+flutter pub get
+
+# 2. Lanzar la app en dos dispositivos/emuladores, uno detrás del otro
+flutter run -d <serial-1> --no-hot   # será el host
+flutter run -d <serial-2> --no-hot   # se unirá a la sala
+
+# 3. Dispositivo 1 → Home → "Crear sala" → elegir "Online" en el selector
+#    de modo → debería pasar por _ConnectingView y llegar a la sala con
+#    un código de 6 caracteres visible y copiable en el header (en vez de
+#    la IP de WiFi que muestra el modo LAN)
+# 4. Dispositivo 2 → Home → "Unirse a sala" → "Online" → tipear el código
+#    del paso 3 → debería unirse a la misma sala
+# 5. Dispositivo 2 → "Ready", dispositivo 1 (host) → "Start Game" — de ahí
+#    en más el resto del flujo (turnos, cartas, Nope, Defuse,
+#    GameOverScreen) ya está verificado desde Fase 5 y no debería tener
+#    sorpresas, solo confirma que la conexión online no rompe nada del
+#    juego en sí.
+```
+
+**Casos límite a probar si el flujo feliz anda bien:**
+- Botón "Online" deshabilitado si `.env` no tiene `ONLINE_SERVER_URL` —
+  confirma que un build sin backend configurado sigue siendo 100% LAN sin
+  ninguna opción rota visible.
+- Código de sala inválido/inexistente al unirse → debería caer en
+  `LobbyError`, no colgarse en `_ConnectingView` para siempre.
+- Matar el proceso del servidor con una partida en curso → mismo
+  comportamiento de reconexión con back-off que ya verificó Fase 5 para
+  LAN (`WsClient` no distingue LAN de online más allá de la URI inicial).
+
+**Qué reportar de vuelta, en cualquier resultado:**
+- Si el flujo completo (crear → código → unirse → jugar) anda de punta a
+  punta → confirma que la mitad cliente del modo online es viable tal
+  cual está, se puede considerar para mergear.
+- Si algo falla → indicar en qué paso, y si hay algo relevante en los
+  logs de `go run ./cmd/server` (rechazo de `join_room`, error de
+  `POST /rooms`) o en la consola de `flutter run` del lado cliente.

@@ -1,7 +1,7 @@
 name: exploding_kittens
 description: "Exploding Kittens — Mobile game by ZenXLK"
 publish_to: 'none'
-version: 0.6.0+48
+version: 0.7.0+49
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -25,6 +25,7 @@ dependencies:
   web_socket_channel: ^3.0.0
   network_info_plus: ^8.2.0
   multicast_dns: ^0.3.2+1
+  http: ^1.6.0
 
   # ── Animaciones ─────────────────────────────────────
   lottie: ^3.5.1
