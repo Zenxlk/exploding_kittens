@@ -107,15 +107,15 @@ empezar la siguiente.
 
 ### Autenticación (Fase 7)
 - [x] Mitad cliente de la identidad persistente de `cards_game_service` (backend hermano, repo separado): `SupabaseAuthService` + `authServiceProvider`/`authSessionProvider` (feature `auth/`, sign-in anónimo en la primera lectura), `JoinRoomMessage.authToken` opcional, `WsClient` lo manda en el join inicial y lo reenvía en cada reconexión automática, y `playerIdProvider` prefiere el `playerId` de la sesión sobre el UUID de invitado — ver `docs/ARCHITECTURE.md`, sección "Autenticación con Supabase", para el diseño completo
-- [ ] Conectar de verdad a `cards_game_service` desplegado por Internet — explícitamente fuera de alcance de lo de arriba, sigue sin existir ningún flujo de UI que arme una URL remota en vez del descubrimiento mDNS (`LobbyRepository` sigue siendo 100% LAN)
-- [ ] Soporte `wss://` (TLS) en `WsClient` — hoy conecta con `ws://` plano, no sirve para un dominio público sin TLS por delante
+- [x] Conectar de verdad a `cards_game_service` desplegado por Internet — `OnlineLobbyRepository` (nueva implementación de `ILobbyRepository`), `WsClient.connectToUri`, `OnlineRoomsClient` (`POST /rooms`) y un selector explícito LAN/Online en `LobbyScreen`. **Pendiente de verificación manual contra el backend Go real** (todo tiene tests automatizados, pero contra dobles — ver `docs/VERIFICATION_LOG.md`, sección "Fase 7 — Modo online del lado cliente")
+- [x] Soporte `wss://` (TLS) en `WsClient` — `OnlineConfig.wsUri()` mapea el esquema `https`/`http` del `ONLINE_SERVER_URL` a `wss`/`ws`; `WsClient.connectToUri` acepta cualquier esquema tal cual se lo pase `IOWebSocketChannel`
 - [ ] Vincular una cuenta anónima a una cuenta real (email/Google/etc.) — Supabase lo soporta (`linkIdentity`), no implementado
 
 ### Modo online
-- [ ] Backend de salas (WebSocket server desplegado) — ver Autenticación (Fase 7) arriba para la mitad cliente ya lista
-- [ ] Sistema de cuentas / nicknames persistentes
-- [ ] Matchmaking por código de sala
-- [ ] Ranking global
+- [x] Backend de salas (WebSocket server desplegado) — `cards_game_service` (repo separado), ver Autenticación (Fase 7) arriba para la mitad cliente
+- [ ] Sistema de cuentas / nicknames persistentes — el backend ya expone `GET /players/{id}` y `PATCH /players/{id}/nickname`, sin consumir todavía desde el cliente
+- [x] Matchmaking por código de sala — crear sala online muestra el código; unirse online lo pide por diálogo
+- [ ] Ranking global — el backend ya expone `GET /leaderboard`, sin consumir todavía desde el cliente
 
 ### Expansiones
 - [ ] Imploding Kittens (6 jugadores, cartas nuevas)
