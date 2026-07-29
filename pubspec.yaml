@@ -25,6 +25,7 @@ dependencies:
   web_socket_channel: ^3.0.0
   network_info_plus: ^8.2.0
   multicast_dns: ^0.3.2+1
+  http: ^1.6.0
 
   # ── Animaciones ─────────────────────────────────────
   lottie: ^3.5.1
