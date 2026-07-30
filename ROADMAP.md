@@ -89,7 +89,7 @@ empezar la siguiente.
 
 ### UI/UX
 - [x] Diseño responsivo: `GameTableView` tiene árboles diferenciados por orientación (`context.isLandscape`) en vez de un único `Column`/`Row` con reflow; ancho de carta de mano y separación mazo/descarte escalan además por tamaño de pantalla (`LayoutConstants`, `context.isTablet` contra el lado corto)
-- [ ] Arrastrar cartas (drag & drop) en `PlayerHandWidget`, además de (o en vez de) la selección por tap — revierte la decisión de Fase 4 de descartar drag & drop por simplicidad
+- [x] Arrastrar cartas (drag & drop) en `PlayerHandWidget`, además de la selección por tap: soltar una carta jugable de inmediato (Skip/Attack/Shuffle/See the Future) sobre el `DragTarget` de mazo/descarte la juega directo, sin pasar por el botón "Jugar"; soltar cualquier otra carta (o una jugable fuera del `DragTarget`) simplemente la selecciona, igual que un tap — las combinaciones que necesitan objetivo (Favor, par/trío de gatos) siguen su flujo de selección + overlay sin cambios
 
 ### Mejoras técnicas pendientes
 - [x] Migrar `MdnsAdvertiser` / `MdnsDiscoverer` de UDP broadcast a mDNS/Bonjour real (`nsd`) — `nsd` es enteramente nativo (Bonjour en Apple, NsdManager en Android); los tests mockean `NsdPlatformInterface` para la lógica propia, y el registro/descubrimiento real se verificó a mano en dispositivos antes de mergear (ver `docs/VERIFICATION_LOG.md`)
@@ -113,6 +113,8 @@ empezar la siguiente.
 
 ### Modo online
 - [x] Backend de salas (WebSocket server desplegado) — `cards_game_service` (repo separado), ver Autenticación (Fase 7) arriba para la mitad cliente
+- [x] Soporte cliente para tokens de sesión emitidos por el servidor (`JoinRoomMessage.token`, `SessionTokenMessage` en `WsClient`) — reenviados en cada reconexión, distinto del `authToken` de Fase 7 (ese identifica al jugador vía Supabase; este prueba ante el backend que la reconexión es la misma sesión de red ya conocida). `WsServer` (host LAN) no lo implementa a propósito, así que el juego local por WiFi no se ve afectado
+- [ ] Persistir `_sessionToken` (hoy solo en memoria en `WsClient`) igual que ya se hace con `playerId` vía `shared_preferences` — si no, un crash/reinicio de la app pierde el token y el backend online rechazaría el reconnect aunque el `playerId` sí sobreviva
 - [ ] Sistema de cuentas / nicknames persistentes — el backend ya expone `GET /players/{id}` y `PATCH /players/{id}/nickname`, sin consumir todavía desde el cliente
 - [x] Matchmaking por código de sala — crear sala online muestra el código; unirse online lo pide por diálogo
 - [ ] Ranking global — el backend ya expone `GET /leaderboard`, sin consumir todavía desde el cliente

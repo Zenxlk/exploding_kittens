@@ -474,6 +474,57 @@ adb -s <serial> shell am force-stop com.zenxlk.exploding_kittens
 
 ---
 
+## Fase 6 — Drag & drop en `PlayerHandWidget` (verificado)
+
+PR #16 (`dev/fase6-drag-drop`). Tests automatizados
+(`player_hand_widget_test.dart`, `game_table_view_test.dart`) cubren la
+lógica de aceptación/rechazo del `DragTarget` y el fallback a selección;
+la sensación real del gesto en dispositivo (scroll vs. drag compitiendo
+por el mismo `Stack` con `SingleChildScrollView` horizontal) se verificó
+a mano siguiendo los pasos de abajo.
+
+```bash
+git fetch origin
+git checkout dev/fase6-drag-drop
+git pull
+flutter devices
+flutter run -d <serial>
+```
+
+Pasos, en una partida ya iniciada (2+ dispositivos o 1 dispositivo + host
+en el mismo, ver secciones de Fase 5 arriba para armar la sala):
+
+1. Con una carta de juego inmediato en mano (Attack/Skip/Shuffle/See the
+   Future) y siendo tu turno: arrastrarla hasta soltarla sobre el bloque de
+   mazo/descarte. Confirmar que el borde se resalta en verde mientras se
+   arrastra por encima, y que soltarla ahí la juega directo (sin pasar por
+   el botón "Jugar" ni el `SelectionBar`).
+2. La misma carta, pero soltada fuera del `DragTarget` (en cualquier otro
+   punto de la pantalla): debe comportarse como un tap — la selecciona
+   (queda levantada/resaltada) en vez de jugarla.
+3. Una carta que necesita objetivo (Favor, o una carta de gato sola/pareja):
+   arrastrarla sobre el `DragTarget` y soltarla — debe ser rechazada (sin
+   borde verde) y caer en selección normal, nunca jugarse directo.
+4. Fuera de tu turno: intentar arrastrar cualquier carta sobre el
+   `DragTarget` — debe rechazarse siempre (no hay borde verde en ningún
+   momento del arrastre).
+5. Con la mano en modo landscape (rotar el dispositivo): repetir el paso 1
+   y confirmar que el gesto de arrastre sigue funcionando igual de bien con
+   el layout angosto (`LayoutConstants` landscape).
+6. Soltar una carta jugable justo sobre el borde del `DragTarget` (mitad
+   dentro, mitad fuera) para ver si el `onWillAcceptWithDetails` se siente
+   consistente o hay una zona "muerta" incómoda de acertar con el dedo.
+
+El gesto se siente natural: no compite con el scroll horizontal de la
+mano, y no hace falta acertar con precisión rara al soltar sobre el
+`DragTarget`. Si en algún momento algo se siente mal (el
+`SingleChildScrollView` roba el gesto antes de que el `Draggable` lo
+capture, el drop zone queda muy chico/impreciso), anotar el
+dispositivo/tamaño de pantalla y el paso exacto donde pasó — sería una
+regresión, no un problema conocido de este diseño.
+
+---
+
 ## Fase 7 — Modo online del lado cliente (verificado 2026-07-29, mergeado)
 
 Toda la plomería (`OnlineConfig`, `WsClient.connectToUri`,

@@ -72,5 +72,70 @@ void main() {
         expect(find.byKey(const ValueKey('b')), findsNothing);
       },
     );
+
+    testWidgets(
+      'arrastrar una carta y soltarla sin un DragTarget que la acepte la '
+      'selecciona, igual que un tap',
+      (tester) async {
+        const hand = [CardModel(id: 'a', type: CardType.skip)];
+        CardModel? tapped;
+
+        await tester.pumpWidget(
+          _wrap(
+            PlayerHandWidget(hand: hand, onCardTap: (card) => tapped = card),
+          ),
+        );
+
+        final gesture = await tester.startGesture(
+          tester.getCenter(find.byType(CardWidget)),
+        );
+        await tester.pump(const Duration(milliseconds: 50));
+        await gesture.moveBy(const Offset(0, -80));
+        await tester.pump(const Duration(milliseconds: 50));
+        await gesture.up();
+        await tester.pumpAndSettle();
+
+        expect(tapped, hand.first);
+      },
+    );
+
+    testWidgets(
+      'soltar una carta sobre un DragTarget que la acepta no dispara '
+      'onCardTap',
+      (tester) async {
+        const hand = [CardModel(id: 'a', type: CardType.skip)];
+        CardModel? tapped;
+        CardModel? accepted;
+
+        await tester.pumpWidget(
+          _wrap(
+            Column(
+              children: [
+                PlayerHandWidget(
+                    hand: hand, onCardTap: (card) => tapped = card),
+                DragTarget<CardModel>(
+                  onAcceptWithDetails: (details) => accepted = details.data,
+                  builder: (context, candidateData, rejectedData) =>
+                      const SizedBox(width: 100, height: 100),
+                ),
+              ],
+            ),
+          ),
+        );
+
+        final gesture = await tester.startGesture(
+          tester.getCenter(find.byType(CardWidget)),
+        );
+        await tester.pump(const Duration(milliseconds: 50));
+        await gesture
+            .moveTo(tester.getCenter(find.byType(DragTarget<CardModel>)));
+        await tester.pump(const Duration(milliseconds: 50));
+        await gesture.up();
+        await tester.pumpAndSettle();
+
+        expect(accepted, hand.first);
+        expect(tapped, isNull);
+      },
+    );
   });
 }
