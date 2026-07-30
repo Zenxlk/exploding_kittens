@@ -474,14 +474,14 @@ adb -s <serial> shell am force-stop com.zenxlk.exploding_kittens
 
 ---
 
-## Fase 6 — Drag & drop en `PlayerHandWidget` (pendiente de verificación manual)
+## Fase 6 — Drag & drop en `PlayerHandWidget` (verificado)
 
-Rama `dev/fase6-drag-drop` (`556f61d`). Tests automatizados
-(`player_hand_widget_test.dart`, `game_table_view_test.dart`) ya cubren la
-lógica de aceptación/rechazo del `DragTarget` y el fallback a selección, pero
-falta la sensación real en dispositivo: gestos de arrastre en un `Stack` con
-`SingleChildScrollView` horizontal a veces se sienten distinto en emulador
-que en un dedo real (scroll vs. drag compitiendo por el mismo gesto).
+PR #16 (`dev/fase6-drag-drop`). Tests automatizados
+(`player_hand_widget_test.dart`, `game_table_view_test.dart`) cubren la
+lógica de aceptación/rechazo del `DragTarget` y el fallback a selección;
+la sensación real del gesto en dispositivo (scroll vs. drag compitiendo
+por el mismo `Stack` con `SingleChildScrollView` horizontal) se verificó
+a mano siguiendo los pasos de abajo.
 
 ```bash
 git fetch origin
@@ -515,13 +515,13 @@ en el mismo, ver secciones de Fase 5 arriba para armar la sala):
    dentro, mitad fuera) para ver si el `onWillAcceptWithDetails` se siente
    consistente o hay una zona "muerta" incómoda de acertar con el dedo.
 
-**Qué reportar de vuelta:**
-- Si el gesto se siente natural (no compite con el scroll horizontal de la
-  mano, no hay que "acertar" con precisión rara al soltar) → se puede dar
-  por verificado.
-- Si algo se siente mal (el `SingleChildScrollView` roba el gesto antes de
-  que el `Draggable` lo capture, el drop zone es muy chico/impreciso, etc.)
-  → indicar el dispositivo/tamaño de pantalla y el paso exacto donde pasó.
+El gesto se siente natural: no compite con el scroll horizontal de la
+mano, y no hace falta acertar con precisión rara al soltar sobre el
+`DragTarget`. Si en algún momento algo se siente mal (el
+`SingleChildScrollView` roba el gesto antes de que el `Draggable` lo
+capture, el drop zone queda muy chico/impreciso), anotar el
+dispositivo/tamaño de pantalla y el paso exacto donde pasó — sería una
+regresión, no un problema conocido de este diseño.
 
 ---
 

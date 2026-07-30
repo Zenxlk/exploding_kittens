@@ -56,17 +56,20 @@ class WsClient {
   // Null en modo invitado, sin cambio de comportamiento.
   String? _authToken;
 
-  // Issued by the server on this playerId's first join in the current
-  // room (SessionTokenMessage). Sent back on every later join_room so a
-  // reconnect after a network drop can prove it's the same player — see
-  // cards_game_service's docs/TOKENS.md for the server-side contract.
+  // Emitido por el servidor en el primer join_room de este playerId en la
+  // sala actual (SessionTokenMessage). Se reenvía en cada join_room
+  // posterior para que una reconexión tras una caída de red pueda probar
+  // que es el mismo jugador — ver cards_game_service/docs/TOKENS.md para
+  // el contrato del lado servidor.
   //
-  // TODO(online-mode): this is in-memory only, unlike playerId (persisted
-  // via playerIdProvider/shared_preferences, see lobby_providers.dart).
-  // An app crash/restart keeps the same playerId but loses this token, so
-  // the online backend would reject the reconnect as an already-claimed
-  // playerId with no proof. Needs its own persisted storage once the
-  // online-mode UI actually wires up to a real backend.
+  // TODO(sesión persistida): esto vive solo en memoria, a diferencia de
+  // playerId (persistido vía playerIdProvider/shared_preferences, ver
+  // lobby_providers.dart). Un crash/reinicio de la app conserva el mismo
+  // playerId pero pierde este token, así que el backend online
+  // (OnlineLobbyRepository, ya conectado desde Fase 7) rechazaría la
+  // reconexión como un playerId ya reclamado sin poder probarlo. Falta
+  // darle su propio almacenamiento persistido — ver ROADMAP.md, sección
+  // "Modo online".
   String? _sessionToken;
 
   // Raw stream of every parsed WsMessage received from the server.
