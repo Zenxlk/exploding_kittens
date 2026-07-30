@@ -112,6 +112,26 @@ void main() {
       expect(sessionState.error, 'no es tu turno');
     });
 
+    test(
+      'listenTo aplica initialGameState de inmediato — catch-up para el '
+      'GameStateMessage que ya llegó antes de suscribirse',
+      () async {
+        final state = _state();
+        container.read(remoteGameProvider.notifier).listenTo(
+              incoming.stream,
+              sent.add,
+              initialGameState: GameStateMessage(stateJson: state.toJson()),
+            );
+
+        // Sincrónico a propósito: no debería hacer falta esperar un
+        // microtask para que initialGameState se refleje, a diferencia de
+        // los mensajes que llegan por el stream.
+        final sessionState = container.read(remoteGameProvider);
+        expect(sessionState, isA<GameRunning>());
+        expect((sessionState as GameRunning).state, state);
+      },
+    );
+
     test('listenTo es idempotente: no se vuelve a suscribir', () async {
       listen();
       listen(); // segunda llamada no debería duplicar el envío

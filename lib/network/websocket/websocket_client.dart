@@ -37,6 +37,7 @@ class WsClient {
   bool _connected = false;
   bool _explicitClose = false;
   LobbyRoom? _lastRoom;
+  GameStateMessage? _lastGameState;
   final _messageController = StreamController<WsMessage>.broadcast();
   final _statusController = StreamController<WsConnectionStatus>.broadcast();
   Timer? _pingTimer;
@@ -81,6 +82,16 @@ class WsClient {
   // Last room state received. Populated before the stream emits, so callers
   // that miss the first stream event can still read the current state.
   LobbyRoom? get lastRoom => _lastRoom;
+
+  // Último GameState recibido. Mismo motivo que _lastRoom: el host arranca
+  // el motor y transmite el primer GameState casi al instante (todo local,
+  // vía loopback — ver gameNetworkBridgeProvider), mientras que en un
+  // cliente remoto GameScreen recién se suscribe a `messages` (broadcast
+  // stream, sin replay) después de navegar y montar la pantalla — un viaje
+  // de red real que en modo online (Internet, no LAN) puede tardar más que
+  // ese primer broadcast. Sin este caché, ese primer GameState se pierde
+  // para siempre y el jugador queda trabado en "Repartiendo cartas…".
+  GameStateMessage? get lastGameState => _lastGameState;
 
   // Filtered view: emits a new LobbyRoom on every RoomStateMessage.
   Stream<LobbyRoom> get roomStream => messages
@@ -193,6 +204,9 @@ class WsClient {
       // subscriber was attached when the first RoomStateMessage arrived.
       if (msg is RoomStateMessage) {
         _lastRoom = LobbyRoom.fromJson(msg.roomJson);
+      }
+      if (msg is GameStateMessage) {
+        _lastGameState = msg;
       }
       if (msg is SessionTokenMessage) {
         _sessionToken = msg.token;
