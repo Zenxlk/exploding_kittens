@@ -303,11 +303,27 @@ class RemoteGameNotifier extends Notifier<GameSessionState> {
   /// Empieza a reflejar la partida que llega por [messages], mandando las
   /// acciones locales por [send]. Idempotente — llamarlo de nuevo (p. ej. en
   /// cada rebuild de `GameScreen`) no vuelve a suscribirse.
-  void listenTo(Stream<WsMessage> messages, void Function(WsMessage) send) {
+  ///
+  /// [initialGameState] cubre una carrera real entre el host y un cliente
+  /// remoto: el host arranca el motor y transmite el primer `GameState`
+  /// casi al instante (todo local, vía loopback — ver
+  /// `gameNetworkBridgeProvider`), mientras acá recién se llega a suscribir
+  /// después de navegar y montar `GameScreen` — un viaje de red real que en
+  /// modo online puede tardar más que ese primer broadcast. Como [messages]
+  /// es un stream broadcast sin replay, ese primer mensaje se perdería para
+  /// siempre sin este catch-up (pasar `WsClient.lastGameState`, que si
+  /// llegó a tiempo por la red ya quedó cacheado ahí aunque nadie lo
+  /// escuchara todavía).
+  void listenTo(
+    Stream<WsMessage> messages,
+    void Function(WsMessage) send, {
+    GameStateMessage? initialGameState,
+  }) {
     if (_listening) return;
     _listening = true;
     _send = send;
     _sub = messages.listen(_onMessage);
+    if (initialGameState != null) _onMessage(initialGameState);
   }
 
   void _onMessage(WsMessage msg) {

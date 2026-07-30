@@ -335,6 +335,30 @@ void main() {
       await server.close();
     });
 
+    test(
+      'lastGameState se cachea aunque nadie esté escuchando messages '
+      'todavía (la carrera real que trababa a un cliente remoto en '
+      '"Repartiendo cartas…")',
+      () async {
+        final server = await startServer();
+        final client = await connectClient(port: server.port);
+
+        await server.roomStream
+            .firstWhere((r) => r.players.length == 2)
+            .timeout(const Duration(seconds: 3));
+
+        // A propósito, sin suscribirse a client.messages antes de esto —
+        // _onData() cachea igual, sin depender de un listener activo.
+        server.broadcast(const GameStateMessage(stateJson: {'turnCount': 1}));
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+
+        expect(client.lastGameState?.stateJson, equals({'turnCount': 1}));
+
+        await client.close(playerId: 'p1');
+        await server.close();
+      },
+    );
+
     test('isConnected es false después de close()', () async {
       final server = await startServer();
       final client = await connectClient(port: server.port);

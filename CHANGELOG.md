@@ -11,6 +11,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.7.2] — 2026-07-30
+
+### Corregido
+- Reportado por el usuario: al iniciar la partida, un jugador no-host podía quedar trabado indefinidamente en "Repartiendo cartas…". Causa: `WsClient.messages` es un stream broadcast sin replay, y el host arranca el motor y transmite el primer `GameState` casi al instante (todo local, vía loopback), mientras el cliente remoto recién se suscribe después de navegar y montar `GameScreen` — un viaje de red real que en modo online puede tardar más que ese primer broadcast, perdiendo el mensaje para siempre. `WsClient` ahora cachea el último `GameStateMessage` recibido (`lastGameState`, mismo patrón que ya existía para `lastRoom`/`RoomStateMessage`) y `RemoteGameNotifier.listenTo()` lo aplica de inmediato al suscribirse
+
+---
+
 ## [0.7.1] — 2026-07-29
 
 ### Añadido

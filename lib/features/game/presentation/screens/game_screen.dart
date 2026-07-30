@@ -83,9 +83,11 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     if (!lobbyState.isHost) {
       final client = ref.read(lobbyProvider.notifier).wsClient;
       if (client != null) {
-        ref
-            .read(remoteGameProvider.notifier)
-            .listenTo(client.messages, client.send);
+        ref.read(remoteGameProvider.notifier).listenTo(
+              client.messages,
+              client.send,
+              initialGameState: client.lastGameState,
+            );
       }
       return;
     }
