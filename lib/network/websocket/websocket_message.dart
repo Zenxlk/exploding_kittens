@@ -45,7 +45,7 @@ sealed class WsMessage {
 
 final class JoinRoomMessage extends WsMessage {
   const JoinRoomMessage(
-      {required this.playerId, required this.name, this.token});
+      {required this.playerId, required this.name, this.token, this.authToken});
 
   final String playerId;
   final String name;
@@ -55,10 +55,17 @@ final class JoinRoomMessage extends WsMessage {
   // a fresh join, when there's nothing to prove yet.
   final String? token;
 
+  // JWT de Supabase (sesión anónima o real) — opcional, ver
+  // AuthSessionProvider/SupabaseAuthService en features/auth. Sin él, el
+  // servidor trata la conexión como invitada, igual que hoy (ver
+  // docs/ARCHITECTURE.md, sección "Autenticación con Supabase").
+  final String? authToken;
+
   factory JoinRoomMessage._fromJson(Map<String, dynamic> j) => JoinRoomMessage(
       playerId: j['playerId'] as String,
       name: j['name'] as String,
-      token: j['token'] as String?);
+      token: j['token'] as String?,
+      authToken: j['authToken'] as String?);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -66,6 +73,7 @@ final class JoinRoomMessage extends WsMessage {
         'playerId': playerId,
         'name': name,
         if (token != null) 'token': token,
+        if (authToken != null) 'authToken': authToken,
       };
 }
 

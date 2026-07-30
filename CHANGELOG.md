@@ -11,20 +11,49 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
-## [0.5.19] — 2026-07-19
-
-### Añadido
-- Soporte cliente para tokens de sesión emitidos por el servidor (`WsClient`): `JoinRoomMessage` gana un campo `token` opcional y se agrega `SessionTokenMessage` (servidor → cliente, dirigido). `WsClient` guarda el token del primer `join_room` y lo reenvía en cada `join_room` posterior, incluidos los reconnects automáticos — necesario porque el backend online (`cards_game_service`, repo aparte) rechaza un `join_room` para un `playerId` ya reclamado si no trae el token exacto emitido antes. `WsServer` (host LAN local) no lo implementa a propósito: nunca manda `session_token`, así que el juego local por WiFi sigue igual. `LobbyRoom`/`LobbyPlayer` quedan sin tocar — el token es un secreto de conexión, no estado compartido de la sala
-
-### Pendiente conocido
-- El token de sesión solo vive en memoria en `WsClient` — a diferencia de `playerId` (persistido con `shared_preferences`), no sobrevive a un crash/reinicio de la app. Falta persistirlo antes de que el modo online dependa de esto en la práctica (ver ROADMAP.md y el `TODO(online-mode)` en `websocket_client.dart`)
-
----
-
-## [0.5.18] — 2026-07-18
+## [0.7.1] — 2026-07-29
 
 ### Añadido
 - Drag & drop en `PlayerHandWidget`, además de la selección por tap: soltar una carta jugable de inmediato (Skip/Attack/Shuffle/See the Future) sobre el `DragTarget` de mazo/descarte la juega directo, sin pasar por el botón "Jugar". Soltar cualquier otra carta (o una jugable fuera de esa zona) simplemente la selecciona, igual que un tap — Favor y par/trío de gatos siguen su flujo de selección + overlay de objetivo sin cambios
+
+---
+
+## [0.7.0] — 2026-07-29
+
+### Añadido
+- Mitad cliente del modo online (jugar contra `cards_game_service` desplegado por Internet, en vez de solo LAN): `OnlineConfig` (`ONLINE_SERVER_URL`), `WsClient.connectToUri` para conectar a una Uri completa con path, `OnlineRoomsClient` (`POST /rooms`), `OnlineLobbyRepository` (nueva implementación de `ILobbyRepository` contra el backend remoto) y un selector explícito LAN/Online en `LobbyScreen` — elegido por el jugador cada vez, no automático según la sesión de Supabase, para no forzar a jugadores de la misma red WiFi a pasar por Internet sin haberlo pedido. El host online ve el código de sala (copiable) en el header en vez de la IP de WiFi; unirse online pide ese código por diálogo en vez de escanear mDNS
+- `package:http` como dependencia nueva para `OnlineRoomsClient`
+
+Verificado a mano contra el backend Go real antes de mergear, además de los tests automatizados contra dobles (`WsServer` propio, `MockClient`/mocktail) — pasos en `docs/VERIFICATION_LOG.md`, sección "Fase 7 — Modo online del lado cliente"
+
+---
+
+## [0.6.0] — 2026-07-29
+
+### Añadido
+- Mitad cliente de la identidad persistente de Fase 7 (autenticación con Supabase): nueva feature `auth/` (`SupabaseAuthService`, `authServiceProvider`/`authSessionProvider`, sign-in anónimo en la primera lectura), `JoinRoomMessage.authToken` opcional, `WsClient` lo manda en el join inicial y en cada reconexión automática, y `playerIdProvider` prefiere el `playerId` de la sesión autenticada sobre el UUID de invitado. Sin `.env` configurado (o con Supabase deshabilitado), la app sigue funcionando 100% en modo invitado, sin cambios de comportamiento — ver `docs/ARCHITECTURE.md`, sección "Autenticación con Supabase", para el diseño completo y qué queda explícitamente fuera de esta fase (conectar a `cards_game_service` por Internet, `wss://`, vincular cuenta anónima a una real)
+- `supabase_flutter` + `flutter_dotenv`, `.env.example` y `SupabaseConfig` (`isConfigured` decide si `main.dart` llama a `Supabase.initialize`)
+
+### Corregido
+- Dos bugs del propio boceto de diseño en `docs/ARCHITECTURE.md`: `currentSession ?? signInAnonymously()` mezclaba `AuthSession` con `Future<AuthSession>` sin tipar correctamente, y `SupabaseConfig.url`/`anonKey` llamaban a `dotenv.get()` sin verificar que `dotenv.load()` ya se hubiera ejecutado (lanzaba en cualquier test, que nunca corre `main()`)
+
+### Infraestructura
+- `.env` está declarado como asset en `pubspec.yaml` pero no se versiona; ambos workflows de CI copian `.env.example` a `.env` antes de correr comandos de Flutter para evitar un `asset_does_not_exist` en un checkout limpio. Los builds de release quedan en modo invitado hasta cablear credenciales reales como paso aparte
+
+---
+
+## [0.5.19] — 2026-07-24
+
+### Añadido
+- Fuentes reales (licencia OFL) reemplazando el placeholder vacío `ExplodingFont-Regular.ttf`: `Bangers` para `AppTextStyles.headline` (letras estilo cómic), `Baloo2` para el resto del tema (`title`/`body`/`caption`/`cardLabel`, legible en tamaños chicos) — ver `assets/fonts/ATTRIBUTION.md`
+
+---
+
+## [0.5.18] — 2026-07-24
+
+### Añadido
+- Timer de 30 segundos por turno: si el jugador activo no actúa a tiempo, se le roba una carta automáticamente (mismo efecto que un robo manual, termina el turno con normalidad). El cronómetro es único por turno completo — jugar cartas de acción a mitad de turno (Skip, Attack, Favor, par/trío de gatos, Shuffle, See the Future) no lo reinicia, solo pasar el turno a otro jugador lo hace
+- `TurnTimerBar`: cuenta regresiva visual en la mesa de juego, puramente cosmética (igual que `NopeWindowOverlay`), visible tanto para el host como para los clientes no-host sin cableado adicional
 
 ---
 

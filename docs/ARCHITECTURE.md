@@ -142,10 +142,11 @@ actualizar el `txt` de un registro activo: `MdnsAdvertiser.updatePlayerCount`
 des-registra y vuelve a registrar con los valores nuevos.
 
 > Migrado en Fase 6 desde un broadcast UDP propio (no mDNS/Bonjour real).
-> **Sin verificar en un dispositivo real todavía** — `nsd` es enteramente
-> nativo, sin implementación en Dart puro para ejercitar el registro/
-> descubrimiento real desde un entorno de desarrollo sin dispositivo; los
-> tests mockean `NsdPlatformInterface` y solo cubren la lógica propia.
+> `nsd` es enteramente nativo, sin implementación en Dart puro para
+> ejercitar el registro/descubrimiento desde el entorno de desarrollo; los
+> tests mockean `NsdPlatformInterface` para la lógica propia, y el
+> registro/descubrimiento real se verificó a mano en dispositivos antes de
+> mergear (ver `docs/VERIFICATION_LOG.md`).
 
 ### Protocolo WebSocket del lobby
 
@@ -221,6 +222,212 @@ expira sin volver, llama `GameNotifier.eliminateForDisconnect()`, que
 reutiliza el mismo camino de eliminación que una Exploding Kitten sin
 Defuse. `WsClient` reconecta solo con back-off exponencial (1s→16s) tras una
 caída no solicitada.
+
+---
+
+## Autenticación con Supabase (Fase 7 — lado cliente implementado)
+
+### Objetivo y alcance
+
+El backend hermano `cards_game_service` (mismo autor, repo separado)
+implementa identidad de jugador persistente entre partidas vía Supabase
+Auth: un `authToken` (JWT) opcional en el mensaje `join_room`, validado
+offline contra el JWKS del proyecto. Sin ese token, el servidor trata la
+conexión como invitada, igual que en modo 100% local. Esta fase cubrió la
+mitad que faltaba del lado del cliente: obtener ese JWT (sign-in anónimo
+de Supabase) y mandarlo, más el camino completo para jugar de verdad
+contra ese backend por Internet.
+
+Implementado:
+
+- `authToken` de principio a fin: `SupabaseAuthService` obtiene la sesión,
+  `JoinRoomMessage.authToken` la transporta, `WsClient` la reenvía en cada
+  join y en cada reconexión automática.
+- Conexión real a `cards_game_service` por Internet: `OnlineLobbyRepository`
+  (nueva implementación de `ILobbyRepository`, sin `WsServer` local ni
+  mDNS), `OnlineRoomsClient` (`POST /rooms`), `WsClient.connectToUri`
+  (conecta a una URL completa con código de sala en el path, no a un
+  host:puerto LAN) y un selector explícito LAN/Online en `LobbyScreen`.
+- Soporte `wss://` (TLS): `OnlineConfig.wsUri()` deriva el esquema
+  `wss`/`ws` del `https`/`http` de `ONLINE_SERVER_URL`; `WsClient` ya no
+  asume `ws://` a secas.
+
+Todo lo de arriba tiene tests automatizados contra dobles (un `WsServer`
+propio como backend de prueba, `MockClient`/mocktail para HTTP) y además
+se verificó a mano contra el proceso Go real antes de mergear — pasos de
+reproducción en `docs/VERIFICATION_LOG.md`, sección "Fase 7 — Modo online
+del lado cliente".
+
+**Explícitamente fuera de alcance** (no confundir con lo de arriba):
+
+- Vincular una cuenta anónima a una cuenta real (login con
+  email/Google/etc.). Supabase lo soporta (`linkIdentity`), pero no está
+  implementado.
+- Sistema de cuentas/nicknames persistentes y ranking global — el backend
+  ya expone `GET /players/{id}`, `PATCH /players/{id}/nickname` y
+  `GET /leaderboard`, pero el cliente todavía no los consume.
+
+### Diseño: `SupabaseAuthService`
+
+Nueva feature `lib/features/auth/`, mismo patrón de carpetas que el resto
+del proyecto (`data`/`domain`/`presentation`), sin `GetIt` ni service
+locator — todo vía Riverpod, igual que `SettingsNotifier`
+(`features/settings/presentation/providers/settings_providers.dart`).
+
+```dart
+// lib/features/auth/domain/auth_session.dart
+class AuthSession {
+  const AuthSession({
+    required this.playerId,   // "sub" del JWT — mismo valor que espera
+                               // cards_game_service como playerId
+    required this.accessToken,
+    required this.isAnonymous,
+  });
+  final String playerId;
+  final String accessToken;
+  final bool isAnonymous;
+}
+```
+
+```dart
+// lib/features/auth/data/supabase_auth_service.dart
+// Envoltorio fino sobre supabase_flutter — nada propio de más, solo
+// traduce su modelo de sesión a AuthSession.
+class SupabaseAuthService {
+  SupabaseAuthService(this._client);
+  final SupabaseClient _client;
+
+  AuthSession? get currentSession { ... } // lee _client.auth.currentSession
+
+  Future<AuthSession> signInAnonymously() async {
+    final res = await _client.auth.signInAnonymously();
+    return _toSession(res.session!);
+  }
+}
+```
+
+```dart
+// lib/features/auth/presentation/providers/auth_providers.dart
+
+// null si no hay Supabase configurado (sin .env) — igual que el backend,
+// la ausencia de configuración apaga la feature entera sin ramas
+// especiales en el resto del código.
+final authServiceProvider = Provider<SupabaseAuthService?>((ref) {
+  if (!SupabaseConfig.isConfigured) return null;
+  return SupabaseAuthService(Supabase.instance.client);
+});
+
+final authSessionProvider =
+    AsyncNotifierProvider<AuthSessionNotifier, AuthSession?>(
+        AuthSessionNotifier.new);
+
+class AuthSessionNotifier extends AsyncNotifier<AuthSession?> {
+  @override
+  Future<AuthSession?> build() async {
+    final service = ref.watch(authServiceProvider);
+    if (service == null) return null; // modo invitado, sin cambios
+    return service.currentSession ?? service.signInAnonymously();
+  }
+}
+```
+
+### Cambios en código existente
+
+1. **`JoinRoomMessage`** (`network/websocket/websocket_message.dart`):
+   sumar `authToken` opcional al constructor, `toJson()` (solo si no es
+   null, mismo patrón que `token` hoy) y `_fromJson()`.
+2. **`WsClient`** (`network/websocket/websocket_client.dart`): nuevo
+   campo privado `_authToken`, seteado en `_connect()` igual que
+   `_playerId`/`_playerName` — así `_attemptReconnect()` lo reenvía solo
+   por reutilizar esos mismos campos, sin tocar la lógica de reconexión.
+   Nuevo parámetro opcional `authToken` en el factory `connect()`.
+3. **`playerIdProvider`** (`features/lobby/presentation/providers/lobby_providers.dart`):
+   preferir `authSessionProvider` por sobre el UUID generado:
+   ```dart
+   final playerIdProvider = FutureProvider<String>((ref) async {
+     final session = await ref.watch(authSessionProvider.future);
+     if (session != null) return session.playerId;
+     // comportamiento actual sin cambios: UUID persistido en SharedPreferences
+     ...
+   });
+   ```
+   **Importante:** si el jugador ya tenía un UUID de invitado guardado y
+   después se autentica, el `playerId` efectivo cambia — coherente con el
+   backend (ahí el `sub` manda), pero implica que el historial ligado al
+   UUID de invitado viejo (si algo local lo usa) queda huérfano. No hay
+   migración automática planeada para ese caso.
+4. **`LobbyRepository`/`LobbyNotifier.createRoom()`/`joinRoom()`**: leer
+   `ref.read(authSessionProvider.future)` y pasar
+   `session?.accessToken` como `authToken` hasta `WsClient.connect()`.
+
+### Configuración
+
+- `pubspec.yaml`: agregar `supabase_flutter` y `flutter_dotenv` (más
+  simple que `--dart-define-from-file` porque no cambia los comandos de
+  build/run existentes — a cambio, el `.env` tiene que declararse como
+  asset en `pubspec.yaml` y existir en cada máquina que compile).
+- `.gitignore` ya contempla `.env`/`.env.*` con excepción de
+  `.env.example` — falta crear ese `.env.example`:
+  ```
+  SUPABASE_URL=
+  SUPABASE_ANON_KEY=
+  ```
+  Mismas credenciales que usa el backend para `SUPABASE_JWKS_URL` (mismo
+  proyecto Supabase, ver `cards_game_service/docs/DEPLOYMENT.md`) —
+  `SUPABASE_ANON_KEY` es pública por diseño, pensada para clientes.
+- `SupabaseConfig.isConfigured` (ambas variables no vacías) decide si
+  `main.dart` llama `Supabase.initialize(...)` antes de `runApp` — vacío
+  o ausente el `.env` significa modo 100% invitado, igual que hoy.
+- Requiere **Anonymous Sign-Ins habilitado** en el proyecto Supabase
+  (mismo paso ya documentado en `cards_game_service/docs/DEPLOYMENT.md`,
+  sección 3) — sin eso, `signInAnonymously()` falla y el jugador queda en
+  modo invitado (fallback, no debería crashear la app).
+
+### Testing
+
+- `test/network/websocket/ws_message_test.dart`: roundtrip de
+  `JoinRoomMessage` con/sin `authToken`, mismo patrón que ya existe para
+  `token` (incluyendo `containsKey('authToken')` en `false` cuando es
+  null).
+- `test/features/auth/`: unit tests de `SupabaseAuthService` mockeando
+  `SupabaseClient`/`GoTrueClient` con `mocktail` — sin pegarle a un
+  proyecto Supabase real, mismo principio que `internal/auth/auth_test.go`
+  en el backend (JWKS en memoria, no HTTP real).
+- `test/features/lobby/presentation/providers/lobby_providers_test.dart`:
+  override de `authSessionProvider` para probar que `playerIdProvider`
+  prefiere el `playerId` de la sesión, y que cae al UUID de invitado
+  cuando `authServiceProvider` es `null`.
+- `test/core/config/online_config_test.dart`: mapeo de esquema
+  `https`/`http` → `wss`/`ws` en `OnlineConfig.wsUri()`.
+- `test/network/http/online_rooms_client_test.dart`: `OnlineRoomsClient`
+  contra `http.testing.MockClient` (respuesta exitosa, error HTTP, sin
+  red).
+- `test/features/lobby/data/online_lobby_repository_test.dart`:
+  `OnlineLobbyRepository` contra un `WsServer` propio como doble del
+  backend (habla el mismo protocolo `WsMessage`, ver
+  `internal/transport/protocol.go` en `cards_game_service`) +
+  `OnlineRoomsClient` mockeado.
+- `test/features/lobby/presentation/screens/lobby_screen_test.dart`:
+  selector LAN/Online, diálogo de código de sala, botón Online
+  deshabilitado sin `OnlineConfig` configurada.
+
+### Implementado en
+
+1. `pubspec.yaml` + config (`.env.example`, `SupabaseConfig`,
+   `OnlineConfig`, init en `main.dart`).
+2. `lib/features/auth/` — `SupabaseAuthService` + providers.
+3. `lib/network/websocket/websocket_message.dart` —
+   `JoinRoomMessage.authToken`.
+4. `lib/network/websocket/websocket_client.dart` — `authToken` en
+   connect/reconexión, y `WsClient.connectToUri` para el modo online.
+5. `lib/features/lobby/presentation/providers/lobby_providers.dart` —
+   `playerIdProvider` prefiere la sesión autenticada; `LobbyMode` (lan/
+   online) explícito en `createRoom()`/`joinRoom()`.
+6. `lib/network/http/online_rooms_client.dart` y
+   `lib/features/lobby/data/online_lobby_repository.dart` — modo online
+   contra `cards_game_service`.
+7. `lib/features/lobby/presentation/screens/lobby_screen.dart` — selector
+   LAN/Online, código de sala.
 
 ---
 

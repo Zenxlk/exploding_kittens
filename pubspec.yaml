@@ -1,7 +1,7 @@
 name: exploding_kittens
 description: "Exploding Kittens — Mobile game by ZenXLK"
 publish_to: 'none'
-version: 0.5.19+47
+version: 0.7.0+49
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -25,6 +25,7 @@ dependencies:
   web_socket_channel: ^3.0.0
   network_info_plus: ^8.2.0
   multicast_dns: ^0.3.2+1
+  http: ^1.6.0
 
   # ── Animaciones ─────────────────────────────────────
   lottie: ^3.5.1
@@ -47,6 +48,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   nsd: ^5.0.1
   package_info_plus: ^10.2.0
+
+  # ── Autenticación (Fase 7) ───────────────────────────
+  supabase_flutter: ^2.16.0
+  flutter_dotenv: ^6.0.1
 
 dev_dependencies:
   flutter_test:
@@ -74,8 +79,23 @@ flutter:
     - assets/sounds/
     - assets/animations/
     - assets/images/
+    # .env no versionado (ver .gitignore); si falta, SupabaseConfig.isConfigured
+    # da false y la app arranca en modo 100% invitado, sin romper el build.
+    - .env
 
   fonts:
-    - family: ExplodingFont
+    - family: Bangers
       fonts:
-        - asset: assets/fonts/ExplodingFont-Regular.ttf
+        - asset: assets/fonts/Bangers-Regular.ttf
+    - family: Baloo2
+      fonts:
+        - asset: assets/fonts/Baloo2-Variable.ttf
+          weight: 400
+        - asset: assets/fonts/Baloo2-Variable.ttf
+          weight: 500
+        - asset: assets/fonts/Baloo2-Variable.ttf
+          weight: 600
+        - asset: assets/fonts/Baloo2-Variable.ttf
+          weight: 700
+        - asset: assets/fonts/Baloo2-Variable.ttf
+          weight: 800

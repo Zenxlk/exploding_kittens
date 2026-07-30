@@ -94,3 +94,6 @@ migrate_working_dir/
 # ── Claude Code ───────────────────────────────────────────────────────────────
 .claude/
 CLAUDE.md
+
+# Notas locales de seguimiento — nunca se suben (ver *.local.md).
+*.local.md

@@ -29,6 +29,15 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # .env está declarado como asset en pubspec.yaml (Fase 7, Supabase
+      # Auth) y no se versiona — sin este placeholder, analyze/build fallan
+      # con "asset_does_not_exist" en cualquier checkout limpio. Vacío es
+      # intencional: CI corre en modo invitado, no necesita credenciales
+      # reales (ver docs/ARCHITECTURE.md, sección "Autenticación con
+      # Supabase").
+      - name: Create placeholder .env
+        run: cp .env.example .env
+
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
 

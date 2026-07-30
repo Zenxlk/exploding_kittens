@@ -5,13 +5,23 @@ import 'package:network_info_plus/network_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:exploding_kittens/features/auth/presentation/providers/auth_providers.dart';
 import 'package:exploding_kittens/features/lobby/data/lobby_repository.dart';
+import 'package:exploding_kittens/features/lobby/data/online_lobby_repository.dart';
+import 'package:exploding_kittens/features/lobby/domain/i_lobby_repository.dart';
 import 'package:exploding_kittens/features/lobby/domain/models/discovered_room.dart';
 import 'package:exploding_kittens/features/lobby/domain/models/lobby_room.dart';
 import 'package:exploding_kittens/features/settings/presentation/providers/settings_providers.dart';
 import 'package:exploding_kittens/core/errors/failures.dart';
 import 'package:exploding_kittens/network/websocket/websocket_client.dart';
 import 'package:exploding_kittens/network/websocket/websocket_server.dart';
+
+// LAN (mDNS + WsServer local) u online (cards_game_service por Internet,
+// Fase 7) — el jugador lo elige explícitamente en la UI antes de crear/unirse
+// a una sala; no se decide solo según si hay sesión de Supabase activa, para
+// no forzar a jugadores de la misma red WiFi a pasar por Internet solo
+// porque el build tenga un backend online configurado (ver ROADMAP.md).
+enum LobbyMode { lan, online }
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -60,7 +70,21 @@ class LobbyError extends LobbyState {
 // host empareja las reconexiones por playerId.
 const _playerIdPrefsKey = 'lobby_player_id';
 
+// Prefiere el "sub" de la sesión de Supabase (Fase 7) por sobre el UUID de
+// invitado generado acá — mismo criterio que usa cards_game_service al
+// validar el authToken, así que el playerId que ve el servidor y el que
+// arma el cliente terminan siendo el mismo id. Sin Supabase configurado,
+// authSessionProvider resuelve a null y este provider se comporta exacto
+// igual que antes de Fase 7.
+//
+// Importante: si el jugador ya tenía un UUID de invitado guardado y
+// después se autentica, el playerId efectivo cambia (el UUID viejo queda
+// en SharedPreferences pero deja de usarse) — no hay migración automática
+// de estado local ligado a ese UUID viejo, ver docs/ARCHITECTURE.md.
 final playerIdProvider = FutureProvider<String>((ref) async {
+  final session = await ref.watch(authSessionProvider.future);
+  if (session != null) return session.playerId;
+
   final prefs = await SharedPreferences.getInstance();
   final existing = prefs.getString(_playerIdPrefsKey);
   if (existing != null) return existing;
@@ -81,7 +105,10 @@ final lobbyProvider =
     NotifierProvider<LobbyNotifier, LobbyState>(LobbyNotifier.new);
 
 class LobbyNotifier extends Notifier<LobbyState> {
-  final _repo = LobbyRepository();
+  // LAN por defecto: cualquier código existente que no pase `mode` (los
+  // tests actuales, por ejemplo) se sigue comportando exactamente igual
+  // que antes de la Fase 7 de modo online.
+  ILobbyRepository _repo = LobbyRepository();
   StreamSubscription<LobbyRoom>? _roomSub;
   StreamSubscription<List<DiscoveredRoom>>? _discoverySub;
   String? _localPlayerId;
@@ -101,9 +128,13 @@ class LobbyNotifier extends Notifier<LobbyState> {
 
   // ── host ────────────────────────────────────────────────────────────────
 
-  Future<void> createRoom() async {
+  Future<void> createRoom({LobbyMode mode = LobbyMode.lan}) async {
+    _repo =
+        mode == LobbyMode.online ? OnlineLobbyRepository() : LobbyRepository();
+
     final settings = await ref.read(settingsProvider.future);
     final playerId = await ref.read(playerIdProvider.future);
+    final session = await ref.read(authSessionProvider.future);
     _localPlayerId = playerId;
 
     state = const LobbyConnecting();
@@ -111,6 +142,7 @@ class LobbyNotifier extends Notifier<LobbyState> {
     final result = await _repo.createRoom(
       playerName: settings.playerName,
       playerId: playerId,
+      authToken: session?.accessToken,
     );
 
     switch (result) {
@@ -134,9 +166,15 @@ class LobbyNotifier extends Notifier<LobbyState> {
     });
   }
 
-  Future<void> joinRoom(String hostAddress) async {
+  // [target] es una IP LAN para LobbyMode.lan, o un código de sala para
+  // LobbyMode.online — ver el doc de ILobbyRepository.joinRoom.
+  Future<void> joinRoom(String target, {LobbyMode mode = LobbyMode.lan}) async {
+    _repo =
+        mode == LobbyMode.online ? OnlineLobbyRepository() : LobbyRepository();
+
     final settings = await ref.read(settingsProvider.future);
     final playerId = await ref.read(playerIdProvider.future);
+    final session = await ref.read(authSessionProvider.future);
     _localPlayerId = playerId;
 
     await _discoverySub?.cancel();
@@ -145,9 +183,10 @@ class LobbyNotifier extends Notifier<LobbyState> {
     state = const LobbyConnecting();
 
     final result = await _repo.joinRoom(
-      hostAddress: hostAddress,
+      hostAddress: target,
       playerName: settings.playerName,
       playerId: playerId,
+      authToken: session?.accessToken,
     );
 
     switch (result) {

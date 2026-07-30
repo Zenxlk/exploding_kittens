@@ -62,14 +62,22 @@ final gameProvider =
     NotifierProvider<GameNotifier, GameSessionState>(GameNotifier.new);
 
 class GameNotifier extends Notifier<GameSessionState> {
-  GameNotifier({IGameGateway? gateway, Duration? nopeWindowDuration})
-      : _gateway = gateway ?? LocalGameGateway(),
+  GameNotifier({
+    IGameGateway? gateway,
+    Duration? nopeWindowDuration,
+    Duration? turnTimeout,
+  })  : _gateway = gateway ?? LocalGameGateway(),
         _nopeWindowDuration = nopeWindowDuration ??
-            const Duration(milliseconds: GameConstants.nopeWindowMs);
+            const Duration(milliseconds: GameConstants.nopeWindowMs),
+        _turnTimeout = turnTimeout ??
+            const Duration(seconds: GameConstants.turnTimeoutSeconds);
 
   final IGameGateway _gateway;
   final Duration _nopeWindowDuration;
+  final Duration _turnTimeout;
   Timer? _nopeTimer;
+  Timer? _turnTimer;
+  String? _turnTimerPlayerId;
   final _rawStatesController = StreamController<GameState>.broadcast(
     sync: true,
   );
@@ -88,6 +96,7 @@ class GameNotifier extends Notifier<GameSessionState> {
   GameSessionState build() {
     ref.onDispose(() {
       _nopeTimer?.cancel();
+      _turnTimer?.cancel();
       _rawStatesController.close();
     });
     return const GameIdle();
@@ -216,15 +225,45 @@ class GameNotifier extends Notifier<GameSessionState> {
   void _setFromGameState(GameState gameState) {
     _rawStatesController.add(gameState);
     final next = sessionStateFrom(gameState);
-    if (next is GameFinished) _nopeTimer?.cancel();
+    if (next is GameFinished) {
+      _nopeTimer?.cancel();
+      _turnTimer?.cancel();
+    }
     state = next;
-    if (next is GameRunning) _scheduleNopeWindowIfNeeded(gameState);
+    if (next is GameRunning) {
+      _scheduleNopeWindowIfNeeded(gameState);
+      _scheduleTurnTimerIfNeeded(gameState);
+    }
   }
 
   void _scheduleNopeWindowIfNeeded(GameState gameState) {
     _nopeTimer?.cancel();
     if (gameState.turn.phase != TurnPhase.nopeWindow) return;
     _nopeTimer = Timer(_nopeWindowDuration, _resolveNopeWindow);
+  }
+
+  /// Un solo cronómetro por turno completo: mientras `currentPlayerId` no
+  /// cambie (jugar cartas de acción a mitad de turno pasa por otras fases
+  /// pero no rota el turno), no se reinicia.
+  void _scheduleTurnTimerIfNeeded(GameState gameState) {
+    final playerId = gameState.turn.currentPlayerId;
+    if (playerId == _turnTimerPlayerId) return;
+    _turnTimer?.cancel();
+    _turnTimerPlayerId = playerId;
+    _turnTimer = Timer(_turnTimeout, () => _onTurnTimeout(playerId));
+  }
+
+  void _onTurnTimeout(String playerId) {
+    final current = state;
+    if (current is! GameRunning) return;
+    final turn = current.state.turn;
+    // El turno ya avanzó por otro camino o está resolviendo otra cosa
+    // (nopeWindow, resolving, awaitingCardChoice): el robo automático ya
+    // no aplica.
+    if (turn.currentPlayerId != playerId || turn.phase != TurnPhase.playing) {
+      return;
+    }
+    drawCard(playerId);
   }
 }
 

@@ -38,6 +38,7 @@ class LobbyRepository implements ILobbyRepository {
   Future<Result<LobbyRoom>> createRoom({
     required String playerName,
     required String playerId,
+    String? authToken,
   }) async {
     try {
       _localPlayerId = playerId;
@@ -52,6 +53,7 @@ class LobbyRepository implements ILobbyRepository {
         hostAddress: '127.0.0.1',
         playerId: playerId,
         playerName: playerName,
+        authToken: authToken,
       );
 
       // 3. Empieza a anunciar la sala en la red local, y mantiene el conteo
@@ -83,6 +85,7 @@ class LobbyRepository implements ILobbyRepository {
     required String hostAddress,
     required String playerName,
     required String playerId,
+    String? authToken,
   }) async {
     try {
       _localPlayerId = playerId;
@@ -94,6 +97,7 @@ class LobbyRepository implements ILobbyRepository {
         hostAddress: hostAddress,
         playerId: playerId,
         playerName: playerName,
+        authToken: authToken,
       );
 
       // Usa el lastRoom en caché si el RoomStateMessage llegó antes de

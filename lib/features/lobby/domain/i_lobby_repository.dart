@@ -18,19 +18,26 @@ abstract interface class ILobbyRepository {
   WsServer? get wsServer;
 
   // Host: create a new room and start advertising it on the local network.
+  // authToken (Fase 7): JWT de Supabase de la sesión actual, si hay una
+  // (ver features/auth) — null en modo invitado, sin cambio de comportamiento.
   Future<Result<LobbyRoom>> createRoom({
     required String playerName,
     required String playerId,
+    String? authToken,
   });
 
   // Client: scan the local network for available rooms.
   Stream<List<DiscoveredRoom>> discoverRooms();
 
-  // Client: connect to an existing room by host address.
+  // Client: connect to an existing room. hostAddress es una IP LAN para
+  // LobbyRepository, pero OnlineLobbyRepository lo reinterpreta como el
+  // código de sala devuelto por createRoom del host — mismo campo, distinto
+  // significado según la implementación (ver esa clase para el detalle).
   Future<Result<LobbyRoom>> joinRoom({
     required String hostAddress,
     required String playerName,
     required String playerId,
+    String? authToken,
   });
 
   // Toggle the local player's ready state.

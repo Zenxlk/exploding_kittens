@@ -104,7 +104,16 @@ Widget _wrap({
   return ProviderScope(
     overrides: [
       lobbyProvider.overrideWith(() => _FakeLobbyNotifier(lobbyState)),
-      gameProvider.overrideWith(() => GameNotifier(gateway: gateway)),
+      // turnTimeout enorme a propósito: pumpAndSettle avanza el reloj
+      // simulado hasta que no queda nada pendiente, y el default real de
+      // 30s terminaría disparando el auto-robo del timer de turno contra
+      // este gateway falso (que no lo espera).
+      gameProvider.overrideWith(
+        () => GameNotifier(
+          gateway: gateway,
+          turnTimeout: const Duration(hours: 1),
+        ),
+      ),
       audioServiceProvider.overrideWithValue(_FakeAudioService()),
       if (remoteNotifierFactory != null)
         remoteGameProvider.overrideWith(remoteNotifierFactory),

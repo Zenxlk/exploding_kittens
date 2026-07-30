@@ -92,7 +92,7 @@ empezar la siguiente.
 - [x] Arrastrar cartas (drag & drop) en `PlayerHandWidget`, además de la selección por tap: soltar una carta jugable de inmediato (Skip/Attack/Shuffle/See the Future) sobre el `DragTarget` de mazo/descarte la juega directo, sin pasar por el botón "Jugar"; soltar cualquier otra carta (o una jugable fuera del `DragTarget`) simplemente la selecciona, igual que un tap — las combinaciones que necesitan objetivo (Favor, par/trío de gatos) siguen su flujo de selección + overlay sin cambios
 
 ### Mejoras técnicas pendientes
-- [x] Migrar `MdnsAdvertiser` / `MdnsDiscoverer` de UDP broadcast a mDNS/Bonjour real (`nsd`) — **código completo pero sin verificar en un dispositivo real**: `nsd` es enteramente nativo (Bonjour en Apple, NsdManager en Android), sin implementación en Dart puro que se pueda ejercitar desde este entorno; los tests mockean `NsdPlatformInterface` y solo cubren la lógica propia, no el registro/descubrimiento mDNS real. `flutter build apk --debug` compila y linkea bien (el Kotlin nativo de `nsd_android` es válido), pero eso no prueba que el descubrimiento funcione en la práctica. Falta la misma verificación manual que se hizo para Fase 5 antes de confiar en esto
+- [x] Migrar `MdnsAdvertiser` / `MdnsDiscoverer` de UDP broadcast a mDNS/Bonjour real (`nsd`) — `nsd` es enteramente nativo (Bonjour en Apple, NsdManager en Android); los tests mockean `NsdPlatformInterface` para la lógica propia, y el registro/descubrimiento real se verificó a mano en dispositivos antes de mergear (ver `docs/VERIFICATION_LOG.md`)
 - [x] `WifiManager.MulticastLock` vía platform channel en Android 10+ — resuelto como efecto colateral de la migración anterior: `nsd_android` ya lo adquiere internamente (usa el permiso `CHANGE_WIFI_MULTICAST_STATE` que ya estaba declarado), no hace falta un platform channel propio
 - [x] Persistir `playerId` con `shared_preferences` para reconexión tras crash
 - [x] Reproducir `AssetPaths.musicMenu` en Home/Splash/Lobby/Settings (`MenuMusicMixin`; antes solo `GameScreen`/`GameOverScreen` tenían música vía `AudioService`)
@@ -105,13 +105,19 @@ empezar la siguiente.
 - [ ] Estrategia avanzada de bot (heurística)
 - [ ] Partida local contra 1–4 bots sin red
 
+### Autenticación (Fase 7)
+- [x] Mitad cliente de la identidad persistente de `cards_game_service` (backend hermano, repo separado): `SupabaseAuthService` + `authServiceProvider`/`authSessionProvider` (feature `auth/`, sign-in anónimo en la primera lectura), `JoinRoomMessage.authToken` opcional, `WsClient` lo manda en el join inicial y lo reenvía en cada reconexión automática, y `playerIdProvider` prefiere el `playerId` de la sesión sobre el UUID de invitado — ver `docs/ARCHITECTURE.md`, sección "Autenticación con Supabase", para el diseño completo
+- [x] Conectar de verdad a `cards_game_service` desplegado por Internet — `OnlineLobbyRepository` (nueva implementación de `ILobbyRepository`), `WsClient.connectToUri`, `OnlineRoomsClient` (`POST /rooms`) y un selector explícito LAN/Online en `LobbyScreen`. Verificado a mano contra el backend Go real antes de mergear (ver `docs/VERIFICATION_LOG.md`, sección "Fase 7 — Modo online del lado cliente")
+- [x] Soporte `wss://` (TLS) en `WsClient` — `OnlineConfig.wsUri()` mapea el esquema `https`/`http` del `ONLINE_SERVER_URL` a `wss`/`ws`; `WsClient.connectToUri` acepta cualquier esquema tal cual se lo pase `IOWebSocketChannel`
+- [ ] Vincular una cuenta anónima a una cuenta real (email/Google/etc.) — Supabase lo soporta (`linkIdentity`), no implementado
+
 ### Modo online
-- [x] Soporte cliente para tokens de sesión emitidos por el servidor (`JoinRoomMessage.token`, `SessionTokenMessage` en `WsClient`) — protocolo listo para `cards_game_service` (backend separado, ver su `docs/TOKENS.md`); `WsServer` (host LAN) no lo implementa a propósito, así que el juego local por WiFi no se ve afectado
-- [ ] Persistir `_sessionToken` (hoy solo en memoria en `WsClient`) igual que ya se hace con `playerId` vía `shared_preferences` — si no, un crash/reinicio de la app pierde el token y el backend online rechazaría el reconnect aunque el `playerId` sí sobreviva (ver `TODO(online-mode)` en `websocket_client.dart`)
-- [ ] Backend de salas (WebSocket server desplegado)
-- [ ] Sistema de cuentas / nicknames persistentes
-- [ ] Matchmaking por código de sala
-- [ ] Ranking global
+- [x] Backend de salas (WebSocket server desplegado) — `cards_game_service` (repo separado), ver Autenticación (Fase 7) arriba para la mitad cliente
+- [x] Soporte cliente para tokens de sesión emitidos por el servidor (`JoinRoomMessage.token`, `SessionTokenMessage` en `WsClient`) — reenviados en cada reconexión, distinto del `authToken` de Fase 7 (ese identifica al jugador vía Supabase; este prueba ante el backend que la reconexión es la misma sesión de red ya conocida). `WsServer` (host LAN) no lo implementa a propósito, así que el juego local por WiFi no se ve afectado
+- [ ] Persistir `_sessionToken` (hoy solo en memoria en `WsClient`) igual que ya se hace con `playerId` vía `shared_preferences` — si no, un crash/reinicio de la app pierde el token y el backend online rechazaría el reconnect aunque el `playerId` sí sobreviva
+- [ ] Sistema de cuentas / nicknames persistentes — el backend ya expone `GET /players/{id}` y `PATCH /players/{id}/nickname`, sin consumir todavía desde el cliente
+- [x] Matchmaking por código de sala — crear sala online muestra el código; unirse online lo pide por diálogo
+- [ ] Ranking global — el backend ya expone `GET /leaderboard`, sin consumir todavía desde el cliente
 
 ### Expansiones
 - [ ] Imploding Kittens (6 jugadores, cartas nuevas)
