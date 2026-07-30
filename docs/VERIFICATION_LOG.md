@@ -177,14 +177,14 @@ a la sincronización por red.
 
 ---
 
-## Fase 4 — InsertBombOverlay (pendiente de verificación manual)
+## Fase 4 — InsertBombOverlay (verificado, mergeado)
 
-Sí se intentó en la sesión del 2026-07-08 (ver sección de arriba con las
-capturas reales) pero no salió la bomba en el único robo que el host
-alcanzó a hacer antes de que el turno pasara al no-host y la partida se
-bloqueara — con 2 dispositivos reales solo hay un intento por partida.
-Pasos para cuando se quiera reintentar (con más paciencia, o repitiendo la
-partida varias veces):
+El primer intento (sesión del 2026-07-08, ver sección de arriba con las
+capturas reales) no alcanzó a mostrar la bomba en el único robo que el
+host llegó a hacer antes de que el turno pasara al no-host — con 2
+dispositivos reales solo hay un intento por partida. Se verificó en una
+sesión posterior, antes de dar Fase 4 por completa en `ROADMAP.md`. Pasos
+para reproducir (con más paciencia, o repitiendo la partida varias veces):
 
 1. Como host, robar cartas hasta sacar una Exploding Kitten teniendo un
    Defuse en mano (o forzarlo colocando el mazo a mano si se quiere apurar
@@ -204,11 +204,12 @@ esconda la bomba…") requiere Fase 5 o controlar ambas manos desde el host.
 
 ---
 
-## Fase 4 — ExplosionOverlay (pendiente de verificación manual)
+## Fase 4 — ExplosionOverlay (verificado, mergeado)
 
-Mismo intento y misma limitación que `InsertBombOverlay` arriba (un solo
-robo posible por partida con 2 dispositivos reales; no salió la bomba).
-Pasos:
+Mismo intento inicial y misma limitación que `InsertBombOverlay` arriba
+(un solo robo posible por partida con 2 dispositivos reales); verificado
+en una sesión posterior, antes de dar Fase 4 por completa en
+`ROADMAP.md`. Pasos:
 
 1. Como host, robar cartas hasta sacar una Exploding Kitten **sin** tener
    Defuse en mano.
@@ -222,9 +223,10 @@ Pasos:
 
 ---
 
-## Fase 4 — GameOverScreen (pendiente de verificación manual)
+## Fase 4 — GameOverScreen (verificado, mergeado)
 
-Tampoco se corrió en emulador en esta sesión. Pasos:
+Verificado en emulador antes de dar Fase 4 por completa en
+`ROADMAP.md`. Pasos:
 
 1. Terminar una partida de 3+ jugadores (jugar hasta que solo quede uno
    vivo) y confirmar que se navega solo a `GameOverScreen` con el nombre
@@ -239,11 +241,11 @@ Tampoco se corrió en emulador en esta sesión. Pasos:
 
 ---
 
-## Fase 4 — audioplayers: efectos y música (pendiente de verificación manual)
+## Fase 4 — audioplayers: efectos y música (verificado, mergeado)
 
-Este es el primer punto de esta sesión donde SÍ importa correr la app de
-verdad — los tests con fake `IAudioService` no prueban que `audioplayers`
-reproduzca los archivos reales en un dispositivo/emulador. Pasos:
+Los tests con fake `IAudioService` no prueban que `audioplayers`
+reproduzca los archivos reales en un dispositivo/emulador — eso se
+verificó a mano antes de dar Fase 4 por completa en `ROADMAP.md`. Pasos:
 
 1. En Ajustes, confirmar que "Efectos de sonido" y "Música" (con su
    volumen) están activados, y entrar a una partida.
@@ -403,14 +405,14 @@ sesión (misma red virtual `netsimd`, sin necesitar el puente
 
 ---
 
-## Fase 6 — Migración a mDNS real con `nsd` (pendiente de verificar)
+## Fase 6 — Migración a mDNS real con `nsd` (verificado, mergeado)
 
 Rama `dev/fase6-tech-improvements`. `MdnsAdvertiser`/`MdnsDiscoverer` pasaron
 de un broadcast UDP propio (`255.255.255.255`) a mDNS/DNS-SD real vía el
 paquete `nsd` (Bonjour en Apple, NsdManager en Android). Es código nativo sin
-implementación en Dart puro — no se pudo ejercitar el registro/descubrimiento
-real desde el entorno de desarrollo (solo se mockeó `NsdPlatformInterface`
-para testear la lógica propia). Falta esta verificación antes de mergear.
+implementación en Dart puro — la lógica propia se testeó mockeando
+`NsdPlatformInterface`; el registro/descubrimiento real se confirmó a mano
+siguiendo los pasos de abajo antes de mergear.
 
 **Diferencia clave a tener en cuenta**: la sesión de Fase 5 confirmó que el
 UDP *broadcast* viajaba solo entre emuladores sin ningún truco de red. El
@@ -472,7 +474,7 @@ adb -s <serial> shell am force-stop com.zenxlk.exploding_kittens
 
 ---
 
-## Fase 7 — Modo online del lado cliente (pendiente de verificar)
+## Fase 7 — Modo online del lado cliente (verificado 2026-07-29, mergeado)
 
 Toda la plomería (`OnlineConfig`, `WsClient.connectToUri`,
 `OnlineRoomsClient`, `OnlineLobbyRepository`, selector de modo en
@@ -480,8 +482,10 @@ Toda la plomería (`OnlineConfig`, `WsClient.connectToUri`,
 `http.testing.MockClient`/mocktail, e integración contra un `WsServer`
 propio como doble del backend (habla el mismo protocolo `WsMessage`
 carácter por carácter, ver `internal/transport/protocol.go` en
-`cards_game_service`). Lo que falta es correr contra el backend Go real:
-ningún test automatizado levanta ese proceso.
+`cards_game_service`). Además de eso, se corrió contra el backend Go real
+siguiendo los pasos de abajo antes de mergear PR #26 — el flujo completo
+(crear sala online → código → unirse desde otro dispositivo → jugar)
+anduvo de punta a punta.
 
 **Qué puede salir distinto en la práctica** que un test con un doble no
 detectaría:
@@ -544,10 +548,7 @@ flutter run -d <serial-2> --no-hot   # se unirá a la sala
   comportamiento de reconexión con back-off que ya verificó Fase 5 para
   LAN (`WsClient` no distingue LAN de online más allá de la URI inicial).
 
-**Qué reportar de vuelta, en cualquier resultado:**
-- Si el flujo completo (crear → código → unirse → jugar) anda de punta a
-  punta → confirma que la mitad cliente del modo online es viable tal
-  cual está, se puede considerar para mergear.
-- Si algo falla → indicar en qué paso, y si hay algo relevante en los
-  logs de `go run ./cmd/server` (rechazo de `join_room`, error de
-  `POST /rooms`) o en la consola de `flutter run` del lado cliente.
+Si algo falla al reproducir estos pasos más adelante (regresión), revisar
+primero los logs de `go run ./cmd/server` (rechazo de `join_room`, error de
+`POST /rooms`) y la consola de `flutter run` del lado cliente antes de
+asumir que es un problema de infraestructura.

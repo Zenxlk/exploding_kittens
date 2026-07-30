@@ -142,10 +142,11 @@ actualizar el `txt` de un registro activo: `MdnsAdvertiser.updatePlayerCount`
 des-registra y vuelve a registrar con los valores nuevos.
 
 > Migrado en Fase 6 desde un broadcast UDP propio (no mDNS/Bonjour real).
-> **Sin verificar en un dispositivo real todavía** — `nsd` es enteramente
-> nativo, sin implementación en Dart puro para ejercitar el registro/
-> descubrimiento real desde un entorno de desarrollo sin dispositivo; los
-> tests mockean `NsdPlatformInterface` y solo cubren la lógica propia.
+> `nsd` es enteramente nativo, sin implementación en Dart puro para
+> ejercitar el registro/descubrimiento desde el entorno de desarrollo; los
+> tests mockean `NsdPlatformInterface` para la lógica propia, y el
+> registro/descubrimiento real se verificó a mano en dispositivos antes de
+> mergear (ver `docs/VERIFICATION_LOG.md`).
 
 ### Protocolo WebSocket del lobby
 
@@ -224,33 +225,47 @@ caída no solicitada.
 
 ---
 
-## Autenticación con Supabase (Fase 7 — planificada, sin implementar)
+## Autenticación con Supabase (Fase 7 — lado cliente implementado)
 
 ### Objetivo y alcance
 
-El backend hermano `cards_game_service` (mismo autor, repo separado) ya
+El backend hermano `cards_game_service` (mismo autor, repo separado)
 implementa identidad de jugador persistente entre partidas vía Supabase
 Auth: un `authToken` (JWT) opcional en el mensaje `join_room`, validado
 offline contra el JWKS del proyecto. Sin ese token, el servidor trata la
-conexión como invitada exactamente igual que hoy — esta fase es la mitad
-que falta del lado del cliente: obtener ese JWT (sign-in anónimo de
-Supabase) y mandarlo.
+conexión como invitada, igual que en modo 100% local. Esta fase cubrió la
+mitad que faltaba del lado del cliente: obtener ese JWT (sign-in anónimo
+de Supabase) y mandarlo, más el camino completo para jugar de verdad
+contra ese backend por Internet.
 
-**Explícitamente fuera de alcance de esta fase** (no confundir con "hacer
-que la app juegue online"):
+Implementado:
 
-- Conectar de verdad a `cards_game_service` desplegado por Internet. La
-  sección "Red y reconexión" de arriba ya documenta que migrar a modo
-  online es, por diseño, "solo cambiar la URL de conexión del cliente" —
-  pero hoy no existe ningún flujo de UI ni código que arme esa URL en vez
-  del descubrimiento mDNS (`LobbyRepository` es 100% LAN). Esta fase deja
-  el `authToken` listo para ese momento, no lo construye.
-- Soporte `wss://` (TLS) en `WsClient` — hoy conecta con `ws://` plano
-  (`Uri.parse('ws://$hostAddress:$port')` en `websocket_client.dart`), que
-  no sirve para un dominio público sin TLS por delante.
+- `authToken` de principio a fin: `SupabaseAuthService` obtiene la sesión,
+  `JoinRoomMessage.authToken` la transporta, `WsClient` la reenvía en cada
+  join y en cada reconexión automática.
+- Conexión real a `cards_game_service` por Internet: `OnlineLobbyRepository`
+  (nueva implementación de `ILobbyRepository`, sin `WsServer` local ni
+  mDNS), `OnlineRoomsClient` (`POST /rooms`), `WsClient.connectToUri`
+  (conecta a una URL completa con código de sala en el path, no a un
+  host:puerto LAN) y un selector explícito LAN/Online en `LobbyScreen`.
+- Soporte `wss://` (TLS): `OnlineConfig.wsUri()` deriva el esquema
+  `wss`/`ws` del `https`/`http` de `ONLINE_SERVER_URL`; `WsClient` ya no
+  asume `ws://` a secas.
+
+Todo lo de arriba tiene tests automatizados contra dobles (un `WsServer`
+propio como backend de prueba, `MockClient`/mocktail para HTTP) y además
+se verificó a mano contra el proceso Go real antes de mergear — pasos de
+reproducción en `docs/VERIFICATION_LOG.md`, sección "Fase 7 — Modo online
+del lado cliente".
+
+**Explícitamente fuera de alcance** (no confundir con lo de arriba):
+
 - Vincular una cuenta anónima a una cuenta real (login con
   email/Google/etc.). Supabase lo soporta (`linkIdentity`), pero no está
-  en el alcance descrito acá.
+  implementado.
+- Sistema de cuentas/nicknames persistentes y ranking global — el backend
+  ya expone `GET /players/{id}`, `PATCH /players/{id}/nickname` y
+  `GET /leaderboard`, pero el cliente todavía no los consume.
 
 ### Diseño: `SupabaseAuthService`
 
@@ -375,27 +390,44 @@ class AuthSessionNotifier extends AsyncNotifier<AuthSession?> {
   `token` (incluyendo `containsKey('authToken')` en `false` cuando es
   null).
 - `test/features/auth/`: unit tests de `SupabaseAuthService` mockeando
-  `SupabaseClient`/`GoTrueClient` con `mocktail` (ya está en
-  `dev_dependencies`) — sin pegarle a un proyecto Supabase real, mismo
-  principio que `internal/auth/auth_test.go` en el backend (JWKS en
-  memoria, no HTTP real).
+  `SupabaseClient`/`GoTrueClient` con `mocktail` — sin pegarle a un
+  proyecto Supabase real, mismo principio que `internal/auth/auth_test.go`
+  en el backend (JWKS en memoria, no HTTP real).
 - `test/features/lobby/presentation/providers/lobby_providers_test.dart`:
   override de `authSessionProvider` para probar que `playerIdProvider`
   prefiere el `playerId` de la sesión, y que cae al UUID de invitado
   cuando `authServiceProvider` es `null`.
+- `test/core/config/online_config_test.dart`: mapeo de esquema
+  `https`/`http` → `wss`/`ws` en `OnlineConfig.wsUri()`.
+- `test/network/http/online_rooms_client_test.dart`: `OnlineRoomsClient`
+  contra `http.testing.MockClient` (respuesta exitosa, error HTTP, sin
+  red).
+- `test/features/lobby/data/online_lobby_repository_test.dart`:
+  `OnlineLobbyRepository` contra un `WsServer` propio como doble del
+  backend (habla el mismo protocolo `WsMessage`, ver
+  `internal/transport/protocol.go` en `cards_game_service`) +
+  `OnlineRoomsClient` mockeado.
+- `test/features/lobby/presentation/screens/lobby_screen_test.dart`:
+  selector LAN/Online, diálogo de código de sala, botón Online
+  deshabilitado sin `OnlineConfig` configurada.
 
-### Orden sugerido de implementación
+### Implementado en
 
-1. `pubspec.yaml` + config (`.env.example`, `SupabaseConfig`, init en
-   `main.dart`) — nada de lo demás compila sin esto.
-2. `SupabaseAuthService` + providers, con sus tests — aislado, no toca
-   nada existente todavía.
-3. `JoinRoomMessage.authToken` + test de serialización.
-4. `WsClient`: threading del `authToken` (connect/_connect/reconexión).
-5. `playerIdProvider`: preferir sesión autenticada, con test del
-   fallback a invitado.
-6. `LobbyRepository`/`LobbyNotifier`: pasar el `accessToken` vigente al
-   conectar.
+1. `pubspec.yaml` + config (`.env.example`, `SupabaseConfig`,
+   `OnlineConfig`, init en `main.dart`).
+2. `lib/features/auth/` — `SupabaseAuthService` + providers.
+3. `lib/network/websocket/websocket_message.dart` —
+   `JoinRoomMessage.authToken`.
+4. `lib/network/websocket/websocket_client.dart` — `authToken` en
+   connect/reconexión, y `WsClient.connectToUri` para el modo online.
+5. `lib/features/lobby/presentation/providers/lobby_providers.dart` —
+   `playerIdProvider` prefiere la sesión autenticada; `LobbyMode` (lan/
+   online) explícito en `createRoom()`/`joinRoom()`.
+6. `lib/network/http/online_rooms_client.dart` y
+   `lib/features/lobby/data/online_lobby_repository.dart` — modo online
+   contra `cards_game_service`.
+7. `lib/features/lobby/presentation/screens/lobby_screen.dart` — selector
+   LAN/Online, código de sala.
 
 ---
 

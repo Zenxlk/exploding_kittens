@@ -11,7 +11,8 @@
 
 Implementación móvil del juego de cartas *Exploding Kittens* para Android e iOS,
 desarrollada en Flutter por **ZenXLK**. Soporta partidas locales por WiFi para
-2–5 jugadores y está preparada para multijugador online en el futuro.
+2–5 jugadores, y partidas online contra un backend dedicado
+(`cards_game_service`, repo separado) con autenticación opcional vía Supabase.
 
 ## Estado del proyecto
 
@@ -22,7 +23,9 @@ desarrollada en Flutter por **ZenXLK**. Soporta partidas locales por WiFi para
 | 3 | Lobby y partidas locales por WiFi | ✅ Completa |
 | 4 | Pantalla de juego completa con animaciones | ✅ Completa |
 | 5 | Red y reconexión | ✅ Completa |
-| 6 | Bots, modo online y mejoras técnicas | 🗓 Futuro |
+| 6 | Mejoras técnicas, diseño responsivo, drag & drop | ✅ Completa |
+| 7 | Autenticación (Supabase) y modo online (lado cliente) | ✅ Completa |
+| — | Bots, expansiones, publicación en tiendas | 🗓 Futuro (ver `ROADMAP.md`) |
 
 ## Requisitos
 
