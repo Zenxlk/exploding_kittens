@@ -1,5 +1,7 @@
 import 'package:exploding_kittens/core/router/route_names.dart';
+import 'package:exploding_kittens/features/game/presentation/widgets/card_widget.dart';
 import 'package:exploding_kittens/features/rules/presentation/screens/rules_screen.dart';
+import 'package:exploding_kittens/game_engine/models/card/card_type.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,33 +52,26 @@ void main() {
       expect(find.text('GATOS'), findsOneWidget);
     });
 
-    testWidgets('muestra las 13 cartas del juego, cada una con su nombre', (
-      tester,
-    ) async {
-      _growViewport(tester);
-      await tester.pumpWidget(_wrap());
-      await tester.pumpAndSettle();
+    testWidgets(
+      'muestra las 13 cartas del juego, cada una con su arte real',
+      (tester) async {
+        _growViewport(tester);
+        await tester.pumpWidget(_wrap());
+        await tester.pumpAndSettle();
 
-      const labels = [
-        'Exploding Kitten',
-        'Defuse',
-        'Nope',
-        'Attack',
-        'Skip',
-        'Favor',
-        'Shuffle',
-        'See the Future',
-        'Tacocat',
-        'Rainbow-Ralphing Cat',
-        'Bearded Dragon',
-        'Cattermelon',
-        'Hairy Potato Cat',
-      ];
-      for (final label in labels) {
-        expect(find.text(label), findsOneWidget,
-            reason: '$label debería verse');
-      }
-    });
+        // El nombre ya no se busca como Text: con el arte final presente,
+        // CardWidget dibuja la imagen (que lo lleva impreso) en vez del
+        // placeholder de ícono+texto — ver CardWidget/CardAssetResolver.
+        final cards =
+            tester.widgetList<CardWidget>(find.byType(CardWidget)).toList();
+
+        expect(cards.map((c) => c.type).toSet(), CardType.values.toSet());
+        for (final card in cards) {
+          expect(card.assetPath, isNotNull,
+              reason: '${card.type} debería resolver su arte real');
+        }
+      },
+    );
 
     testWidgets(
       'explica que el trío de gatos se elige a ciegas de la mano rival',

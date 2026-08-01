@@ -71,6 +71,9 @@ dev_dependencies:
 
   flutter_lints: ^6.0.0
 
+  # Ícono de la app
+  flutter_launcher_icons: ^0.14.4
+
 flutter:
   uses-material-design: true
 
@@ -99,3 +102,9 @@ flutter:
           weight: 700
         - asset: assets/fonts/Baloo2-Variable.ttf
           weight: 800
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  remove_alpha_ios: true
