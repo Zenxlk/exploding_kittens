@@ -6,7 +6,12 @@ import 'package:exploding_kittens/features/game/presentation/screens/game_over_s
 import 'package:exploding_kittens/features/lobby/domain/models/lobby_player.dart';
 import 'package:exploding_kittens/features/lobby/domain/models/lobby_room.dart';
 import 'package:exploding_kittens/features/lobby/presentation/providers/lobby_providers.dart';
+import 'package:exploding_kittens/game_engine/models/deck/deck_model.dart';
+import 'package:exploding_kittens/game_engine/models/game/game_config.dart';
 import 'package:exploding_kittens/game_engine/models/game/game_result.dart';
+import 'package:exploding_kittens/game_engine/models/game/game_state.dart';
+import 'package:exploding_kittens/game_engine/models/player/player_model.dart';
+import 'package:exploding_kittens/game_engine/models/turn/turn_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,6 +24,7 @@ class _FakeLobbyNotifier extends LobbyNotifier {
   final LobbyState _initial;
   final bool _isOnline;
   bool leaveRoomCalled = false;
+  bool startGameCalled = false;
 
   @override
   LobbyState build() => _initial;
@@ -32,6 +38,15 @@ class _FakeLobbyNotifier extends LobbyNotifier {
   @override
   Future<void> leaveRoom() async {
     leaveRoomCalled = true;
+  }
+
+  // Revancha en modo online (cards_game_service#10): la pantalla no arranca
+  // ningún motor local, solo manda start_game de nuevo — la navegación la
+  // dispara el listener de remoteGameProvider cuando llegue el nuevo estado,
+  // no este método.
+  @override
+  Future<void> startGame() async {
+    startGameCalled = true;
   }
 }
 
@@ -73,6 +88,11 @@ class _FakeRemoteGameNotifier extends RemoteGameNotifier {
 
   @override
   GameSessionState build() => _initial;
+
+  // Simula que llegó un nuevo GameStateMessage por WebSocket (la revancha
+  // online arrancó del lado del servidor) — mismo efecto que produciría
+  // _onMessage en el RemoteGameNotifier real.
+  void emit(GameSessionState next) => state = next;
 }
 
 const _room = LobbyRoom(
@@ -99,6 +119,7 @@ Widget _wrap({
   required GameSessionState gameState,
   required LobbyState lobbyState,
   required _FakeLobbyNotifier lobbyNotifier,
+  _FakeRemoteGameNotifier? remoteNotifier,
 }) {
   final router = GoRouter(
     initialLocation: RouteNames.gameOver,
@@ -124,7 +145,9 @@ Widget _wrap({
       // El mismo estado en los dos: cada test decide con `localPlayerId` si
       // es host o no, y GameOverScreen ya elige el provider correcto según
       // eso — aquí no hace falta un estado distinto por provider.
-      remoteGameProvider.overrideWith(() => _FakeRemoteGameNotifier(gameState)),
+      remoteGameProvider.overrideWith(
+        () => remoteNotifier ?? _FakeRemoteGameNotifier(gameState),
+      ),
       audioServiceProvider.overrideWithValue(_FakeAudioService()),
     ],
     child: MaterialApp.router(routerConfig: router),
@@ -205,9 +228,41 @@ void main() {
     );
 
     testWidgets(
-      'el host en modo online ve el aviso de "no disponible" en vez del '
-      'botón de revancha (cards_game_service#10)',
+      'el host en modo online: tocar Revancha manda start_game por red en '
+      'vez de correr el motor local (cards_game_service#10)',
       (tester) async {
+        final lobbyNotifier = _FakeLobbyNotifier(
+          const LobbyInRoom(room: _room, localPlayerId: 'host'),
+          isOnline: true,
+        );
+        await tester.pumpWidget(
+          _wrap(
+            gameState: const GameFinished(_result),
+            lobbyState: const LobbyInRoom(room: _room, localPlayerId: 'host'),
+            lobbyNotifier: lobbyNotifier,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Mismo botón que en LAN — la diferencia está en qué hace, no en
+        // si se muestra.
+        await tester.tap(find.widgetWithText(FilledButton, 'Revancha'));
+        await tester.pump();
+
+        expect(lobbyNotifier.startGameCalled, isTrue);
+        // A diferencia de LAN, acá no navega de una: espera a que
+        // remoteGameProvider refleje el nuevo GameState (ver _rematch()).
+        expect(find.text('game-screen'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'el host en modo online navega solo cuando llega el GameState de la '
+      'revancha por remoteGameProvider',
+      (tester) async {
+        final remoteNotifier = _FakeRemoteGameNotifier(
+          const GameFinished(_result),
+        );
         await tester.pumpWidget(
           _wrap(
             gameState: const GameFinished(_result),
@@ -216,15 +271,31 @@ void main() {
               const LobbyInRoom(room: _room, localPlayerId: 'host'),
               isOnline: true,
             ),
+            remoteNotifier: remoteNotifier,
           ),
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('Revancha'), findsNothing);
-        expect(
-          find.textContaining('Revancha no disponible todavía en modo online'),
-          findsOneWidget,
-        );
+        // El servidor mandó el nuevo game_state de la revancha (mismo
+        // camino que RemoteGameNotifier._onMessage con un GameStateMessage
+        // real) — todavía no se tocó "Revancha", solo llegó el broadcast.
+        remoteNotifier.emit(GameRunning(
+          state: GameState(
+            id: 'g2',
+            config: const GameConfig(playerCount: 3),
+            players: const [
+              PlayerModel(id: 'host', name: 'Ana', hand: []),
+              PlayerModel(id: 'p2', name: 'Beto', hand: []),
+              PlayerModel(id: 'p3', name: 'Caro', hand: []),
+            ],
+            deck: const DeckModel(drawPile: [], discardPile: []),
+            turn: TurnModel(currentPlayerId: 'host', phase: TurnPhase.playing),
+            phase: GamePhase.playing,
+          ),
+        ));
+        await tester.pumpAndSettle();
+
+        expect(find.text('game-screen'), findsOneWidget);
       },
     );
 

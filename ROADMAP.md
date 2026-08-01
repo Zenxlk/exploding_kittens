@@ -118,8 +118,8 @@ empezar la siguiente.
 - [ ] Sistema de cuentas / nicknames persistentes — el backend ya expone `GET /players/{id}` y `PATCH /players/{id}/nickname`, sin consumir todavía desde el cliente
 - [x] Matchmaking por código de sala — crear sala online muestra el código; unirse online lo pide por diálogo
 - [x] Jugar de verdad una partida online (issue #35, Stage A): el host dejó de correr `GameEngine` local en modo online — ahora refleja el servidor autoritativo de `cards_game_service` igual que cualquier no-host, con un codec nuevo (`online_wire_codec.dart`) que traduce el `View` redactado del servidor (manos rivales ocultas, `CardType`/`TurnPhase` en `snake_case`) al `GameState` de Dart en las dos direcciones
-- [ ] Trío de gatos a ciegas en modo online — el `View` del servidor no manda `id` de carta para la mano rival, necesario para resolver `ChooseCardAction`; ver [cards_game_service#9](https://github.com/Zenxlk/cards_game_service/issues/9)
-- [ ] Revancha en modo online — el backend no tiene ningún mecanismo para reiniciar una sala ya terminada; ver [cards_game_service#10](https://github.com/Zenxlk/cards_game_service/issues/10)
+- [x] Trío de gatos a ciegas en modo online (issue #35, Stage B) — `View.PlayerView.HiddenHandIds` expone el `id` de carta (sin `type`) de la mano rival, solo mientras el viewer tiene un trío pendiente contra ella; ver [cards_game_service#9](https://github.com/Zenxlk/cards_game_service/issues/9)
+- [x] Revancha en modo online (issue #35, Stage C) — `onStartGame` acepta la sala en `phaseFinished`, no solo `phaseWaiting`; ver [cards_game_service#10](https://github.com/Zenxlk/cards_game_service/issues/10)
 - [ ] Ranking global — el backend ya expone `GET /leaderboard`, sin consumir todavía desde el cliente
 
 ### Expansiones
