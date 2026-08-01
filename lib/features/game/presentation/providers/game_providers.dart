@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:exploding_kittens/core/constants/game_constants.dart';
 import 'package:exploding_kittens/core/errors/exceptions.dart';
 import 'package:exploding_kittens/features/game/data/local_game_gateway.dart';
+import 'package:exploding_kittens/features/game/data/online_wire_codec.dart';
 import 'package:exploding_kittens/features/game/domain/i_game_gateway.dart';
 import 'package:exploding_kittens/game_engine/events/game_event.dart';
 import 'package:exploding_kittens/game_engine/models/card/card_model.dart';
@@ -284,6 +285,11 @@ class RemoteGameNotifier extends Notifier<GameSessionState> {
   StreamSubscription<WsMessage>? _sub;
   void Function(WsMessage)? _send;
   bool _listening = false;
+  // true contra el backend online (cards_game_service): el GameState que
+  // llega es la proyección redactada `View`, no el GameState completo que
+  // manda WsServer en LAN, así que hace falta un parser distinto (y
+  // recodificar las acciones salientes) — ver online_wire_codec.dart.
+  bool _isOnline = false;
   final _eventsController = StreamController<GameEvent>.broadcast();
 
   /// Eventos reenviados por el host (`GameEventMessage`) — mismo tipo que
@@ -318,9 +324,11 @@ class RemoteGameNotifier extends Notifier<GameSessionState> {
     Stream<WsMessage> messages,
     void Function(WsMessage) send, {
     GameStateMessage? initialGameState,
+    bool isOnline = false,
   }) {
     if (_listening) return;
     _listening = true;
+    _isOnline = isOnline;
     _send = send;
     _sub = messages.listen(_onMessage);
     if (initialGameState != null) _onMessage(initialGameState);
@@ -329,7 +337,9 @@ class RemoteGameNotifier extends Notifier<GameSessionState> {
   void _onMessage(WsMessage msg) {
     switch (msg) {
       case GameStateMessage(:final stateJson):
-        state = sessionStateFrom(GameState.fromJson(stateJson));
+        state = sessionStateFrom(_isOnline
+            ? gameStateFromOnlineView(stateJson)
+            : GameState.fromJson(stateJson));
       case GameEventMessage(:final eventJson):
         _eventsController.add(GameEvent.fromJson(eventJson));
       case ActionRejectedMessage(:final message):
@@ -396,6 +406,8 @@ class RemoteGameNotifier extends Notifier<GameSessionState> {
   void chooseCard(String playerId, String cardId) =>
       _dispatch(ChooseCardAction(playerId: playerId, cardId: cardId));
 
-  void _dispatch(TurnAction action) =>
-      _send?.call(ActionMessage(actionJson: action.toJson()));
+  void _dispatch(TurnAction action) => _send?.call(ActionMessage(
+        actionJson:
+            _isOnline ? turnActionToOnlineJson(action) : action.toJson(),
+      ));
 }
