@@ -1,4 +1,5 @@
 import 'package:exploding_kittens/features/game/data/online_wire_codec.dart';
+import 'package:exploding_kittens/game_engine/events/game_event.dart';
 import 'package:exploding_kittens/game_engine/models/card/card_model.dart';
 import 'package:exploding_kittens/game_engine/models/card/card_type.dart';
 import 'package:exploding_kittens/game_engine/models/game/game_state.dart';
@@ -264,6 +265,78 @@ void main() {
       ));
 
       expect(json['nopeCard'], {'id': 'n1', 'type': 'nope'});
+    });
+  });
+
+  group('gameEventFromOnlineWire', () {
+    test('card_played recodifica el type de la carta embebida', () {
+      final event = gameEventFromOnlineWire(
+        {
+          'type': 'card_played',
+          'timestamp': '2026-08-01T00:00:00.000Z',
+          'playerId': 'p1',
+          'card': {'id': 'c1', 'type': 'exploding_kitten'},
+        },
+        localPlayerId: 'p1',
+      );
+
+      expect(event, isA<CardPlayedEvent>());
+      expect((event as CardPlayedEvent).card.type, CardType.explodingKitten);
+    });
+
+    test(
+        'see_the_future completa playerId con el jugador local cuando el '
+        'backend no lo manda (a propósito, ver comentario en el codec)', () {
+      final event = gameEventFromOnlineWire(
+        {
+          'type': 'see_the_future',
+          'timestamp': '2026-08-01T00:00:00.000Z',
+          'topCards': [
+            {'id': 'c1', 'type': 'exploding_kitten'},
+            {'id': 'c2', 'type': 'skip'},
+          ],
+        },
+        localPlayerId: 'p1',
+      );
+
+      expect(event, isA<SeeTheFutureEvent>());
+      final seeTheFuture = event as SeeTheFutureEvent;
+      expect(seeTheFuture.playerId, 'p1');
+      expect(
+        seeTheFuture.topCards.map((c) => c.type),
+        [CardType.explodingKitten, CardType.skip],
+      );
+    });
+
+    test('bomb_defused completa playerId con el jugador local', () {
+      final event = gameEventFromOnlineWire(
+        {
+          'type': 'bomb_defused',
+          'timestamp': '2026-08-01T00:00:00.000Z',
+          'insertedAtPosition': 3,
+        },
+        localPlayerId: 'p2',
+      );
+
+      expect(event, isA<BombDefusedEvent>());
+      expect((event as BombDefusedEvent).playerId, 'p2');
+      expect(event.insertedAtPosition, 3);
+    });
+
+    test(
+        'eventos sin cartas ni playerId omitido pasan sin cambios '
+        '(card_drawn, turn_changed, etc.)', () {
+      final event = gameEventFromOnlineWire(
+        {
+          'type': 'card_drawn',
+          'timestamp': '2026-08-01T00:00:00.000Z',
+          'playerId': 'p1',
+        },
+        localPlayerId: 'p1',
+      );
+
+      expect(event, isA<CardDrawnEvent>());
+      expect((event as CardDrawnEvent).playerId, 'p1');
     });
   });
 }

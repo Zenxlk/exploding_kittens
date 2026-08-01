@@ -197,6 +197,37 @@ void main() {
       },
     );
 
+    test(
+      'con isOnline: true, un GameEventMessage en el dialecto del backend '
+      '(type en snake_case, sin playerId en see_the_future) no revienta y '
+      'usa localPlayerId (issue #38)',
+      () async {
+        container.read(remoteGameProvider.notifier).listenTo(
+              incoming.stream,
+              sent.add,
+              isOnline: true,
+              localPlayerId: 'p1',
+            );
+        final notifier = container.read(remoteGameProvider.notifier);
+        final events = <GameEvent>[];
+        notifier.events.listen(events.add);
+
+        incoming.add(const GameEventMessage(eventJson: {
+          'type': 'see_the_future',
+          'timestamp': '2026-08-01T00:00:00.000Z',
+          'topCards': [
+            {'id': 'c1', 'type': 'exploding_kitten'},
+          ],
+        }));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(events, hasLength(1));
+        final event = events.single as SeeTheFutureEvent;
+        expect(event.playerId, 'p1');
+        expect(event.topCards.single.type, CardType.explodingKitten);
+      },
+    );
+
     test('listenTo es idempotente: no se vuelve a suscribir', () async {
       listen();
       listen(); // segunda llamada no debería duplicar el envío

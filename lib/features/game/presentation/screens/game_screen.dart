@@ -94,6 +94,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
               client.send,
               initialGameState: client.lastGameState,
               isOnline: lobbyNotifier.isOnline,
+              localPlayerId: lobbyState.localPlayerId,
             );
       }
       return;
