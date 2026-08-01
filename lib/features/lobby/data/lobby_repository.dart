@@ -32,6 +32,9 @@ class LobbyRepository implements ILobbyRepository {
   @override
   WsServer? get wsServer => _server;
 
+  @override
+  bool get isOnline => false;
+
   // ── host ──────────────────────────────────────────────────────────────────
 
   @override

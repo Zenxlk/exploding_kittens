@@ -44,7 +44,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _startIfNeeded());
     _audioService = ref.read(audioServiceProvider);
     _soundController = GameSoundController(
-      events: _isHost()
+      events: _runsLocalEngine()
           ? ref.read(gameProvider.notifier).events
           : ref.read(remoteGameProvider.notifier).events,
       audioService: _audioService,
@@ -53,11 +53,16 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     _syncMusic();
   }
 
-  // Antes de que haya sala (lobbyState no es LobbyInRoom) no importa cuál se
-  // elija: build() ya muestra el mensaje de "no hay partida" en ese caso.
-  bool _isHost() {
+  // Quién corre el motor real no es lo mismo que "quién es el host de la
+  // sala": en modo online el servidor (cards_game_service) es el único que
+  // corre el motor, así que ni siquiera el host lo corre localmente — se
+  // comporta como cualquier no-host (RemoteGameNotifier). Antes de que haya
+  // sala (lobbyState no es LobbyInRoom) no importa cuál se elija: build() ya
+  // muestra el mensaje de "no hay partida" en ese caso.
+  bool _runsLocalEngine() {
     final lobbyState = ref.read(lobbyProvider);
-    return lobbyState is! LobbyInRoom || lobbyState.isHost;
+    if (lobbyState is! LobbyInRoom) return true;
+    return lobbyState.isHost && !ref.read(lobbyProvider.notifier).isOnline;
   }
 
   void _syncMusic() {
@@ -80,13 +85,15 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     final lobbyState = ref.read(lobbyProvider);
     if (lobbyState is! LobbyInRoom) return;
 
-    if (!lobbyState.isHost) {
-      final client = ref.read(lobbyProvider.notifier).wsClient;
+    if (!_runsLocalEngine()) {
+      final lobbyNotifier = ref.read(lobbyProvider.notifier);
+      final client = lobbyNotifier.wsClient;
       if (client != null) {
         ref.read(remoteGameProvider.notifier).listenTo(
               client.messages,
               client.send,
               initialGameState: client.lastGameState,
+              isOnline: lobbyNotifier.isOnline,
             );
       }
       return;
@@ -127,14 +134,15 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       );
     }
 
-    final isHost = lobbyState.isHost;
+    final runsLocalEngine = _runsLocalEngine();
     // Mantiene vivo el puente host↔red mientras esta pantalla esté montada
     // (ya se activó en _startIfNeeded, pero un Provider sin watchers activos
     // podría no sobrevivir a un rebuild en algún escenario de test/hot reload).
-    if (isHost) ref.watch(gameNetworkBridgeProvider);
+    if (runsLocalEngine) ref.watch(gameNetworkBridgeProvider);
 
-    final sessionState =
-        isHost ? ref.watch(gameProvider) : ref.watch(remoteGameProvider);
+    final sessionState = runsLocalEngine
+        ? ref.watch(gameProvider)
+        : ref.watch(remoteGameProvider);
     final localPlayerId = lobbyState.localPlayerId;
 
     return Scaffold(
@@ -143,48 +151,48 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         GameRunning(:final state) => GameTableView(
             gameState: state,
             localPlayerId: localPlayerId,
-            onDraw: () => isHost
+            onDraw: () => runsLocalEngine
                 ? ref.read(gameProvider.notifier).drawCard(localPlayerId)
                 : ref.read(remoteGameProvider.notifier).drawCard(localPlayerId),
-            onPlaySimpleCard: (card) => isHost
+            onPlaySimpleCard: (card) => runsLocalEngine
                 ? ref.read(gameProvider.notifier).playCard(localPlayerId, card)
                 : ref
                     .read(remoteGameProvider.notifier)
                     .playCard(localPlayerId, card),
-            onPlayFavor: (card, targetId) => isHost
+            onPlayFavor: (card, targetId) => runsLocalEngine
                 ? ref
                     .read(gameProvider.notifier)
                     .playFavor(localPlayerId, card, targetId)
                 : ref
                     .read(remoteGameProvider.notifier)
                     .playFavor(localPlayerId, card, targetId),
-            onPlayCatPair: (cards, targetId) => isHost
+            onPlayCatPair: (cards, targetId) => runsLocalEngine
                 ? ref
                     .read(gameProvider.notifier)
                     .playCatPair(localPlayerId, cards, targetId)
                 : ref
                     .read(remoteGameProvider.notifier)
                     .playCatPair(localPlayerId, cards, targetId),
-            onPlayCatTrio: (cards, targetId) => isHost
+            onPlayCatTrio: (cards, targetId) => runsLocalEngine
                 ? ref
                     .read(gameProvider.notifier)
                     .playCatTrio(localPlayerId, cards, targetId)
                 : ref
                     .read(remoteGameProvider.notifier)
                     .playCatTrio(localPlayerId, cards, targetId),
-            onPlayNope: (card) => isHost
+            onPlayNope: (card) => runsLocalEngine
                 ? ref.read(gameProvider.notifier).playNope(localPlayerId, card)
                 : ref
                     .read(remoteGameProvider.notifier)
                     .playNope(localPlayerId, card),
-            onDefuseBomb: (card, position) => isHost
+            onDefuseBomb: (card, position) => runsLocalEngine
                 ? ref
                     .read(gameProvider.notifier)
                     .defuse(localPlayerId, card, position)
                 : ref
                     .read(remoteGameProvider.notifier)
                     .defuse(localPlayerId, card, position),
-            onChooseCard: (cardId) => isHost
+            onChooseCard: (cardId) => runsLocalEngine
                 ? ref
                     .read(gameProvider.notifier)
                     .chooseCard(localPlayerId, cardId)
@@ -193,7 +201,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                     .chooseCard(localPlayerId, cardId),
             assetPathFor: resolver?.faceAssetFor,
             cardBackAssetPath: resolver?.cardBackAsset(),
-            events: isHost
+            events: runsLocalEngine
                 ? ref.read(gameProvider.notifier).events
                 : ref.read(remoteGameProvider.notifier).events,
           ),

@@ -18,9 +18,12 @@ import 'package:exploding_kittens/game_engine/models/player/player_model.dart';
 
 /// Resultado de la partida: ganador, ranking por orden real de eliminación
 /// (último eliminado queda 2º, el primero en explotar queda último) y
-/// revancha. La revancha sigue siendo solo del host (mismo límite que
-/// `GameScreen`: solo el host corre el `GameEngine` real), pero el resultado
-/// en sí ya se sincroniza a los no-host vía `remoteGameProvider`.
+/// revancha. La revancha solo existe en LAN (mismo límite que `GameScreen`:
+/// solo el host corre el `GameEngine` real ahí) — el backend online todavía
+/// no tiene un mecanismo para reiniciar una sala terminada (ver
+/// cards_game_service#10), así que en modo online el botón se reemplaza por
+/// un aviso. El resultado en sí ya se sincroniza a los no-host vía
+/// `remoteGameProvider` en los dos modos.
 class GameOverScreen extends ConsumerStatefulWidget {
   const GameOverScreen({super.key});
 
@@ -67,9 +70,14 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
     });
 
     final lobbyState = ref.watch(lobbyProvider);
-    final isHostDevice = lobbyState is! LobbyInRoom || lobbyState.isHost;
-    final sessionState =
-        isHostDevice ? ref.watch(gameProvider) : ref.watch(remoteGameProvider);
+    // Mismo criterio que GameScreen._runsLocalEngine(): en modo online ni
+    // siquiera el host corre el motor local, así que refleja remoteGameProvider
+    // como cualquier no-host.
+    final runsLocalEngine = lobbyState is! LobbyInRoom ||
+        (lobbyState.isHost && !ref.read(lobbyProvider.notifier).isOnline);
+    final sessionState = runsLocalEngine
+        ? ref.watch(gameProvider)
+        : ref.watch(remoteGameProvider);
 
     if (sessionState is! GameFinished) {
       return Scaffold(
@@ -98,7 +106,11 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
         players.where((p) => p.id == id).firstOrNull?.name ?? id;
 
     final ranking = [result.winnerId, ...result.eliminationOrder.reversed];
-    final isHost = inRoom?.isHost ?? false;
+    final lobbyIsHost = inRoom?.isHost ?? false;
+    // La revancha todavía no tiene soporte en el backend online
+    // (cards_game_service#10) — se avisa explícito en vez de mostrar un botón
+    // que no haría nada.
+    final isOnline = ref.read(lobbyProvider.notifier).isOnline;
     // Entrada escalonada: cada fila del ranking aparece un poco después de
     // la anterior; los botones esperan a que termine la última fila.
     final buttonsDelay = (200 + ranking.length * 60).ms;
@@ -131,7 +143,13 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
                   .fadeIn(delay: (200 + i * 60).ms, duration: 250.ms)
                   .slideX(begin: 0.1, end: 0),
             const SizedBox(height: 32),
-            if (isHost)
+            if (isOnline)
+              Text(
+                'Revancha no disponible todavía en modo online',
+                style: AppTextStyles.caption,
+                textAlign: TextAlign.center,
+              ).animate().fadeIn(delay: buttonsDelay)
+            else if (lobbyIsHost)
               FilledButton(
                 onPressed: () => _rematch(inRoom!),
                 style:
