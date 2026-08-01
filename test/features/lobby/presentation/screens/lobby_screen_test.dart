@@ -1,3 +1,5 @@
+import 'package:exploding_kittens/features/lobby/domain/models/lobby_player.dart';
+import 'package:exploding_kittens/features/lobby/domain/models/lobby_room.dart';
 import 'package:exploding_kittens/features/lobby/presentation/providers/lobby_providers.dart';
 import 'package:exploding_kittens/features/lobby/presentation/screens/lobby_screen.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +36,36 @@ class _RecordingLobbyNotifier extends LobbyNotifier {
   @override
   Future<void> leaveRoom() async {
     calls.add('leaveRoom');
+  }
+}
+
+// A diferencia de _RecordingLobbyNotifier (no-op, solo registra que se
+// llamó), esta sí transiciona a LobbyInRoom de verdad al crear la sala —
+// hace falta que _InRoomView llegue a montarse para poder probar el
+// SnackBar de errorStream (issue #39).
+class _InRoomAfterCreateNotifier extends LobbyNotifier {
+  _InRoomAfterCreateNotifier(this._room);
+  final LobbyRoom _room;
+
+  @override
+  LobbyState build() => const LobbyIdle();
+
+  @override
+  Future<void> createRoom({LobbyMode mode = LobbyMode.lan}) async {
+    state = LobbyInRoom(room: _room, localPlayerId: _room.hostId);
+  }
+
+  // Simula lo que LobbyNotifier._subscribeToRoom hace de verdad al recibir
+  // un WsErrorMessage por el errorStream del repositorio.
+  void emitError(String message) {
+    final current = state;
+    if (current is LobbyInRoom) {
+      state = LobbyInRoom(
+        room: current.room,
+        localPlayerId: current.localPlayerId,
+        error: message,
+      );
+    }
   }
 }
 
@@ -162,6 +194,41 @@ void main() {
 
         expect(find.text('Local WiFi'), findsOneWidget);
         expect(notifier.calls, isEmpty);
+      },
+    );
+  });
+
+  group('LobbyScreen — errores del servidor ya en la sala (issue #39)', () {
+    testWidgets(
+      'un WsErrorMessage llegando ya en la sala muestra un SnackBar en vez '
+      'de perderse en silencio',
+      (tester) async {
+        const room = LobbyRoom(
+          id: 'room-1',
+          hostId: 'host',
+          players: [
+            LobbyPlayer(id: 'host', name: 'Ana', isHost: true, isReady: true),
+          ],
+        );
+        final notifier = _InRoomAfterCreateNotifier(room);
+        await tester.pumpWidget(
+          _wrap(const LobbyScreen(isHost: true), notifier),
+        );
+
+        await tester.tap(find.text('Local WiFi'));
+        // pumpAndSettle, no pump: _PlayerTile usa flutter_animate (fadeIn/
+        // slideX), que deja un Timer corriendo si no se lo deja terminar.
+        await tester.pumpAndSettle();
+
+        // "Ana (you)" — el único jugador es el host local. Confirma que ya
+        // se llegó a _InRoomView antes de probar el SnackBar.
+        expect(find.textContaining('Ana'), findsOneWidget);
+        expect(find.text('Faltan jugadores listos'), findsNothing);
+
+        notifier.emitError('Faltan jugadores listos');
+        await tester.pump();
+
+        expect(find.text('Faltan jugadores listos'), findsOneWidget);
       },
     );
   });

@@ -43,9 +43,17 @@ class LobbyDiscovering extends LobbyState {
 }
 
 class LobbyInRoom extends LobbyState {
-  const LobbyInRoom({required this.room, required this.localPlayerId});
+  const LobbyInRoom(
+      {required this.room, required this.localPlayerId, this.error});
   final LobbyRoom room;
   final String localPlayerId;
+
+  // Último WsErrorMessage del servidor (ej. "Faltan jugadores listos" al
+  // rechazar un start_game) — transitorio, mismo patrón que
+  // GameRunning.error en game_providers.dart: se limpia solo en cuanto
+  // llega el próximo room_state legítimo (ver _subscribeToRoom), no hace
+  // falta un método explícito para descartarlo.
+  final String? error;
 
   bool get isHost => room.hostId == localPlayerId;
 
@@ -110,6 +118,7 @@ class LobbyNotifier extends Notifier<LobbyState> {
   // que antes de la Fase 7 de modo online.
   ILobbyRepository _repo = LobbyRepository();
   StreamSubscription<LobbyRoom>? _roomSub;
+  StreamSubscription<String>? _errorSub;
   StreamSubscription<List<DiscoveredRoom>>? _discoverySub;
   String? _localPlayerId;
 
@@ -220,12 +229,28 @@ class LobbyNotifier extends Notifier<LobbyState> {
     _roomSub?.cancel();
     _roomSub = _repo.roomStream.listen((room) {
       final id = _localPlayerId;
+      // Se reconstruye entero (sin error) a propósito: un room_state
+      // legítimo es la señal de que lo que haya pasado ya se resolvió, así
+      // que de paso limpia cualquier error transitorio previo.
       if (id != null) state = LobbyInRoom(room: room, localPlayerId: id);
+    });
+
+    _errorSub?.cancel();
+    _errorSub = _repo.errorStream.listen((message) {
+      final current = state;
+      if (current is LobbyInRoom) {
+        state = LobbyInRoom(
+          room: current.room,
+          localPlayerId: current.localPlayerId,
+          error: message,
+        );
+      }
     });
   }
 
   void _disposeAll() {
     _roomSub?.cancel();
+    _errorSub?.cancel();
     _discoverySub?.cancel();
     _repo.leaveRoom();
   }

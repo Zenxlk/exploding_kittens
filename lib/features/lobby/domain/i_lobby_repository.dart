@@ -8,6 +8,14 @@ abstract interface class ILobbyRepository {
   // Live room state — emits on every change while inside a room.
   Stream<LobbyRoom> get roomStream;
 
+  // WsErrorMessage que el servidor mande estando ya en una sala (ej.
+  // start_game rechazado por "Faltan jugadores listos") — antes se perdían
+  // en silencio porque nadie los escuchaba (issue #39). No confundir con el
+  // Result<Failure> que devuelven createRoom/joinRoom/etc.: eso cubre fallos
+  // locales o del primer intento de conexión; esto cubre rechazos del
+  // servidor una vez adentro.
+  Stream<String> get errorStream;
+
   // The WebSocket connection every player (including the host, via
   // 127.0.0.1) already has open — Fase 5 reuses it for in-game messages
   // instead of opening a second connection. Null before joining/creating.
