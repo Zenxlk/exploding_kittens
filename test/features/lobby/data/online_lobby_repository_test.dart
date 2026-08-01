@@ -2,6 +2,7 @@ import 'package:exploding_kittens/core/errors/exceptions.dart';
 import 'package:exploding_kittens/core/errors/failures.dart';
 import 'package:exploding_kittens/features/lobby/data/online_lobby_repository.dart';
 import 'package:exploding_kittens/network/http/online_rooms_client.dart';
+import 'package:exploding_kittens/network/websocket/websocket_message.dart';
 import 'package:exploding_kittens/network/websocket/websocket_server.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -91,6 +92,47 @@ void main() {
   test('discoverRooms es un stream vacío (sin mDNS online)', () async {
     final repo = OnlineLobbyRepository(roomsClient: MockOnlineRoomsClient());
     expect(await repo.discoverRooms().toList(), isEmpty);
+  });
+
+  group('OnlineLobbyRepository.errorStream', () {
+    test(
+      'expone un WsErrorMessage que el backend mande estando ya en la sala '
+      '(issue #39 — antes se perdía en silencio)',
+      () async {
+        final backend = await _startFakeBackend();
+        configureOnlineUrl(backend.port);
+        final rooms = MockOnlineRoomsClient();
+        when(() => rooms.createRoom(
+              gameType: any(named: 'gameType'),
+              hostId: any(named: 'hostId'),
+              hostName: any(named: 'hostName'),
+            )).thenAnswer((_) async => 'AB12CD');
+
+        final repo = OnlineLobbyRepository(roomsClient: rooms);
+        await repo.createRoom(playerName: 'Ana', playerId: 'p1');
+
+        final errors = <String>[];
+        final sub = repo.errorStream.listen(errors.add);
+
+        backend.sendToPlayer(
+          'p1',
+          const WsErrorMessage(message: 'Faltan jugadores listos'),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+
+        expect(errors, ['Faltan jugadores listos']);
+
+        await sub.cancel();
+        await repo.leaveRoom();
+        await backend.close();
+      },
+    );
+
+    test('sin conexión, errorStream es un stream vacío (no null/throw)',
+        () async {
+      final repo = OnlineLobbyRepository(roomsClient: MockOnlineRoomsClient());
+      expect(await repo.errorStream.toList(), isEmpty);
+    });
   });
 
   group('OnlineLobbyRepository — sin conexión activa', () {

@@ -33,6 +33,11 @@ class OnlineLobbyRepository implements ILobbyRepository {
       _client?.roomStream ?? const Stream.empty();
 
   @override
+  Stream<String> get errorStream => (_client?.messages ?? const Stream.empty())
+      .where((m) => m is WsErrorMessage)
+      .map((m) => (m as WsErrorMessage).message);
+
+  @override
   WsClient? get wsClient => _client;
 
   // El modo online no levanta ningún WsServer local — la sala vive en el

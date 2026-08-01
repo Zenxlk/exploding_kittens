@@ -120,6 +120,21 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen>
           break;
       }
     });
+    // Aparte del listen de arriba a propósito: ese switch ya cubre
+    // LobbyError (falla al crear/unirse); esto es un WsErrorMessage
+    // llegando mientras ya se está adentro de la sala (ej. start_game
+    // rechazado por "Faltan jugadores listos") — antes se perdía en
+    // silencio, ver issue #39.
+    ref.listen<LobbyState>(lobbyProvider, (_, next) {
+      if (next is LobbyInRoom && next.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
+    });
 
     final lobbyState = ref.watch(lobbyProvider);
 
