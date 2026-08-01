@@ -11,6 +11,21 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.7.3] — 2026-08-01
+
+### Corregido
+- Reportado por el usuario, seguía pasando pese al fix de la 0.7.2 (esa era una carrera de timing distinta, solo de modo LAN): en modo **online**, todos los jugadores menos el host quedaban trabados para siempre en "Repartiendo cartas…". Causa real: `gameNetworkBridgeProvider` solo se activa con un `WsServer` local, y `OnlineLobbyRepository.wsServer` siempre es `null` (la sala vive en `cards_game_service`, no en el dispositivo) — el host nunca retransmitía nada. `GameScreen`/`GameOverScreen` ahora deciden "quién corre el motor" con `isHost && !isOnline` en vez de solo `isHost`: en modo online, ni siquiera el host corre `GameEngine` localmente, refleja el servidor autoritativo igual que cualquier no-host
+
+### Añadido
+- `online_wire_codec.dart`: traduce el `View` redactado que manda `cards_game_service` (manos rivales ocultas, sin `Config`) al `GameState` de Dart, y recodifica las acciones salientes — hacía falta porque `CardType`/`TurnPhase` van en `snake_case` del lado Go pero el `.name` nativo de un enum Dart es `camelCase`, un mismatch que revienta o corrompe en silencio cualquier carta multi-palabra o media docena de fases de turno
+- Botón "Revancha" deshabilitado con aviso explícito en modo online — el backend todavía no tiene forma de reiniciar una sala terminada
+
+### Limitaciones conocidas (seguimiento en issues separadas)
+- Trío de gatos a ciegas no resuelve bien en modo online — [cards_game_service#9](https://github.com/Zenxlk/cards_game_service/issues/9)
+- Revancha en modo online, sin soporte de backend — [cards_game_service#10](https://github.com/Zenxlk/cards_game_service/issues/10)
+
+---
+
 ## [0.7.2] — 2026-07-30
 
 ### Corregido
