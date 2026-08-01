@@ -290,6 +290,10 @@ class RemoteGameNotifier extends Notifier<GameSessionState> {
   // manda WsServer en LAN, así que hace falta un parser distinto (y
   // recodificar las acciones salientes) — ver online_wire_codec.dart.
   bool _isOnline = false;
+  // Solo se usa (y solo hace falta que sea real) cuando _isOnline es true —
+  // ver gameEventFromOnlineWire, que lo necesita para completar el
+  // playerId que el backend online omite en algunos eventos.
+  String _localPlayerId = '';
   final _eventsController = StreamController<GameEvent>.broadcast();
 
   /// Eventos reenviados por el host (`GameEventMessage`) — mismo tipo que
@@ -325,10 +329,12 @@ class RemoteGameNotifier extends Notifier<GameSessionState> {
     void Function(WsMessage) send, {
     GameStateMessage? initialGameState,
     bool isOnline = false,
+    String localPlayerId = '',
   }) {
     if (_listening) return;
     _listening = true;
     _isOnline = isOnline;
+    _localPlayerId = localPlayerId;
     _send = send;
     _sub = messages.listen(_onMessage);
     if (initialGameState != null) _onMessage(initialGameState);
@@ -341,7 +347,9 @@ class RemoteGameNotifier extends Notifier<GameSessionState> {
             ? gameStateFromOnlineView(stateJson)
             : GameState.fromJson(stateJson));
       case GameEventMessage(:final eventJson):
-        _eventsController.add(GameEvent.fromJson(eventJson));
+        _eventsController.add(_isOnline
+            ? gameEventFromOnlineWire(eventJson, localPlayerId: _localPlayerId)
+            : GameEvent.fromJson(eventJson));
       case ActionRejectedMessage(:final message):
         final current = state;
         if (current is GameRunning) state = current.copyWith(error: message);

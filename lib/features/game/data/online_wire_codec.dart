@@ -1,3 +1,4 @@
+import 'package:exploding_kittens/game_engine/events/game_event.dart';
 import 'package:exploding_kittens/game_engine/models/card/card_model.dart';
 import 'package:exploding_kittens/game_engine/models/card/card_type.dart';
 import 'package:exploding_kittens/game_engine/models/deck/deck_model.dart';
@@ -40,6 +41,15 @@ import 'package:exploding_kittens/game_engine/models/turn/turn_model.dart';
 ///    método de `GameEngine` corre del lado remoto), el contenido real del
 ///    mazo (solo viaja `deckSize`), y las cartas concretas de la mano de
 ///    cada rival (solo viaja `handSize`).
+/// 3. **Los `game_event` también llevan cartas y también están redactados**
+///    (`games/explodingkittens/events.go`) — mismo problema 1 en
+///    `card_played`/`see_the_future` (`Card` embebida), y una variante del
+///    2: `SeeTheFuturePayload`/`BombDefusedPayload` nunca mandan `playerId`
+///    a propósito (el evento ya va filtrado solo al dueño vía
+///    `Recipients`, no hace falta que se lo repita) — pero
+///    `SeeTheFutureEvent`/`BombDefusedEvent` de Dart lo piden como campo
+///    obligatorio. Se sintetiza con el id del jugador local: si el evento
+///    llegó, es porque es sobre uno mismo.
 // ── CardType / TurnPhase: conversión explícita, no genérica ────────────────
 //
 // Mapas explícitos en vez de un conversor camelCase↔snake_case genérico a
@@ -273,4 +283,32 @@ Map<String, dynamic> turnActionToOnlineJson(TurnAction action) {
         'nopeCard': _cardToWire(nopeCard),
       },
   };
+}
+
+// ── Eventos entrantes: game_event (redactado) → GameEvent ──────────────────
+
+/// Convierte el `game_event` que manda el backend online al `GameEvent` que
+/// ya sabe consumir el resto de la UI (`GameSoundController`,
+/// `GameTableView`) — ver el punto 3 del comentario de arriba. En vez de
+/// reimplementar el switch de `GameEvent.fromJson` acá, se arma un JSON ya
+/// "traducido" (cartas recodificadas, `playerId` completado si hace falta)
+/// y se delega ahí — un solo lugar sabe construir cada variante.
+GameEvent gameEventFromOnlineWire(
+  Map<String, dynamic> json, {
+  required String localPlayerId,
+}) {
+  final adapted = Map<String, dynamic>.from(json);
+  switch (json['type'] as String) {
+    case 'card_played':
+      adapted['card'] =
+          _cardFromWire(json['card'] as Map<String, dynamic>).toJson();
+    case 'see_the_future':
+      adapted['playerId'] ??= localPlayerId;
+      adapted['topCards'] = (json['topCards'] as List)
+          .map((c) => _cardFromWire(c as Map<String, dynamic>).toJson())
+          .toList();
+    case 'bomb_defused':
+      adapted['playerId'] ??= localPlayerId;
+  }
+  return GameEvent.fromJson(adapted);
 }
