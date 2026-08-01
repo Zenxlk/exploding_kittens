@@ -118,7 +118,7 @@ jobs:
           mv dist/app-release.aab "dist/exploding-kittens-${{ github.ref_name }}.aab"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           # Los dos .apk son instalables directo (sideload) — firmados con
           # las claves de debug hasta que exista firma de release real (ver
