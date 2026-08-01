@@ -125,6 +125,7 @@ class LobbyNotifier extends Notifier<LobbyState> {
   // migration" design intent.
   WsClient? get wsClient => _repo.wsClient;
   WsServer? get wsServer => _repo.wsServer;
+  bool get isOnline => _repo.isOnline;
 
   // ── host ────────────────────────────────────────────────────────────────
 

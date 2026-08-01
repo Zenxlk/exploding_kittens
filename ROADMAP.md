@@ -117,6 +117,9 @@ empezar la siguiente.
 - [ ] Persistir `_sessionToken` (hoy solo en memoria en `WsClient`) igual que ya se hace con `playerId` vía `shared_preferences` — si no, un crash/reinicio de la app pierde el token y el backend online rechazaría el reconnect aunque el `playerId` sí sobreviva
 - [ ] Sistema de cuentas / nicknames persistentes — el backend ya expone `GET /players/{id}` y `PATCH /players/{id}/nickname`, sin consumir todavía desde el cliente
 - [x] Matchmaking por código de sala — crear sala online muestra el código; unirse online lo pide por diálogo
+- [x] Jugar de verdad una partida online (issue #35, Stage A): el host dejó de correr `GameEngine` local en modo online — ahora refleja el servidor autoritativo de `cards_game_service` igual que cualquier no-host, con un codec nuevo (`online_wire_codec.dart`) que traduce el `View` redactado del servidor (manos rivales ocultas, `CardType`/`TurnPhase` en `snake_case`) al `GameState` de Dart en las dos direcciones
+- [ ] Trío de gatos a ciegas en modo online — el `View` del servidor no manda `id` de carta para la mano rival, necesario para resolver `ChooseCardAction`; ver [cards_game_service#9](https://github.com/Zenxlk/cards_game_service/issues/9)
+- [ ] Revancha en modo online — el backend no tiene ningún mecanismo para reiniciar una sala ya terminada; ver [cards_game_service#10](https://github.com/Zenxlk/cards_game_service/issues/10)
 - [ ] Ranking global — el backend ya expone `GET /leaderboard`, sin consumir todavía desde el cliente
 
 ### Expansiones

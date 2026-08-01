@@ -17,6 +17,13 @@ abstract interface class ILobbyRepository {
   // ActionMessage/GameStateMessage through once the game starts.
   WsServer? get wsServer;
 
+  // true si la sala corre contra el backend online (cards_game_service) en
+  // vez de un WsServer local — el feature game lo usa para decidir si el
+  // host corre el motor local (LAN) o refleja el estado del servidor como
+  // cualquier no-host (online), y para elegir el parser correcto del
+  // GameState que llega por WebSocket (ver online_game_state_mapper.dart).
+  bool get isOnline;
+
   // Host: create a new room and start advertising it on the local network.
   // authToken (Fase 7): JWT de Supabase de la sesión actual, si hay una
   // (ver features/auth) — null en modo invitado, sin cambio de comportamiento.
