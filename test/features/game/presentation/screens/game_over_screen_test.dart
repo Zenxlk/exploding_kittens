@@ -14,12 +14,17 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeLobbyNotifier extends LobbyNotifier {
-  _FakeLobbyNotifier(this._initial);
+  _FakeLobbyNotifier(this._initial, {bool isOnline = false})
+      : _isOnline = isOnline;
   final LobbyState _initial;
+  final bool _isOnline;
   bool leaveRoomCalled = false;
 
   @override
   LobbyState build() => _initial;
+
+  @override
+  bool get isOnline => _isOnline;
 
   // No se delega al LobbyNotifier real: solo interesa comprobar que la
   // pantalla lo llama antes de navegar (el fix del "servidor fantasma" —
@@ -196,6 +201,30 @@ void main() {
         expect(find.text('2. Beto'), findsOneWidget);
         expect(find.text('3. Caro'), findsOneWidget);
         expect(find.widgetWithText(FilledButton, 'Revancha'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'el host en modo online ve el aviso de "no disponible" en vez del '
+      'botón de revancha (cards_game_service#10)',
+      (tester) async {
+        await tester.pumpWidget(
+          _wrap(
+            gameState: const GameFinished(_result),
+            lobbyState: const LobbyInRoom(room: _room, localPlayerId: 'host'),
+            lobbyNotifier: _FakeLobbyNotifier(
+              const LobbyInRoom(room: _room, localPlayerId: 'host'),
+              isOnline: true,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Revancha'), findsNothing);
+        expect(
+          find.textContaining('Revancha no disponible todavía en modo online'),
+          findsOneWidget,
+        );
       },
     );
 

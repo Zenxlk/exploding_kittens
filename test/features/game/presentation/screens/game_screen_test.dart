@@ -19,11 +19,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeLobbyNotifier extends LobbyNotifier {
-  _FakeLobbyNotifier(this._initial);
+  _FakeLobbyNotifier(this._initial, {bool isOnline = false})
+      : _isOnline = isOnline;
   final LobbyState _initial;
+  final bool _isOnline;
 
   @override
   LobbyState build() => _initial;
+
+  @override
+  bool get isOnline => _isOnline;
 }
 
 class _FakeRemoteGameNotifier extends RemoteGameNotifier {
@@ -100,10 +105,13 @@ Widget _wrap({
   required LobbyState lobbyState,
   required _FakeGameGateway gateway,
   RemoteGameNotifier Function()? remoteNotifierFactory,
+  bool isOnline = false,
 }) {
   return ProviderScope(
     overrides: [
-      lobbyProvider.overrideWith(() => _FakeLobbyNotifier(lobbyState)),
+      lobbyProvider.overrideWith(
+        () => _FakeLobbyNotifier(lobbyState, isOnline: isOnline),
+      ),
       // turnTimeout enorme a propósito: pumpAndSettle avanza el reloj
       // simulado hasta que no queda nada pendiente, y el default real de
       // 30s terminaría disparando el auto-robo del timer de turno contra
@@ -165,6 +173,41 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Repartiendo cartas…'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'el host en modo online NO corre el motor local: ve la mesa vía '
+      'RemoteGameNotifier igual que un no-host (issue #35)',
+      (tester) async {
+        final state = GameState(
+          id: 'g1',
+          config: const GameConfig(playerCount: 2),
+          players: const [
+            PlayerModel(id: 'host', name: 'Ana', hand: []),
+            PlayerModel(id: 'p2', name: 'Beto', hand: []),
+          ],
+          deck: const DeckModel(drawPile: [], discardPile: []),
+          turn: TurnModel(currentPlayerId: 'host', phase: TurnPhase.playing),
+          phase: GamePhase.playing,
+        );
+
+        await tester.pumpWidget(
+          _wrap(
+            lobbyState: const LobbyInRoom(room: _room, localPlayerId: 'host'),
+            gateway: _FakeGameGateway(),
+            isOnline: true,
+            remoteNotifierFactory: () =>
+                _FakeRemoteGameNotifier(GameRunning(state: state)),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Si el host hubiera intentado correr el motor local (el bug
+        // original), _FakeGameGateway.onStart es null y tirar una excepción
+        // al arrancar — no llegar hasta acá ya es parte de la aserción.
+        expect(find.text('Ana'), findsOneWidget);
+        expect(find.text('Beto'), findsOneWidget);
       },
     );
 

@@ -132,6 +132,71 @@ void main() {
       },
     );
 
+    test(
+      'listenTo(isOnline: true) parsea el game_state con el dialecto del '
+      'backend online (View redactado, snake_case) en vez del GameState '
+      'completo de LAN',
+      () async {
+        container.read(remoteGameProvider.notifier).listenTo(
+              incoming.stream,
+              sent.add,
+              isOnline: true,
+            );
+
+        incoming.add(const GameStateMessage(stateJson: {
+          'id': 'g1',
+          'players': [
+            {
+              'id': 'p1',
+              'name': 'A',
+              'handSize': 1,
+              'hand': [
+                {'id': 'c1', 'type': 'exploding_kitten'},
+              ],
+              'status': 'active',
+            },
+          ],
+          'deckSize': 5,
+          'discardTop': null,
+          'turn': {
+            'currentPlayerId': 'p1',
+            'phase': 'nope_window',
+            'actionsLeft': 1,
+            'nopeChainCount': 0,
+          },
+          'phase': 'playing',
+          'pendingAction': null,
+          'pendingBomb': false,
+          'turnCount': 1,
+          'eliminationOrder': <String>[],
+        }));
+        await Future<void>.delayed(Duration.zero);
+
+        final sessionState = container.read(remoteGameProvider) as GameRunning;
+        expect(sessionState.state.turn.phase, TurnPhase.nopeWindow);
+        expect(
+          sessionState.state.playerById('p1')?.hand.single.type,
+          CardType.explodingKitten,
+        );
+      },
+    );
+
+    test(
+      'con isOnline: true, las acciones salientes van con el type de carta '
+      'en snake_case',
+      () async {
+        container
+            .read(remoteGameProvider.notifier)
+            .listenTo(incoming.stream, sent.add, isOnline: true);
+
+        const card = CardModel(id: 'a', type: CardType.explodingKitten);
+        container.read(remoteGameProvider.notifier).playCard('p1', card);
+
+        final msg = sent.single as ActionMessage;
+        expect(msg.actionJson['card'], {'id': 'a', 'type': 'exploding_kitten'});
+      },
+    );
+
     test('listenTo es idempotente: no se vuelve a suscribir', () async {
       listen();
       listen(); // segunda llamada no debería duplicar el envío
