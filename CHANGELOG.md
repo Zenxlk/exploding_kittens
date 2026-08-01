@@ -11,6 +11,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.7.4] — 2026-08-01
+
+### Añadido
+- Revancha jugable en modo online (issue #35, Stage C — última de las tres etapas, ver 0.7.3 para las dos anteriores). `cards_game_service` (`onStartGame`) ahora acepta el mismo mensaje `start_game` de siempre también con la sala en `phaseFinished`, no solo `phaseWaiting` — mismo roster, resetea `matchFinalized` para que la revancha se registre por su cuenta. `GameOverScreen` deja de mostrar el aviso de "no disponible": el botón queda igual en los dos modos, pero en online `_rematch()` manda la acción por red en vez de arrancar un motor local — la navegación la dispara el mismo listener de `remoteGameProvider` que ya usa cualquier no-host
+
+### Corregido (lado backend, `cards_game_service`)
+- Un corte de conexión con la sala ya en `phaseFinished` expulsaba al jugador de la sala (o, si era el host, la cerraba entera) — nadie podía pedir la revancha después de una desconexión momentánea en la pantalla de resultados. Ahora ese caso solo libera la conexión, sin tocar el roster
+
+---
+
 ## [0.7.3] — 2026-08-01
 
 ### Corregido
