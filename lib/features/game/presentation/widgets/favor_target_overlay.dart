@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:exploding_kittens/core/theme/app_colors.dart';
 import 'package:exploding_kittens/core/theme/app_text_styles.dart';
 import 'package:exploding_kittens/game_engine/models/player/player_model.dart';
+import 'package:exploding_kittens/l10n/app_localizations.dart';
 
 /// Selector de jugador objetivo para Favor y pares de gato (ambos solo
 /// necesitan un objetivo; el trío de gatos necesita además elegir una carta
@@ -22,13 +23,14 @@ class FavorTargetOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return ColoredBox(
       color: Colors.black.withValues(alpha: 0.8),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Elige a quién pedirle una carta', style: AppTextStyles.title),
+            Text(l10n.favorTargetTitle, style: AppTextStyles.title),
             const SizedBox(height: 16),
             for (final player in candidates)
               Padding(
@@ -45,7 +47,7 @@ class FavorTargetOverlay extends StatelessWidget {
             TextButton(
               onPressed: onCancel,
               style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-              child: const Text('Cancelar'),
+              child: Text(l10n.commonCancel),
             ),
           ],
         ),

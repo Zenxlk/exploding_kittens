@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:exploding_kittens/core/theme/app_colors.dart';
 import 'package:exploding_kittens/core/theme/app_text_styles.dart';
+import 'package:exploding_kittens/l10n/app_localizations.dart';
 
 /// Ventana de tiempo para que cualquier jugador vivo con un Nope en mano
 /// cancele la acción pendiente. El motor (temporizador de `GameNotifier`) es
@@ -58,6 +59,7 @@ class _NopeWindowOverlayState extends State<NopeWindowOverlay>
   @override
   Widget build(BuildContext context) {
     final isCancelled = widget.nopeChainCount.isOdd;
+    final l10n = AppLocalizations.of(context)!;
 
     return ColoredBox(
       color: Colors.black.withValues(alpha: 0.6),
@@ -65,12 +67,10 @@ class _NopeWindowOverlayState extends State<NopeWindowOverlay>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Ventana de Nope', style: AppTextStyles.title),
+            Text(l10n.nopeWindowTitle, style: AppTextStyles.title),
             const SizedBox(height: 4),
             Text(
-              isCancelled
-                  ? 'Cancelada… alguien más puede reactivarla'
-                  : 'Cualquiera puede cancelar esto con un Nope',
+              isCancelled ? l10n.nopeWindowCancelled : l10n.nopeWindowCanCancel,
               style: AppTextStyles.caption,
               textAlign: TextAlign.center,
             ),
@@ -90,7 +90,7 @@ class _NopeWindowOverlayState extends State<NopeWindowOverlay>
             FilledButton(
               onPressed: widget.canPlayNope ? widget.onPlayNope : null,
               style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-              child: const Text('¡Nope!'),
+              child: Text(l10n.nopeWindowButton),
             ),
           ],
         ),

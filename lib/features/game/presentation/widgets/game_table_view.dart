@@ -24,6 +24,7 @@ import 'package:exploding_kittens/game_engine/models/card/card_type.dart';
 import 'package:exploding_kittens/game_engine/models/game/game_state.dart';
 import 'package:exploding_kittens/game_engine/models/turn/turn_action.dart';
 import 'package:exploding_kittens/game_engine/models/turn/turn_model.dart';
+import 'package:exploding_kittens/l10n/app_localizations.dart';
 
 /// Cartas que se juegan con un botón simple, sin objetivo: Nope y Defuse se
 /// juegan en su propio contexto (ventana de Nope / resolución de bomba), no
@@ -288,13 +289,14 @@ class _GameTableViewState extends State<GameTableView> {
       return null;
     }
     final pending = widget.gameState.pendingAction;
+    final l10n = AppLocalizations.of(context)!;
 
     if (pending is PlayFavorAction &&
         pending.targetPlayerId == widget.localPlayerId) {
       final askerName =
           widget.gameState.playerById(pending.playerId)?.name ?? '…';
       return (
-        title: 'Elegí una carta para darle a $askerName',
+        title: l10n.gameFavorChooseCardTitle(askerName),
         candidates: localHand,
         faceUp: true,
       );
@@ -304,8 +306,7 @@ class _GameTableViewState extends State<GameTableView> {
         pending.playerId == widget.localPlayerId) {
       final target = widget.gameState.playerById(pending.targetPlayerId);
       return (
-        title: 'Elegí a ciegas una carta de la mano de '
-            '${target?.name ?? '…'}',
+        title: l10n.gameCatTrioChooseCardTitle(target?.name ?? '…'),
         candidates: target?.hand ?? const [],
         faceUp: false,
       );
@@ -598,7 +599,8 @@ class _StatusBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = _messageFor();
+    final l10n = AppLocalizations.of(context)!;
+    final text = _messageFor(l10n);
     if (text == null) return const SizedBox.shrink();
 
     return Padding(
@@ -611,13 +613,14 @@ class _StatusBanner extends StatelessWidget {
     );
   }
 
-  String? _messageFor() {
+  String? _messageFor(AppLocalizations l10n) {
     switch (gameState.turn.phase) {
       case TurnPhase.nopeWindow:
-        return 'Ventana de Nope abierta…';
+        return l10n.gameNopeWindowOpenStatus;
       case TurnPhase.resolving when !isMyTurn:
-        return 'Esperando a que ${gameState.currentPlayer?.name ?? '…'} '
-            'esconda la bomba…';
+        return l10n.gameWaitingForBombHide(
+          gameState.currentPlayer?.name ?? '…',
+        );
       case TurnPhase.awaitingCardChoice:
         final pending = gameState.pendingAction;
         // Al que le toca elegir ve el CardChoiceOverlay en su lugar (cubre
@@ -626,16 +629,16 @@ class _StatusBanner extends StatelessWidget {
             pending.targetPlayerId != localPlayerId) {
           final targetName =
               gameState.playerById(pending.targetPlayerId)?.name ?? '…';
-          return 'Esperando a que $targetName elija una carta…';
+          return l10n.gameWaitingForCardChoice(targetName);
         }
         if (pending is PlayCatTrioAction && pending.playerId != localPlayerId) {
           final askerName = gameState.playerById(pending.playerId)?.name ?? '…';
-          return 'Esperando a que $askerName elija una carta…';
+          return l10n.gameWaitingForCardChoice(askerName);
         }
         return null;
       default:
         if (!isMyTurn) {
-          return 'Turno de ${gameState.currentPlayer?.name ?? '…'}';
+          return l10n.gameTurnOf(gameState.currentPlayer?.name ?? '…');
         }
         return null;
     }
@@ -661,34 +664,33 @@ class _SelectionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     if (selection is _NoSelection) return const SizedBox.shrink();
 
+    final l10n = AppLocalizations.of(context)!;
     final (message, buttonLabel, onConfirm) = switch (selection) {
       _QuickPlaySelection(:final card) => (
-          '${card.type.name} seleccionada',
-          'Jugar',
+          l10n.gameCardTypeSelected(card.type.name),
+          l10n.gamePlayButton,
           canAct ? onPlaySimple : null,
         ),
       _NeedsTargetSelection(:final kind) => (
           switch (kind) {
-            _TargetActionKind.favor => 'Favor seleccionado',
-            _TargetActionKind.catPair => 'Par de gatos listo',
-            _TargetActionKind.catTrio => 'Trío de gatos listo',
+            _TargetActionKind.favor => l10n.gameFavorSelected,
+            _TargetActionKind.catPair => l10n.gameCatPairReady,
+            _TargetActionKind.catTrio => l10n.gameCatTrioReady,
           },
-          'Elegir objetivo',
+          l10n.gameChooseTarget,
           canAct ? onChooseTarget : null,
         ),
       _CatCardWaitingForPair() => (
-          'Un gato solo no se puede jugar: toca otra carta igual para '
-              'formar un par, o toca el mazo para robar y pasar el turno',
-          'Jugar',
+          l10n.gameCatCardNeedsPairHint,
+          l10n.gamePlayButton,
           null,
         ),
       _UnsupportedSelection() => (
-          'Esta carta no se juega así — toca el mazo para robar y pasar '
-              'el turno',
-          'Jugar',
+          l10n.gameUnsupportedSelectionHint,
+          l10n.gamePlayButton,
           null,
         ),
-      _NoSelection() => ('', 'Jugar', null),
+      _NoSelection() => ('', l10n.gamePlayButton, null),
     };
 
     return Padding(
@@ -704,7 +706,7 @@ class _SelectionBar extends StatelessWidget {
             spacing: 8,
             runSpacing: 4,
             children: [
-              TextButton(onPressed: onCancel, child: const Text('Cancelar')),
+              TextButton(onPressed: onCancel, child: Text(l10n.commonCancel)),
               FilledButton(
                 onPressed: onConfirm,
                 style:

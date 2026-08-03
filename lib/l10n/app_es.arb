@@ -158,5 +158,90 @@
     }
   },
   "gameOverRematch": "Revancha",
-  "gameOverWaitingForRematch": "Esperando a que el host inicie una revancha…"
+  "gameOverWaitingForRematch": "Esperando a que el host inicie una revancha…",
+
+  "gameReconnecting": "Reconectando…",
+
+  "nopeWindowTitle": "Ventana de Nope",
+  "nopeWindowCancelled": "Cancelada… alguien más puede reactivarla",
+  "nopeWindowCanCancel": "Cualquiera puede cancelar esto con un Nope",
+  "nopeWindowButton": "¡Nope!",
+
+  "insertBombTitle": "¿Dónde escondes la bomba?",
+  "insertBombTop": "Arriba del todo — la próxima carta que se robe",
+  "insertBombBottom": "Abajo del todo",
+  "insertBombPosition": "{position, plural, one{A 1 carta de la de arriba} other{A {position} cartas de la de arriba}}",
+  "@insertBombPosition": {
+    "placeholders": {
+      "position": {"type": "int"}
+    }
+  },
+  "insertBombConfirm": "Esconder bomba",
+
+  "favorTargetTitle": "Elige a quién pedirle una carta",
+
+  "seeTheFutureTitle": "Ves las próximas 3 cartas",
+  "seeTheFutureSubtitle": "De arriba hacia abajo",
+  "seeTheFutureContinue": "Continuar",
+
+  "explosionBoom": "¡BOOM!",
+  "explosionPlayerEliminated": "{playerName} explotó",
+  "@explosionPlayerEliminated": {
+    "placeholders": {
+      "playerName": {"type": "String"}
+    }
+  },
+
+  "gameTurnTimerLabel": "{playerName} · {seconds}s restantes",
+  "@gameTurnTimerLabel": {
+    "placeholders": {
+      "playerName": {"type": "String"},
+      "seconds": {"type": "int"}
+    }
+  },
+
+  "gameFavorChooseCardTitle": "Elegí una carta para darle a {askerName}",
+  "@gameFavorChooseCardTitle": {
+    "placeholders": {
+      "askerName": {"type": "String"}
+    }
+  },
+  "gameCatTrioChooseCardTitle": "Elegí a ciegas una carta de la mano de {targetName}",
+  "@gameCatTrioChooseCardTitle": {
+    "placeholders": {
+      "targetName": {"type": "String"}
+    }
+  },
+  "gameNopeWindowOpenStatus": "Ventana de Nope abierta…",
+  "gameWaitingForBombHide": "Esperando a que {name} esconda la bomba…",
+  "@gameWaitingForBombHide": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "gameWaitingForCardChoice": "Esperando a que {name} elija una carta…",
+  "@gameWaitingForCardChoice": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "gameTurnOf": "Turno de {name}",
+  "@gameTurnOf": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "gameCardTypeSelected": "{cardName} seleccionada",
+  "@gameCardTypeSelected": {
+    "placeholders": {
+      "cardName": {"type": "String"}
+    }
+  },
+  "gamePlayButton": "Jugar",
+  "gameFavorSelected": "Favor seleccionado",
+  "gameCatPairReady": "Par de gatos listo",
+  "gameCatTrioReady": "Trío de gatos listo",
+  "gameChooseTarget": "Elegir objetivo",
+  "gameCatCardNeedsPairHint": "Un gato solo no se puede jugar: toca otra carta igual para formar un par, o toca el mazo para robar y pasar el turno",
+  "gameUnsupportedSelectionHint": "Esta carta no se juega así — toca el mazo para robar y pasar el turno"
 }

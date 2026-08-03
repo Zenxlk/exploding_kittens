@@ -107,5 +107,44 @@
   "gameOverTurnsPlayed": "{count, plural, one{1 turn played} other{{count} turns played}}",
   "gameOverRankingEntry": "{position}. {name}",
   "gameOverRematch": "Rematch",
-  "gameOverWaitingForRematch": "Waiting for the host to start a rematch…"
+  "gameOverWaitingForRematch": "Waiting for the host to start a rematch…",
+
+  "gameReconnecting": "Reconnecting…",
+
+  "nopeWindowTitle": "Nope Window",
+  "nopeWindowCancelled": "Cancelled… someone else can reactivate it",
+  "nopeWindowCanCancel": "Anyone can cancel this with a Nope",
+  "nopeWindowButton": "Nope!",
+
+  "insertBombTitle": "Where do you hide the bomb?",
+  "insertBombTop": "Right on top — the next card drawn",
+  "insertBombBottom": "All the way at the bottom",
+  "insertBombPosition": "{position, plural, one{1 card from the top} other{{position} cards from the top}}",
+  "insertBombConfirm": "Hide bomb",
+
+  "favorTargetTitle": "Choose who to ask for a card",
+
+  "seeTheFutureTitle": "You see the next 3 cards",
+  "seeTheFutureSubtitle": "Top to bottom",
+  "seeTheFutureContinue": "Continue",
+
+  "explosionBoom": "BOOM!",
+  "explosionPlayerEliminated": "{playerName} exploded",
+
+  "gameTurnTimerLabel": "{playerName} · {seconds}s left",
+
+  "gameFavorChooseCardTitle": "Choose a card to give {askerName}",
+  "gameCatTrioChooseCardTitle": "Blindly choose a card from {targetName}'s hand",
+  "gameNopeWindowOpenStatus": "Nope window open…",
+  "gameWaitingForBombHide": "Waiting for {name} to hide the bomb…",
+  "gameWaitingForCardChoice": "Waiting for {name} to choose a card…",
+  "gameTurnOf": "{name}'s turn",
+  "gameCardTypeSelected": "{cardName} selected",
+  "gamePlayButton": "Play",
+  "gameFavorSelected": "Favor selected",
+  "gameCatPairReady": "Cat pair ready",
+  "gameCatTrioReady": "Cat trio ready",
+  "gameChooseTarget": "Choose target",
+  "gameCatCardNeedsPairHint": "A lone cat can't be played: tap another matching card to form a pair, or tap the deck to draw and end your turn",
+  "gameUnsupportedSelectionHint": "This card can't be played like that — tap the deck to draw and end your turn"
 }

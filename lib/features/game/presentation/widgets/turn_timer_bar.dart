@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:exploding_kittens/core/constants/game_constants.dart';
 import 'package:exploding_kittens/core/theme/app_colors.dart';
 import 'package:exploding_kittens/core/theme/app_text_styles.dart';
+import 'package:exploding_kittens/l10n/app_localizations.dart';
 
 /// Cuenta regresiva del turno actual. El temporizador real (que roba una
 /// carta automáticamente al expirar) vive en `GameNotifier`; no hay
@@ -69,7 +70,8 @@ class _TurnTimerBarState extends State<TurnTimerBar>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                '${widget.currentPlayerName} · ${secondsLeft}s restantes',
+                AppLocalizations.of(context)!
+                    .gameTurnTimerLabel(widget.currentPlayerName, secondsLeft),
                 style: AppTextStyles.caption,
                 textAlign: TextAlign.center,
               ),
