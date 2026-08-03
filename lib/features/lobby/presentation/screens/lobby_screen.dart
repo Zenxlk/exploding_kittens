@@ -16,6 +16,7 @@ import 'package:exploding_kittens/features/lobby/domain/models/lobby_room.dart';
 import 'package:exploding_kittens/features/lobby/domain/models/lobby_status.dart';
 import 'package:exploding_kittens/features/lobby/presentation/providers/lobby_providers.dart';
 import 'package:exploding_kittens/features/settings/presentation/providers/settings_providers.dart';
+import 'package:exploding_kittens/l10n/app_localizations.dart';
 
 class LobbyScreen extends ConsumerStatefulWidget {
   const LobbyScreen({super.key, required this.isHost});
@@ -52,18 +53,19 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen>
   }
 
   void _showRoomCodeDialog() {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Text('Room code', style: AppTextStyles.title),
+        title: Text(l10n.lobbyRoomCodeDialogTitle, style: AppTextStyles.title),
         content: TextField(
           controller: controller,
           style: AppTextStyles.body,
           textCapitalization: TextCapitalization.characters,
           decoration: InputDecoration(
-            hintText: 'AB12CD',
+            hintText: l10n.lobbyRoomCodeHint,
             hintStyle: AppTextStyles.caption.copyWith(
               color: AppColors.onBackground.withValues(alpha: 0.4),
             ),
@@ -74,7 +76,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen>
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              'Cancel',
+              l10n.commonCancel,
               style: AppTextStyles.body.copyWith(
                 color: AppColors.onBackground.withValues(alpha: 0.5),
               ),
@@ -92,7 +94,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen>
               }
             },
             child: Text(
-              'Connect',
+              l10n.lobbyConnect,
               style: AppTextStyles.body.copyWith(color: AppColors.primary),
             ),
           ),
@@ -137,6 +139,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen>
     });
 
     final lobbyState = ref.watch(lobbyProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return PopScope(
       canPop: false,
@@ -153,7 +156,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen>
           foregroundColor: AppColors.onBackground,
           elevation: 0,
           title: Text(
-            widget.isHost ? 'Create Room' : 'Join Room',
+            widget.isHost ? l10n.homeCreateRoom : l10n.homeJoinRoom,
             style: AppTextStyles.title,
           ),
           leading: IconButton(
@@ -172,7 +175,9 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen>
                 )
               : switch (lobbyState) {
                   LobbyIdle() || LobbyConnecting() => _ConnectingView(
-                      label: widget.isHost ? 'Creating room…' : 'Connecting…',
+                      label: widget.isHost
+                          ? l10n.lobbyCreatingRoom
+                          : l10n.lobbyConnectingEllipsis,
                     ),
                   LobbyDiscovering(:final rooms) => _DiscoveringView(
                       rooms: rooms,
@@ -182,7 +187,8 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen>
                     ),
                   LobbyInRoom() =>
                     _InRoomView(lobbyState, mode: _selectedMode!),
-                  LobbyError() => _ConnectingView(label: 'Error…'),
+                  LobbyError() =>
+                    _ConnectingView(label: l10n.lobbyGenericError),
                 },
         ),
       ),
@@ -199,6 +205,7 @@ class _ModeSelectionView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -212,7 +219,7 @@ class _ModeSelectionView extends StatelessWidget {
             ),
             const Gap(16),
             Text(
-              isHost ? 'How do you want to host?' : 'How do you want to join?',
+              isHost ? l10n.lobbyHowToHost : l10n.lobbyHowToJoin,
               style: AppTextStyles.title,
               textAlign: TextAlign.center,
             ),
@@ -222,7 +229,7 @@ class _ModeSelectionView extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: () => onSelect(LobbyMode.lan),
                 icon: const Icon(Icons.wifi_rounded),
-                label: const Text('Local WiFi'),
+                label: Text(l10n.lobbyLocalWifi),
               ),
             ),
             const Gap(12),
@@ -235,8 +242,8 @@ class _ModeSelectionView extends StatelessWidget {
                 icon: const Icon(Icons.public_rounded),
                 label: Text(
                   OnlineConfig.isConfigured
-                      ? 'Online'
-                      : 'Online (not available in this build)',
+                      ? l10n.lobbyOnline
+                      : l10n.lobbyOnlineUnavailable,
                 ),
               ),
             ),
@@ -281,6 +288,7 @@ class _DiscoveringView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -298,7 +306,7 @@ class _DiscoveringView extends StatelessWidget {
               ),
               const Gap(10),
               Text(
-                'Scanning local network…',
+                l10n.lobbyScanningNetwork,
                 style: AppTextStyles.caption.copyWith(
                   color: AppColors.onBackground.withValues(alpha: 0.6),
                 ),
@@ -319,7 +327,7 @@ class _DiscoveringView extends StatelessWidget {
                       ),
                       const Gap(12),
                       Text(
-                        'No rooms found yet',
+                        l10n.lobbyNoRoomsFound,
                         style: AppTextStyles.body.copyWith(
                           color: AppColors.onBackground.withValues(alpha: 0.4),
                         ),
@@ -345,7 +353,7 @@ class _DiscoveringView extends StatelessWidget {
           child: TextButton.icon(
             onPressed: () => _showManualIpDialog(context),
             icon: const Icon(Icons.edit_rounded, size: 16),
-            label: const Text('Enter IP manually'),
+            label: Text(l10n.lobbyEnterIpManually),
             style: TextButton.styleFrom(
               foregroundColor: AppColors.onBackground.withValues(alpha: 0.55),
             ),
@@ -356,18 +364,19 @@ class _DiscoveringView extends StatelessWidget {
   }
 
   void _showManualIpDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Text('Host IP address', style: AppTextStyles.title),
+        title: Text(l10n.lobbyHostIpDialogTitle, style: AppTextStyles.title),
         content: TextField(
           controller: controller,
           style: AppTextStyles.body,
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
-            hintText: '192.168.1.x',
+            hintText: l10n.lobbyIpHint,
             hintStyle: AppTextStyles.caption.copyWith(
               color: AppColors.onBackground.withValues(alpha: 0.4),
             ),
@@ -378,7 +387,7 @@ class _DiscoveringView extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              'Cancel',
+              l10n.commonCancel,
               style: AppTextStyles.body.copyWith(
                 color: AppColors.onBackground.withValues(alpha: 0.5),
               ),
@@ -400,7 +409,7 @@ class _DiscoveringView extends StatelessWidget {
               }
             },
             child: Text(
-              'Connect',
+              l10n.lobbyConnect,
               style: AppTextStyles.body.copyWith(color: AppColors.primary),
             ),
           ),
@@ -509,6 +518,7 @@ class _RoomHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final wifiIp = ref.watch(wifiIpProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -520,7 +530,7 @@ class _RoomHeader extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${room.players.length}/${room.maxPlayers} players',
+                  l10n.lobbyPlayerCount(room.players.length, room.maxPlayers),
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.secondary,
                     letterSpacing: 1,
@@ -534,28 +544,28 @@ class _RoomHeader extends ConsumerWidget {
                   // muestra — ahí se comparte la IP de WiFi en su lugar.
                   _CopyableValue(
                     value: room.id,
-                    copiedMessage: 'Room code copied to clipboard',
+                    copiedMessage: l10n.lobbyRoomCodeCopied,
                   )
                 else if (isHost)
                   wifiIp.when(
                     data: (ip) => ip == null
                         ? Text(
-                            'No WiFi',
+                            l10n.lobbyNoWifi,
                             style: AppTextStyles.body
                                 .copyWith(color: AppColors.eliminated),
                           )
                         : _CopyableValue(
                             value: ip,
-                            copiedMessage: 'IP copied to clipboard',
+                            copiedMessage: l10n.lobbyIpCopied,
                           ),
                     loading: () => Text(
-                      'Reading IP…',
+                      l10n.lobbyReadingIp,
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.onBackground.withValues(alpha: 0.4),
                       ),
                     ),
                     error: (_, __) => Text(
-                      'WiFi IP unavailable',
+                      l10n.lobbyWifiIpUnavailable,
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.eliminated,
                       ),
@@ -563,7 +573,7 @@ class _RoomHeader extends ConsumerWidget {
                   )
                 else
                   Text(
-                    'Waiting for host to start…',
+                    l10n.lobbyWaitingForHost,
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.onBackground.withValues(alpha: 0.5),
                     ),
@@ -636,6 +646,7 @@ class _PlayerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       leading: CircleAvatar(
@@ -654,7 +665,7 @@ class _PlayerTile extends StatelessWidget {
       title: Row(
         children: [
           Text(
-            player.name + (isLocalPlayer ? ' (you)' : ''),
+            isLocalPlayer ? l10n.lobbyPlayerNameYou(player.name) : player.name,
             style: AppTextStyles.body,
           ),
           if (player.isHost) ...[
@@ -692,6 +703,7 @@ class _ActionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isHost = lobbyState.isHost;
     final room = lobbyState.room;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -705,7 +717,9 @@ class _ActionBar extends StatelessWidget {
                     : null,
                 icon: const Icon(Icons.play_arrow_rounded),
                 label: Text(
-                  room.canStart ? 'Start Game' : 'Waiting for players…',
+                  room.canStart
+                      ? l10n.lobbyStartGame
+                      : l10n.lobbyWaitingForPlayers,
                   style: AppTextStyles.body,
                 ),
               )
@@ -719,7 +733,9 @@ class _ActionBar extends StatelessWidget {
                       : Icons.check_rounded,
                 ),
                 label: Text(
-                  lobbyState.isLocalPlayerReady ? 'Not Ready' : 'Ready',
+                  lobbyState.isLocalPlayerReady
+                      ? l10n.lobbyNotReady
+                      : l10n.lobbyReady,
                   style: AppTextStyles.body,
                 ),
                 style: ElevatedButton.styleFrom(

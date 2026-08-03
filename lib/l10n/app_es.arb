@@ -91,5 +91,45 @@
   "rulesCatNeedsPairDesc": "No hace nada sola — necesita pareja.",
   "rulesCatExplainerIntro": "Ninguna carta de gato hace algo sola: son \"cartas basura\" que solo sirven combinadas.",
   "rulesCatExplainerPairTrio": "Juntá 2 iguales para elegir a otro jugador y robarle una carta al azar de su mano. Con 3 iguales elegís vos qué carta robarle, pero a ciegas: ves su mano boca abajo y tocás una posición sin saber qué es hasta que la tengas.",
-  "rulesCatExplainerLeftover": "Si te quedan solo gatos sueltos sin pareja, no hay drama: no podés jugarlos, así que simplemente tocá el mazo para robar y seguir."
+  "rulesCatExplainerLeftover": "Si te quedan solo gatos sueltos sin pareja, no hay drama: no podés jugarlos, así que simplemente tocá el mazo para robar y seguir.",
+
+  "lobbyRoomCodeDialogTitle": "Código de sala",
+  "lobbyRoomCodeHint": "AB12CD",
+  "lobbyConnect": "Conectar",
+  "lobbyCreatingRoom": "Creando sala…",
+  "lobbyConnectingEllipsis": "Conectando…",
+  "lobbyGenericError": "Error…",
+  "lobbyHowToHost": "¿Cómo querés hostear?",
+  "lobbyHowToJoin": "¿Cómo querés unirte?",
+  "lobbyLocalWifi": "WiFi local",
+  "lobbyOnline": "Online",
+  "lobbyOnlineUnavailable": "Online (no disponible en este build)",
+  "lobbyScanningNetwork": "Buscando en la red local…",
+  "lobbyNoRoomsFound": "Todavía no se encontraron salas",
+  "lobbyEnterIpManually": "Ingresar IP manualmente",
+  "lobbyHostIpDialogTitle": "Dirección IP del host",
+  "lobbyIpHint": "192.168.1.x",
+  "lobbyRoomCodeCopied": "Código de sala copiado al portapapeles",
+  "lobbyIpCopied": "IP copiada al portapapeles",
+  "lobbyNoWifi": "Sin WiFi",
+  "lobbyReadingIp": "Leyendo IP…",
+  "lobbyWifiIpUnavailable": "IP de WiFi no disponible",
+  "lobbyWaitingForHost": "Esperando a que el host inicie…",
+  "lobbyPlayerCount": "{count}/{max} jugadores",
+  "@lobbyPlayerCount": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "max": {"type": "int"}
+    }
+  },
+  "lobbyPlayerNameYou": "{name} (vos)",
+  "@lobbyPlayerNameYou": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "lobbyStartGame": "Iniciar partida",
+  "lobbyWaitingForPlayers": "Esperando jugadores…",
+  "lobbyNotReady": "No listo",
+  "lobbyReady": "Listo"
 }

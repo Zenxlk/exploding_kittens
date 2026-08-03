@@ -92,7 +92,7 @@ void main() {
           _wrap(const LobbyScreen(isHost: true), notifier),
         );
 
-        await tester.tap(find.text('Local WiFi'));
+        await tester.tap(find.text('WiFi local'));
         await tester.pump();
 
         expect(notifier.calls, ['createRoom']);
@@ -110,7 +110,7 @@ void main() {
 
         final button = tester.widget<OutlinedButton>(
           find.ancestor(
-            of: find.text('Online (not available in this build)'),
+            of: find.text('Online (no disponible en este build)'),
             matching: find.byType(OutlinedButton),
           ),
         );
@@ -147,7 +147,7 @@ void main() {
           _wrap(const LobbyScreen(isHost: false), notifier),
         );
 
-        await tester.tap(find.text('Local WiFi'));
+        await tester.tap(find.text('WiFi local'));
         await tester.pump();
 
         expect(notifier.calls, ['startDiscovery']);
@@ -168,11 +168,11 @@ void main() {
         await tester.tap(find.text('Online'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Room code'), findsOneWidget);
+        expect(find.text('Código de sala'), findsOneWidget);
         expect(notifier.calls, isEmpty);
 
         await tester.enterText(find.byType(TextField), 'ab12cd');
-        await tester.tap(find.text('Connect'));
+        await tester.tap(find.text('Conectar'));
         await tester.pump();
 
         expect(notifier.calls, ['joinRoom']);
@@ -195,10 +195,10 @@ void main() {
         await tester.tap(find.text('Online'));
         await tester.pumpAndSettle();
 
-        await tester.tap(find.text('Cancel'));
+        await tester.tap(find.text('Cancelar'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Local WiFi'), findsOneWidget);
+        expect(find.text('WiFi local'), findsOneWidget);
         expect(notifier.calls, isEmpty);
       },
     );
@@ -221,7 +221,7 @@ void main() {
           _wrap(const LobbyScreen(isHost: true), notifier),
         );
 
-        await tester.tap(find.text('Local WiFi'));
+        await tester.tap(find.text('WiFi local'));
         // pumpAndSettle, no pump: _PlayerTile usa flutter_animate (fadeIn/
         // slideX), que deja un Timer corriendo si no se lo deja terminar.
         await tester.pumpAndSettle();
