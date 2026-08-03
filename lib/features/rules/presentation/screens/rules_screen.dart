@@ -8,6 +8,7 @@ import 'package:exploding_kittens/core/theme/app_text_styles.dart';
 import 'package:exploding_kittens/features/game/presentation/providers/card_asset_provider.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/card_widget.dart';
 import 'package:exploding_kittens/game_engine/models/card/card_type.dart';
+import 'package:exploding_kittens/l10n/app_localizations.dart';
 
 /// Explicación en criollo de las reglas ya implementadas, con las cartas de
 /// verdad para que se entienda de un vistazo. No es el manual oficial del
@@ -21,6 +22,7 @@ class RulesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final resolver = ref.watch(cardAssetResolverProvider).value;
     final assetPathFor = resolver?.faceAssetFor;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -28,7 +30,7 @@ class RulesScreen extends ConsumerWidget {
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.onBackground,
         elevation: 0,
-        title: Text('Cómo jugar', style: AppTextStyles.title),
+        title: Text(l10n.homeHowToPlay, style: AppTextStyles.title),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
@@ -39,92 +41,80 @@ class RulesScreen extends ConsumerWidget {
         children: [
           const _IntroSection(),
           const Gap(28),
-          _SectionHeader('Cartas especiales'),
+          _SectionHeader(l10n.rulesSectionSpecialCards),
           const Gap(8),
           _RuleCardRow(
             type: CardType.explodingKitten,
             assetPathFor: assetPathFor,
-            description: 'Si la robás y no tenés un Defuse, quedás '
-                'eliminado. No se juega desde la mano: solo aparece cuando '
-                'te toca en el mazo.',
+            description: l10n.rulesExplodingKittenDesc,
           ),
           _RuleCardRow(
             type: CardType.defuse,
             assetPathFor: assetPathFor,
-            description: 'Te salva de una Exploding Kitten: la escondés de '
-                'nuevo en el mazo, en la posición que elijas.',
+            description: l10n.rulesDefuseDesc,
           ),
           _RuleCardRow(
             type: CardType.nope,
             assetPathFor: assetPathFor,
-            description: 'Cancela la última carta jugada (menos una '
-                'Exploding Kitten o un Defuse). La puede jugar cualquiera, '
-                'en cualquier momento, aunque no sea su turno — incluso '
-                'para cancelar otro Nope.',
+            description: l10n.rulesNopeDesc,
           ),
           const Gap(20),
-          _SectionHeader('Cartas de acción'),
+          _SectionHeader(l10n.rulesSectionActionCards),
           const Gap(8),
           _RuleCardRow(
             type: CardType.attack,
             assetPathFor: assetPathFor,
-            description: 'Termina tu turno sin robar, y el siguiente '
-                'jugador tiene que jugar dos turnos seguidos.',
+            description: l10n.rulesAttackDesc,
           ),
           _RuleCardRow(
             type: CardType.skip,
             assetPathFor: assetPathFor,
-            description: 'Termina tu turno sin robar. Ojo: si te atacaron '
-                'y te tocan dos turnos, un Skip solo te libra de uno — '
-                'necesitás jugar o robar una vez más.',
+            description: l10n.rulesSkipDesc,
           ),
           _RuleCardRow(
             type: CardType.favor,
             assetPathFor: assetPathFor,
-            description: 'Elegís a otro jugador y te tiene que dar una '
-                'carta de su mano — la elige él, no vos.',
+            description: l10n.rulesFavorDesc,
           ),
           _RuleCardRow(
             type: CardType.shuffle,
             assetPathFor: assetPathFor,
-            description: 'Reparte de nuevo el mazo al azar. Nadie ve las '
-                'cartas.',
+            description: l10n.rulesShuffleDesc,
           ),
           _RuleCardRow(
             type: CardType.seeTheFuture,
             assetPathFor: assetPathFor,
-            description: 'Mirás las 3 cartas de arriba del mazo, en orden, '
-                'sin cambiar nada.',
+            description: l10n.rulesSeeTheFutureDesc,
           ),
           const Gap(20),
-          _SectionHeader('Gatos'),
+          _SectionHeader(l10n.rulesSectionCats),
           const Gap(8),
           const _CatCardsExplainer(),
           const Gap(8),
           _RuleCardRow(
             type: CardType.tacocat,
             assetPathFor: assetPathFor,
-            description: 'No hace nada sola — necesita pareja.',
+            description: l10n.rulesCatNeedsPairDesc,
           ),
           _RuleCardRow(
             type: CardType.rainbowRalphingCat,
             assetPathFor: assetPathFor,
-            description: 'No hace nada sola — necesita pareja.',
+            description: l10n.rulesCatNeedsPairDesc,
           ),
           _RuleCardRow(
             type: CardType.beardedDragon,
             assetPathFor: assetPathFor,
-            description: 'No hace nada sola — necesita pareja.',
+            description: l10n.rulesCatNeedsPairDesc,
           ),
           _RuleCardRow(
             type: CardType.cattermelon,
             assetPathFor: assetPathFor,
-            description: 'No hace nada sola — necesita pareja.',
+            description: l10n.rulesCatNeedsPairDesc,
           ),
           _RuleCardRow(
             type: CardType.hairyPotatoCat,
             assetPathFor: assetPathFor,
-            description: 'No hace nada sola — necesita pareja.',
+            description: l10n.rulesCatNeedsPairDesc,
           ),
         ],
       ),
@@ -137,36 +127,21 @@ class _IntroSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader('El objetivo'),
+        _SectionHeader(l10n.rulesSectionObjective),
         const Gap(6),
-        Text(
-          'Sé el último gato en pie. El resto va explotando (a menos que '
-          'se defusen a tiempo) hasta que solo queda uno.',
-          style: AppTextStyles.body,
-        ),
+        Text(l10n.rulesObjectiveBody, style: AppTextStyles.body),
         const Gap(18),
-        _SectionHeader('Antes de empezar'),
+        _SectionHeader(l10n.rulesSectionBeforeStart),
         const Gap(6),
-        Text(
-          'Cada jugador arranca con 7 cartas y 1 Defuse. El resto del mazo '
-          '(con suficientes Exploding Kittens para que quede una menos que '
-          'la cantidad de jugadores) se baraja y se reparte boca abajo en '
-          'el centro.',
-          style: AppTextStyles.body,
-        ),
+        Text(l10n.rulesBeforeStartBody, style: AppTextStyles.body),
         const Gap(18),
-        _SectionHeader('Tu turno'),
+        _SectionHeader(l10n.rulesSectionYourTurn),
         const Gap(6),
-        Text(
-          'Podés jugar tantas cartas de acción como quieras, o ninguna. '
-          'Cuando termines, siempre tenés que robar una carta del mazo '
-          'para pasar el turno. Si te sale una Exploding Kitten y no '
-          'tenés Defuse, quedás eliminado ahí mismo.',
-          style: AppTextStyles.body,
-        ),
+        Text(l10n.rulesYourTurnBody, style: AppTextStyles.body),
       ],
     );
   }
@@ -177,6 +152,7 @@ class _CatCardsExplainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -187,25 +163,19 @@ class _CatCardsExplainer extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Ninguna carta de gato hace algo sola: son "cartas basura" '
-            'que solo sirven combinadas.',
+            l10n.rulesCatExplainerIntro,
             style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
           ),
           const Gap(4),
           Text(
-            'Juntá 2 iguales para elegir a otro jugador y robarle una '
-            'carta al azar de su mano. Con 3 iguales elegís vos qué carta '
-            'robarle, pero a ciegas: ves su mano boca abajo y tocás una '
-            'posición sin saber qué es hasta que la tengas.',
+            l10n.rulesCatExplainerPairTrio,
             style: AppTextStyles.caption.copyWith(
               color: AppColors.onBackground.withValues(alpha: 0.75),
             ),
           ),
           const Gap(4),
           Text(
-            'Si te quedan solo gatos sueltos sin pareja, no hay drama: '
-            'no podés jugarlos, así que simplemente tocá el mazo para '
-            'robar y seguir.',
+            l10n.rulesCatExplainerLeftover,
             style: AppTextStyles.caption.copyWith(
               color: AppColors.onBackground.withValues(alpha: 0.75),
             ),

@@ -45,5 +45,27 @@
   "authResetPasswordDialogTitle": "Reset password",
   "authResetPasswordEmailHint": "you@email.com",
   "authSend": "Send",
-  "authResetPasswordConfirmation": "If that email exists, you'll get a link to reset your password."
+  "authResetPasswordConfirmation": "If that email exists, you'll get a link to reset your password.",
+
+  "rulesSectionSpecialCards": "Special Cards",
+  "rulesSectionActionCards": "Action Cards",
+  "rulesSectionCats": "Cats",
+  "rulesSectionObjective": "The Goal",
+  "rulesSectionBeforeStart": "Before You Start",
+  "rulesSectionYourTurn": "Your Turn",
+  "rulesObjectiveBody": "Be the last cat standing. Everyone else explodes (unless they defuse in time) until only one is left.",
+  "rulesBeforeStartBody": "Each player starts with 7 cards and 1 Defuse. The rest of the deck (with enough Exploding Kittens to leave one fewer than the number of players) is shuffled and dealt face down in the middle.",
+  "rulesYourTurnBody": "You can play as many action cards as you want, or none at all. When you're done, you always have to draw a card from the deck to end your turn. If you draw an Exploding Kitten and don't have a Defuse, you're eliminated on the spot.",
+  "rulesExplodingKittenDesc": "If you draw it and don't have a Defuse, you're eliminated. It's not played from your hand: it only shows up when you draw it.",
+  "rulesDefuseDesc": "Saves you from an Exploding Kitten: you hide it back in the deck, wherever you choose.",
+  "rulesNopeDesc": "Cancels the last card played (except an Exploding Kitten or a Defuse). Anyone can play it, at any time, even if it's not their turn — even to cancel another Nope.",
+  "rulesAttackDesc": "Ends your turn without drawing, and the next player has to take two turns in a row.",
+  "rulesSkipDesc": "Ends your turn without drawing. Careful: if you were attacked and owe two turns, a Skip only clears one — you still need to play or draw once more.",
+  "rulesFavorDesc": "Pick another player and they have to give you a card from their hand — they choose which one, not you.",
+  "rulesShuffleDesc": "Reshuffles the deck at random. No one sees the cards.",
+  "rulesSeeTheFutureDesc": "You look at the top 3 cards of the deck, in order, without changing anything.",
+  "rulesCatNeedsPairDesc": "Does nothing on its own — it needs a pair.",
+  "rulesCatExplainerIntro": "No single cat card does anything on its own: they're \"junk cards\" that only work combined.",
+  "rulesCatExplainerPairTrio": "Combine 2 matching cats to pick another player and steal a random card from their hand. With 3 matching, you choose which card to steal, but blind: you see their hand face down and tap a position without knowing what it is until you get it.",
+  "rulesCatExplainerLeftover": "If you're left with only unpaired cats, no worries: you can't play them, so just tap the deck to draw and keep going."
 }

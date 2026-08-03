@@ -69,5 +69,27 @@
   "authResetPasswordDialogTitle": "Recuperar contraseña",
   "authResetPasswordEmailHint": "tu@correo.com",
   "authSend": "Enviar",
-  "authResetPasswordConfirmation": "Si el correo existe, te llegará un enlace para restablecer la contraseña."
+  "authResetPasswordConfirmation": "Si el correo existe, te llegará un enlace para restablecer la contraseña.",
+
+  "rulesSectionSpecialCards": "Cartas especiales",
+  "rulesSectionActionCards": "Cartas de acción",
+  "rulesSectionCats": "Gatos",
+  "rulesSectionObjective": "El objetivo",
+  "rulesSectionBeforeStart": "Antes de empezar",
+  "rulesSectionYourTurn": "Tu turno",
+  "rulesObjectiveBody": "Sé el último gato en pie. El resto va explotando (a menos que se defusen a tiempo) hasta que solo queda uno.",
+  "rulesBeforeStartBody": "Cada jugador arranca con 7 cartas y 1 Defuse. El resto del mazo (con suficientes Exploding Kittens para que quede una menos que la cantidad de jugadores) se baraja y se reparte boca abajo en el centro.",
+  "rulesYourTurnBody": "Podés jugar tantas cartas de acción como quieras, o ninguna. Cuando termines, siempre tenés que robar una carta del mazo para pasar el turno. Si te sale una Exploding Kitten y no tenés Defuse, quedás eliminado ahí mismo.",
+  "rulesExplodingKittenDesc": "Si la robás y no tenés un Defuse, quedás eliminado. No se juega desde la mano: solo aparece cuando te toca en el mazo.",
+  "rulesDefuseDesc": "Te salva de una Exploding Kitten: la escondés de nuevo en el mazo, en la posición que elijas.",
+  "rulesNopeDesc": "Cancela la última carta jugada (menos una Exploding Kitten o un Defuse). La puede jugar cualquiera, en cualquier momento, aunque no sea su turno — incluso para cancelar otro Nope.",
+  "rulesAttackDesc": "Termina tu turno sin robar, y el siguiente jugador tiene que jugar dos turnos seguidos.",
+  "rulesSkipDesc": "Termina tu turno sin robar. Ojo: si te atacaron y te tocan dos turnos, un Skip solo te libra de uno — necesitás jugar o robar una vez más.",
+  "rulesFavorDesc": "Elegís a otro jugador y te tiene que dar una carta de su mano — la elige él, no vos.",
+  "rulesShuffleDesc": "Reparte de nuevo el mazo al azar. Nadie ve las cartas.",
+  "rulesSeeTheFutureDesc": "Mirás las 3 cartas de arriba del mazo, en orden, sin cambiar nada.",
+  "rulesCatNeedsPairDesc": "No hace nada sola — necesita pareja.",
+  "rulesCatExplainerIntro": "Ninguna carta de gato hace algo sola: son \"cartas basura\" que solo sirven combinadas.",
+  "rulesCatExplainerPairTrio": "Juntá 2 iguales para elegir a otro jugador y robarle una carta al azar de su mano. Con 3 iguales elegís vos qué carta robarle, pero a ciegas: ves su mano boca abajo y tocás una posición sin saber qué es hasta que la tengas.",
+  "rulesCatExplainerLeftover": "Si te quedan solo gatos sueltos sin pareja, no hay drama: no podés jugarlos, así que simplemente tocá el mazo para robar y seguir."
 }
