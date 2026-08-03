@@ -1,4 +1,24 @@
 {
   "@@locale": "en",
-  "appTitle": "Exploding Kittens"
+  "appTitle": "Exploding Kittens",
+
+  "commonSettings": "Settings",
+  "commonFanProjectFooter": "Fan project · Non-commercial",
+
+  "homeSubtitle": "Fan Edition · {company}",
+  "homeCreateRoom": "Create Room",
+  "homeJoinRoom": "Join Room",
+  "homeHowToPlay": "How to Play",
+
+  "settingsLoadError": "Error loading settings: {error}",
+  "settingsSectionProfile": "Profile",
+  "settingsPlayerNameLabel": "Player name",
+  "settingsSectionAccount": "Account",
+  "settingsGuestLabel": "Guest",
+  "settingsSectionAudio": "Audio",
+  "settingsSoundEffects": "Sound effects",
+  "settingsBackgroundMusic": "Background music",
+  "settingsSectionAbout": "About",
+  "settingsVersion": "Version",
+  "settingsBasedOnOriginalGame": "Based on the original Exploding Kittens LLC game"
 }

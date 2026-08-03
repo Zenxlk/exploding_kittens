@@ -3,5 +3,41 @@
   "appTitle": "Exploding Kittens",
   "@appTitle": {
     "description": "Título de la app, usado por MaterialApp.title (no visible en UI normalmente)."
-  }
+  },
+
+  "commonSettings": "Ajustes",
+  "@commonSettings": {
+    "description": "Compartido entre HomeScreen (botón) y SettingsScreen (título de AppBar)."
+  },
+  "commonFanProjectFooter": "Proyecto de fans · Sin fines comerciales",
+  "@commonFanProjectFooter": {
+    "description": "Compartido entre HomeScreen y SettingsScreen."
+  },
+
+  "homeSubtitle": "Edición de fans · {company}",
+  "@homeSubtitle": {
+    "placeholders": {
+      "company": {"type": "String"}
+    }
+  },
+  "homeCreateRoom": "Crear sala",
+  "homeJoinRoom": "Unirse a sala",
+  "homeHowToPlay": "Cómo jugar",
+
+  "settingsLoadError": "Error al cargar ajustes: {error}",
+  "@settingsLoadError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "settingsSectionProfile": "Perfil",
+  "settingsPlayerNameLabel": "Nombre de jugador",
+  "settingsSectionAccount": "Cuenta",
+  "settingsGuestLabel": "Invitado",
+  "settingsSectionAudio": "Audio",
+  "settingsSoundEffects": "Efectos de sonido",
+  "settingsBackgroundMusic": "Música de fondo",
+  "settingsSectionAbout": "Acerca de",
+  "settingsVersion": "Versión",
+  "settingsBasedOnOriginalGame": "Basado en el juego original de Exploding Kittens LLC"
 }
