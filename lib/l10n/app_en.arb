@@ -96,5 +96,16 @@
   "lobbyStartGame": "Start Game",
   "lobbyWaitingForPlayers": "Waiting for players…",
   "lobbyNotReady": "Not Ready",
-  "lobbyReady": "Ready"
+  "lobbyReady": "Ready",
+
+  "gameNoMatchInProgress": "No match in progress",
+  "gameDealingCards": "Dealing cards…",
+
+  "gameOverNoResult": "There's no match result",
+  "gameOverBackToMenu": "Back to menu",
+  "gameOverWinnerAnnouncement": "{winnerName} won!",
+  "gameOverTurnsPlayed": "{count, plural, one{1 turn played} other{{count} turns played}}",
+  "gameOverRankingEntry": "{position}. {name}",
+  "gameOverRematch": "Rematch",
+  "gameOverWaitingForRematch": "Waiting for the host to start a rematch…"
 }

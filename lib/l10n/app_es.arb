@@ -131,5 +131,32 @@
   "lobbyStartGame": "Iniciar partida",
   "lobbyWaitingForPlayers": "Esperando jugadores…",
   "lobbyNotReady": "No listo",
-  "lobbyReady": "Listo"
+  "lobbyReady": "Listo",
+
+  "gameNoMatchInProgress": "No hay ninguna partida en curso",
+  "gameDealingCards": "Repartiendo cartas…",
+
+  "gameOverNoResult": "No hay ningún resultado de partida",
+  "gameOverBackToMenu": "Volver al menú",
+  "gameOverWinnerAnnouncement": "¡{winnerName} ganó!",
+  "@gameOverWinnerAnnouncement": {
+    "placeholders": {
+      "winnerName": {"type": "String"}
+    }
+  },
+  "gameOverTurnsPlayed": "{count, plural, one{1 turno jugado} other{{count} turnos jugados}}",
+  "@gameOverTurnsPlayed": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "gameOverRankingEntry": "{position}. {name}",
+  "@gameOverRankingEntry": {
+    "placeholders": {
+      "position": {"type": "int"},
+      "name": {"type": "String"}
+    }
+  },
+  "gameOverRematch": "Revancha",
+  "gameOverWaitingForRematch": "Esperando a que el host inicie una revancha…"
 }

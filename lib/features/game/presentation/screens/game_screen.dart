@@ -18,6 +18,7 @@ import 'package:exploding_kittens/features/settings/domain/app_settings.dart';
 import 'package:exploding_kittens/features/settings/presentation/providers/settings_providers.dart';
 import 'package:exploding_kittens/game_engine/models/game/game_config.dart';
 import 'package:exploding_kittens/game_engine/models/player/player_model.dart';
+import 'package:exploding_kittens/l10n/app_localizations.dart';
 
 /// Cada dispositivo conectado a la sala es dueño de un único jugador: el
 /// host corre el motor real (vía `LocalGameGateway`/`GameNotifier`) y lo
@@ -127,11 +128,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
     final lobbyState = ref.watch(lobbyProvider);
     final resolver = ref.watch(cardAssetResolverProvider).value;
+    final l10n = AppLocalizations.of(context)!;
 
     if (lobbyState is! LobbyInRoom) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.background,
-        body: _CenteredMessage('No hay ninguna partida en curso'),
+        body: _CenteredMessage(l10n.gameNoMatchInProgress),
       );
     }
 
@@ -206,7 +208,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 ? ref.read(gameProvider.notifier).events
                 : ref.read(remoteGameProvider.notifier).events,
           ),
-        _ => const _CenteredMessage('Repartiendo cartas…'),
+        _ => _CenteredMessage(l10n.gameDealingCards),
       },
     );
   }
