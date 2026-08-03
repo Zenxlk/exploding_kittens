@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/audio/menu_music_mixin.dart';
+import '../../../../core/config/supabase_config.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../providers/settings_providers.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -91,6 +95,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     ref.read(settingsProvider.notifier).setPlayerName(value),
                 textInputAction: TextInputAction.done,
               ),
+
+              // ── Cuenta ───────────────────────────────────────────────────
+              // Solo con Supabase configurado — mismo criterio que el botón
+              // Online en LobbyScreen, la feature entera se apaga sin .env.
+              if (SupabaseConfig.isConfigured) ...[
+                const Gap(28),
+                _SectionHeader('Cuenta'),
+                const Gap(4),
+                Builder(builder: (context) {
+                  final session = ref.watch(authSessionProvider).value;
+                  return _SettingsTile(
+                    title: session?.email ?? 'Invitado',
+                    icon: Icons.account_circle_outlined,
+                    trailing: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.secondary,
+                    ),
+                    onTap: () => context.push(RouteNames.account),
+                  );
+                }),
+              ],
 
               const Gap(28),
 
@@ -203,12 +228,14 @@ class _SettingsTile extends StatelessWidget {
     required this.icon,
     required this.trailing,
     this.subtitle,
+    this.onTap,
   });
 
   final String title;
   final IconData icon;
   final Widget trailing;
   final String? subtitle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -225,6 +252,7 @@ class _SettingsTile extends StatelessWidget {
             )
           : null,
       trailing: trailing,
+      onTap: onTap,
     );
   }
 }

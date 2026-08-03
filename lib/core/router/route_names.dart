@@ -8,4 +8,7 @@ abstract final class RouteNames {
   static const String gameOver = '/game/over';
   static const String settings = '/settings';
   static const String rules = '/rules';
+  static const String account = '/account';
+  static const String accountSignUp = '/account/sign-up';
+  static const String accountLogin = '/account/login';
 }

@@ -6,6 +6,7 @@ class AuthSession {
     required this.playerId,
     required this.accessToken,
     required this.isAnonymous,
+    this.email,
   });
 
   // "sub" del JWT — mismo valor que espera cards_game_service como
@@ -13,4 +14,8 @@ class AuthSession {
   final String playerId;
   final String accessToken;
   final bool isAnonymous;
+
+  // null para invitados, o para una cuenta recién vinculada mientras el
+  // proyecto Supabase exija confirmar el correo antes de reflejarlo acá.
+  final String? email;
 }

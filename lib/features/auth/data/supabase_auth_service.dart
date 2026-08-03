@@ -22,9 +22,41 @@ class SupabaseAuthService {
     return _toAuthSession(response.session!);
   }
 
+  // Vincula correo/contraseña a la sesión anónima activa en vez de crear
+  // una cuenta nueva — mismo playerId/accessToken de antes, updateUser()
+  // solo agrega credenciales a esa identidad (ver gotrue_client.dart:
+  // actualiza _currentSession in-place). Distinto de signUp(), que crearía
+  // un usuario aparte y perdería el historial ya asociado al anónimo.
+  Future<AuthSession> signUpAndLinkAnonymous({
+    required String email,
+    required String password,
+  }) async {
+    await _client.auth.updateUser(
+      UserAttributes(email: email, password: password),
+    );
+    return _toAuthSession(_client.auth.currentSession!);
+  }
+
+  // A diferencia de signUpAndLinkAnonymous, esto reemplaza la sesión
+  // anónima por la de una cuenta ya existente (recupera su historial).
+  Future<AuthSession> signInWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    final response =
+        await _client.auth.signInWithPassword(email: email, password: password);
+    return _toAuthSession(response.session!);
+  }
+
+  Future<void> signOut() => _client.auth.signOut();
+
+  Future<void> resetPasswordForEmail(String email) =>
+      _client.auth.resetPasswordForEmail(email);
+
   AuthSession _toAuthSession(Session session) => AuthSession(
         playerId: session.user.id,
         accessToken: session.accessToken,
         isAnonymous: session.user.isAnonymous,
+        email: session.user.email,
       );
 }
