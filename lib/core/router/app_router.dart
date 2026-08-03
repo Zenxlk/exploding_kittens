@@ -6,6 +6,9 @@ import '../../features/game/presentation/screens/game_screen.dart';
 import '../../features/game/presentation/screens/game_over_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/rules/presentation/screens/rules_screen.dart';
+import '../../features/auth/presentation/screens/account_screen.dart';
+import '../../features/auth/presentation/screens/sign_up_screen.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
 import 'route_names.dart';
 
 final appRouter = GoRouter(
@@ -42,6 +45,18 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.rules,
       builder: (_, __) => const RulesScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.account,
+      builder: (_, __) => const AccountScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.accountSignUp,
+      builder: (_, __) => const SignUpScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.accountLogin,
+      builder: (_, __) => const LoginScreen(),
     ),
   ],
 );

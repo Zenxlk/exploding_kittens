@@ -251,18 +251,29 @@ Implementado:
 - Soporte `wss://` (TLS): `OnlineConfig.wsUri()` deriva el esquema
   `wss`/`ws` del `https`/`http` de `ONLINE_SERVER_URL`; `WsClient` ya no
   asume `ws://` a secas.
+- Vincular la cuenta anónima a un login real con correo/contraseña
+  (issue #27): `SupabaseAuthService.signUpAndLinkAnonymous` llama
+  `supabase.auth.updateUser()` **mientras la sesión anónima sigue
+  activa** — actualiza esa misma identidad (mismo `playerId`, mismo
+  historial en `cards_game_service`) en vez de crear una cuenta aparte.
+  `signInWithPassword` es el camino inverso: reemplaza la sesión anónima
+  por la de una cuenta ya existente, para recuperar su historial. Tres
+  pantallas nuevas en `features/auth/presentation/screens/`
+  (`AccountScreen`, `SignUpScreen`, `LoginScreen`), accesibles desde
+  Ajustes solo si `SupabaseConfig.isConfigured` — la app sigue arrancando
+  100% invitada por default, este login es opt-in. Login con Google sigue
+  fuera de alcance (issue aparte).
 
 Todo lo de arriba tiene tests automatizados contra dobles (un `WsServer`
-propio como backend de prueba, `MockClient`/mocktail para HTTP) y además
-se verificó a mano contra el proceso Go real antes de mergear — pasos de
-reproducción en `docs/VERIFICATION_LOG.md`, sección "Fase 7 — Modo online
-del lado cliente".
+propio como backend de prueba, `MockClient`/mocktail para HTTP,
+`MockSupabaseClient`/`MockGoTrueClient` para las llamadas a GoTrue) y
+además se verificó a mano contra el proceso Go real antes de mergear —
+pasos de reproducción en `docs/VERIFICATION_LOG.md`, sección "Fase 7 —
+Modo online del lado cliente".
 
 **Explícitamente fuera de alcance** (no confundir con lo de arriba):
 
-- Vincular una cuenta anónima a una cuenta real (login con
-  email/Google/etc.). Supabase lo soporta (`linkIdentity`), pero no está
-  implementado.
+- Login con Google/OAuth — issue aparte.
 - Sistema de cuentas/nicknames persistentes y ranking global — el backend
   ya expone `GET /players/{id}`, `PATCH /players/{id}/nickname` y
   `GET /leaderboard`, pero el cliente todavía no los consume.

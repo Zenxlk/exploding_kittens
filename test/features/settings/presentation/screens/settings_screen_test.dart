@@ -1,12 +1,28 @@
 import 'package:exploding_kittens/core/audio/audio_service.dart';
 import 'package:exploding_kittens/core/audio/i_audio_service.dart';
 import 'package:exploding_kittens/core/constants/asset_paths.dart';
+import 'package:exploding_kittens/core/router/route_names.dart';
+import 'package:exploding_kittens/features/auth/domain/auth_session.dart';
+import 'package:exploding_kittens/features/auth/presentation/providers/auth_providers.dart';
 import 'package:exploding_kittens/features/settings/presentation/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+// Fake mínimo: SettingsScreen solo lee el state, nunca llama métodos de
+// escritura del notifier — no hace falta el patrón completo de
+// account_screen_test.dart.
+class _FakeAuthSessionNotifier extends AuthSessionNotifier {
+  _FakeAuthSessionNotifier(this._session);
+  final AuthSession? _session;
+
+  @override
+  Future<AuthSession?> build() async => _session;
+}
 
 class _RecordingAudioService implements IAudioService {
   final List<String> musicCalls = [];
@@ -57,6 +73,8 @@ void main() {
       buildSignature: '',
     );
   });
+
+  tearDown(dotenv.clean);
 
   group('SettingsScreen', () {
     testWidgets('loads persisted settings and renders sections',
@@ -116,6 +134,63 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(audioService.musicCalls, contains(AssetPaths.musicMenu));
+    });
+  });
+
+  group('SettingsScreen — sección Cuenta (issue #27)', () {
+    testWidgets('no aparece sin Supabase configurado', (tester) async {
+      await tester.pumpWidget(_wrapWithProviders());
+      await tester.pumpAndSettle();
+
+      expect(find.text('CUENTA'), findsNothing);
+    });
+
+    testWidgets(
+        'con Supabase configurado, muestra el correo/estado y navega a '
+        'AccountScreen', (tester) async {
+      dotenv.loadFromString(
+        envString: 'SUPABASE_URL=https://x.supabase.co\n'
+            'SUPABASE_ANON_KEY=anon-key',
+      );
+      final router = GoRouter(
+        initialLocation: RouteNames.settings,
+        routes: [
+          GoRoute(
+            path: RouteNames.settings,
+            builder: (_, __) => const SettingsScreen(),
+          ),
+          GoRoute(
+            path: RouteNames.account,
+            builder: (_, __) => const Scaffold(body: Text('account-screen')),
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authSessionProvider.overrideWith(
+              () => _FakeAuthSessionNotifier(
+                const AuthSession(
+                  playerId: 'user-1',
+                  accessToken: 'tok',
+                  isAnonymous: false,
+                  email: 'ana@example.com',
+                ),
+              ),
+            ),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('CUENTA'), findsOneWidget);
+      expect(find.text('ana@example.com'), findsOneWidget);
+
+      await tester.tap(find.text('ana@example.com'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('account-screen'), findsOneWidget);
     });
   });
 }

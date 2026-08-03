@@ -25,4 +25,44 @@ class AuthSessionNotifier extends AsyncNotifier<AuthSession?> {
     if (service == null) return null; // modo invitado, sin cambios
     return service.currentSession ?? await service.signInAnonymously();
   }
+
+  SupabaseAuthService _requireService() {
+    final service = ref.read(authServiceProvider);
+    if (service == null) {
+      throw StateError('Supabase no está configurado');
+    }
+    return service;
+  }
+
+  // Si falla, no toca `state` — deja que la excepción llegue a la
+  // pantalla para mostrar el error sin invalidar la sesión (anónima)
+  // que ya estaba activa.
+  Future<void> signUpAndLinkAnonymous({
+    required String email,
+    required String password,
+  }) async {
+    final session = await _requireService()
+        .signUpAndLinkAnonymous(email: email, password: password);
+    state = AsyncValue.data(session);
+  }
+
+  Future<void> signInWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    final session = await _requireService()
+        .signInWithPassword(email: email, password: password);
+    state = AsyncValue.data(session);
+  }
+
+  Future<void> resetPasswordForEmail(String email) =>
+      _requireService().resetPasswordForEmail(email);
+
+  // Cerrar sesión siempre deja a la app en modo invitado (identidad
+  // anónima nueva), nunca sin sesión — mismo criterio que build().
+  Future<void> signOut() async {
+    final service = _requireService();
+    await service.signOut();
+    state = AsyncValue.data(await service.signInAnonymously());
+  }
 }
