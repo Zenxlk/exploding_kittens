@@ -11,6 +11,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.8.0] — 2026-08-02
+
+### Añadido
+- Login con correo/contraseña vía Supabase Auth (issue #27). `SupabaseAuthService` gana `signUpAndLinkAnonymous` (vincula correo/contraseña a la sesión anónima activa con `updateUser`, conserva el mismo `playerId`/historial en vez de crear una cuenta aparte), `signInWithPassword` (reemplaza la sesión anónima por la de una cuenta ya existente), `signOut` y `resetPasswordForEmail`. Tres pantallas nuevas — `AccountScreen`, `SignUpScreen`, `LoginScreen` — accesibles desde una sección "Cuenta" nueva en Ajustes, solo si Supabase está configurado; la app sigue arrancando 100% invitada por default. Login con Google queda para una issue aparte
+
+---
+
 ## [0.7.4] — 2026-08-01
 
 ### Añadido
