@@ -442,6 +442,63 @@ class AuthSessionNotifier extends AsyncNotifier<AuthSession?> {
 
 ---
 
+## Localización (Fase 6 — issue #45)
+
+Español (base/fallback) + inglés, siguiendo el idioma del sistema
+operativo sin selector manual en la app. Tooling 100% oficial de
+Flutter, mismo criterio que `freezed`/`riverpod_generator` (codegen en
+vez de soluciones ad-hoc):
+
+- `flutter_localizations` + `intl`, `l10n.yaml` (`arb-dir: lib/l10n`,
+  `template-arb-file: app_es.arb`) + `generate: true` en `pubspec.yaml`.
+- `lib/l10n/app_es.arb` (template) y `lib/l10n/app_en.arb` — los únicos
+  archivos versionados de esta carpeta; `app_localizations*.dart` se
+  regeneran solos en cada `flutter pub get` (gitignored, igual criterio
+  que `*.g.dart`/`*.freezed.dart`).
+- `lib/app.dart` (`MaterialApp.router`) expone
+  `AppLocalizations.localizationsDelegates`/`supportedLocales` sin fijar
+  `locale:` — cae a español (primer locale de la lista) si el idioma del
+  SO no está soportado.
+- Convención de claves: camelCase con prefijo de pantalla/feature
+  (`loginEmailLabel`, `settingsSectionAudio`), strings repetidos entre
+  pantallas bajo un prefijo `common*` (`commonCancel`, `commonEmail`) en
+  vez de duplicarse. Variables embebidas usan placeholders/plurales ICU
+  del propio formato `.arb`, nunca concatenación de Dart.
+- `test/support/localization_test_helpers.dart` centraliza los
+  parámetros (`locale` fijo en español, `localizationsDelegates`,
+  `supportedLocales`) que necesita cualquier `MaterialApp`/
+  `MaterialApp.router` armado en un test — sin esto, un widget que
+  llame `AppLocalizations.of(context)!` revienta el test con "No
+  MaterialLocalizations found".
+
+**Fuera de alcance a propósito** (no confundir con un olvido):
+
+- Los mensajes de error de `WsServer` en
+  `lib/network/websocket/websocket_server.dart` (`'Room is full'`,
+  `'Game already started'`, etc., mostrados vía `SnackBar` en el modo
+  LAN) quedan en inglés fijo — esa capa no tiene ningún `BuildContext`
+  disponible (es un servidor WebSocket puro, no un widget), así que
+  localizarlos exige plomería nueva (pasar un locale resuelto hasta
+  `network/`) que excede el alcance de esta issue.
+- Los mensajes de `NetworkFailure`/`GameFailure` que embeben `$e` crudo
+  (`lib/features/lobby/data/lobby_repository.dart` y
+  `online_lobby_repository.dart`) — el texto propio está en español,
+  pero el `$e` es de una excepción de Dart/HTTP en inglés; localizar
+  bien esto exige una capa de mapeo error→mensaje, no un simple extract.
+- `AppSettings.playerName` por defecto (`'Jugador'`,
+  `lib/features/settings/domain/app_settings.dart`) — es la capa
+  `domain/`, no debería depender de `l10n`/`BuildContext`; el jugador lo
+  edita en Ajustes de todos modos.
+- Nombres de carta (`lib/features/game/presentation/theme/card_visuals.dart`,
+  "Exploding Kitten", "Nope", etc.) — términos propios del juego
+  original, no traducidos en ninguno de los dos locales (ver
+  `DISCLAIMER.md`).
+- `game_engine/rules/game_rules.dart` (16 mensajes de excepción) — hoy
+  no los renderiza ningún widget (`GameRunning.error` no tiene lector),
+  así que no había nada real que extraer todavía.
+
+---
+
 ## Gestión de estado (Riverpod)
 
 Los providers manuales (`Notifier`/`NotifierProvider`, sin `@riverpod`) son
