@@ -39,5 +39,35 @@
   "settingsBackgroundMusic": "Música de fondo",
   "settingsSectionAbout": "Acerca de",
   "settingsVersion": "Versión",
-  "settingsBasedOnOriginalGame": "Basado en el juego original de Exploding Kittens LLC"
+  "settingsBasedOnOriginalGame": "Basado en el juego original de Exploding Kittens LLC",
+
+  "commonCancel": "Cancelar",
+  "commonEmail": "Correo",
+  "commonPassword": "Contraseña",
+  "authFillEmailAndPassword": "Completá correo y contraseña",
+  "authCreateAccount": "Crear cuenta",
+  "authLogin": "Iniciar sesión",
+
+  "accountTitle": "Cuenta",
+  "accountLoadError": "Error al cargar la cuenta: {error}",
+  "@accountLoadError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "accountGuestExplanation": "Estás jugando como invitado. Creá una cuenta para conservar tu historial de partidas si cambiás de dispositivo o desinstalás la app.",
+  "accountAlreadyHaveAccount": "Ya tengo cuenta",
+  "accountLinkedFallback": "Cuenta vinculada",
+  "accountLogout": "Cerrar sesión",
+
+  "authConfirmPasswordLabel": "Confirmar contraseña",
+  "authPasswordsDontMatch": "Las contraseñas no coinciden",
+  "authSignUpGenericError": "No se pudo crear la cuenta",
+
+  "authLoginGenericError": "No se pudo iniciar sesión",
+  "authForgotPassword": "¿Olvidaste tu contraseña?",
+  "authResetPasswordDialogTitle": "Recuperar contraseña",
+  "authResetPasswordEmailHint": "tu@correo.com",
+  "authSend": "Enviar",
+  "authResetPasswordConfirmation": "Si el correo existe, te llegará un enlace para restablecer la contraseña."
 }

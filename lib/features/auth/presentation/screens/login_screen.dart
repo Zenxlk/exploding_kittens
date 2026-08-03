@@ -7,6 +7,7 @@ import 'package:exploding_kittens/core/theme/app_colors.dart';
 import 'package:exploding_kittens/core/theme/app_text_styles.dart';
 import 'package:exploding_kittens/features/auth/presentation/providers/auth_providers.dart';
 import 'package:exploding_kittens/features/auth/presentation/widgets/auth_text_field.dart';
+import 'package:exploding_kittens/l10n/app_localizations.dart';
 
 // A diferencia de sign_up_screen.dart, esto reemplaza la sesión anónima
 // por la de una cuenta ya existente (ver
@@ -33,11 +34,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      setState(() => _error = 'Completá correo y contraseña');
+      setState(() => _error = l10n.authFillEmailAndPassword);
       return;
     }
 
@@ -53,25 +55,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
-      setState(() => _error = 'No se pudo iniciar sesión');
+      setState(() => _error = l10n.authLoginGenericError);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
   void _showForgotPasswordDialog() {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: _emailController.text);
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Text('Recuperar contraseña', style: AppTextStyles.title),
+        title:
+            Text(l10n.authResetPasswordDialogTitle, style: AppTextStyles.title),
         content: TextField(
           controller: controller,
           style: AppTextStyles.body,
           keyboardType: TextInputType.emailAddress,
           decoration: InputDecoration(
-            hintText: 'tu@correo.com',
+            hintText: l10n.authResetPasswordEmailHint,
             hintStyle: AppTextStyles.caption.copyWith(
               color: AppColors.onBackground.withValues(alpha: 0.4),
             ),
@@ -82,7 +86,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              'Cancelar',
+              l10n.commonCancel,
               style: AppTextStyles.body.copyWith(
                 color: AppColors.onBackground.withValues(alpha: 0.5),
               ),
@@ -104,18 +108,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               }
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Si el correo existe, te llegará un enlace para '
-                      'restablecer la contraseña.',
-                    ),
+                  SnackBar(
+                    content: Text(l10n.authResetPasswordConfirmation),
                     backgroundColor: AppColors.surface,
                   ),
                 );
               }
             },
             child: Text(
-              'Enviar',
+              l10n.authSend,
               style: AppTextStyles.body.copyWith(color: AppColors.primary),
             ),
           ),
@@ -126,13 +127,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.onBackground,
         elevation: 0,
-        title: Text('Iniciar sesión', style: AppTextStyles.title),
+        title: Text(l10n.authLogin, style: AppTextStyles.title),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -141,14 +143,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           children: [
             AuthTextField(
               controller: _emailController,
-              label: 'Correo',
+              label: l10n.commonEmail,
               icon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
             ),
             const Gap(12),
             AuthTextField(
               controller: _passwordController,
-              label: 'Contraseña',
+              label: l10n.commonPassword,
               icon: Icons.lock_outline_rounded,
               obscureText: true,
             ),
@@ -158,7 +160,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: TextButton(
                 onPressed: _showForgotPasswordDialog,
                 child: Text(
-                  '¿Olvidaste tu contraseña?',
+                  l10n.authForgotPassword,
                   style: AppTextStyles.caption.copyWith(
                     color: AppColors.onBackground.withValues(alpha: 0.65),
                   ),
@@ -184,7 +186,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         color: AppColors.onPrimary,
                       ),
                     )
-                  : Text('Iniciar sesión', style: AppTextStyles.body),
+                  : Text(l10n.authLogin, style: AppTextStyles.body),
             ),
           ],
         ),

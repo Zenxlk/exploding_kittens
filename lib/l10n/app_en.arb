@@ -20,5 +20,30 @@
   "settingsBackgroundMusic": "Background music",
   "settingsSectionAbout": "About",
   "settingsVersion": "Version",
-  "settingsBasedOnOriginalGame": "Based on the original Exploding Kittens LLC game"
+  "settingsBasedOnOriginalGame": "Based on the original Exploding Kittens LLC game",
+
+  "commonCancel": "Cancel",
+  "commonEmail": "Email",
+  "commonPassword": "Password",
+  "authFillEmailAndPassword": "Fill in your email and password",
+  "authCreateAccount": "Create Account",
+  "authLogin": "Log In",
+
+  "accountTitle": "Account",
+  "accountLoadError": "Error loading account: {error}",
+  "accountGuestExplanation": "You're playing as a guest. Create an account to keep your match history if you switch devices or uninstall the app.",
+  "accountAlreadyHaveAccount": "I already have an account",
+  "accountLinkedFallback": "Linked account",
+  "accountLogout": "Log out",
+
+  "authConfirmPasswordLabel": "Confirm password",
+  "authPasswordsDontMatch": "Passwords don't match",
+  "authSignUpGenericError": "Couldn't create the account",
+
+  "authLoginGenericError": "Couldn't log in",
+  "authForgotPassword": "Forgot your password?",
+  "authResetPasswordDialogTitle": "Reset password",
+  "authResetPasswordEmailHint": "you@email.com",
+  "authSend": "Send",
+  "authResetPasswordConfirmation": "If that email exists, you'll get a link to reset your password."
 }
