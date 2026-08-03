@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../../support/localization_test_helpers.dart';
 
 class _RecordingLobbyNotifier extends LobbyNotifier {
   final calls = <String>[];
@@ -71,7 +72,12 @@ class _InRoomAfterCreateNotifier extends LobbyNotifier {
 
 Widget _wrap(Widget child, LobbyNotifier notifier) => ProviderScope(
       overrides: [lobbyProvider.overrideWith(() => notifier)],
-      child: MaterialApp(home: child),
+      child: MaterialApp(
+        locale: testLocale,
+        localizationsDelegates: testLocalizationsDelegates,
+        supportedLocales: testSupportedLocales,
+        home: child,
+      ),
     );
 
 void main() {

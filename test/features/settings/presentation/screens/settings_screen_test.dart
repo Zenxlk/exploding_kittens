@@ -10,6 +10,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../support/localization_test_helpers.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -58,7 +59,12 @@ Widget _wrapWithProviders({IAudioService? audioService}) {
       if (audioService != null)
         audioServiceProvider.overrideWithValue(audioService),
     ],
-    child: const MaterialApp(home: SettingsScreen()),
+    child: const MaterialApp(
+      locale: testLocale,
+      localizationsDelegates: testLocalizationsDelegates,
+      supportedLocales: testSupportedLocales,
+      home: SettingsScreen(),
+    ),
   );
 }
 
@@ -179,7 +185,12 @@ void main() {
               ),
             ),
           ],
-          child: MaterialApp.router(routerConfig: router),
+          child: MaterialApp.router(
+            routerConfig: router,
+            locale: testLocale,
+            localizationsDelegates: testLocalizationsDelegates,
+            supportedLocales: testSupportedLocales,
+          ),
         ),
       );
       await tester.pumpAndSettle();
