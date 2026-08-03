@@ -1,0 +1,7 @@
+{
+  "@@locale": "es",
+  "appTitle": "Exploding Kittens",
+  "@appTitle": {
+    "description": "Título de la app, usado por MaterialApp.title (no visible en UI normalmente)."
+  }
+}

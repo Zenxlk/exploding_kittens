@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/audio/audio_service.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'l10n/app_localizations.dart';
 
 /// Pausa/reanuda la música de fondo con el ciclo de vida de la app — sin
 /// esto, minimizar o cerrar la app dejaba la música sonando de fondo
@@ -52,6 +53,12 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
       theme: AppTheme.dark,
       routerConfig: appRouter,
       debugShowCheckedModeBanner: false,
+      // Sin `locale:` fijo a propósito: sigue el idioma del sistema
+      // operativo solo, cae a español (primero de la lista, matching
+      // template-arb-file en l10n.yaml) si el idioma del SO no está
+      // soportado.
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
     );
   }
 }
