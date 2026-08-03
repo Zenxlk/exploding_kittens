@@ -85,6 +85,19 @@ void main() {
       expect(rival.hand.map((c) => c.id).toSet(), hasLength(3)); // ids únicos
     });
 
+    test(
+        'hiddenHandIds arma la mano de un rival con ids reales (para poder '
+        'elegir a ciegas) en vez de placeholders sintéticos', () {
+      final json = _viewJson();
+      (json['players'] as List)[1]
+          ['hiddenHandIds'] = ['real-1', 'real-2', 'real-3'];
+
+      final state = gameStateFromOnlineView(json);
+      final rival = state.playerById('p2')!;
+
+      expect(rival.hand.map((c) => c.id), ['real-1', 'real-2', 'real-3']);
+    });
+
     test('convierte CardType multi-palabra de snake_case a camelCase', () {
       final state = gameStateFromOnlineView(_viewJson());
       final me = state.playerById('p1')!;

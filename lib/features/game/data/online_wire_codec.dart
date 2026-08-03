@@ -110,9 +110,13 @@ Map<String, dynamic> _cardToWire(CardModel card) => {
 // se renderizan como cara real: los consumidores de la mano de un rival
 // (PlayersHudWidget, el `CardChoiceOverlay` a ciegas con `faceUp: false`)
 // solo usan la cantidad, no el tipo.
+const CardType _placeholderCardType = CardType.defuse;
+
 int _placeholderSeq = 0;
-CardModel _placeholderCard([String tag = 'placeholder']) =>
-    CardModel(id: '_online_${tag}_${_placeholderSeq++}', type: CardType.defuse);
+CardModel _placeholderCard([String tag = 'placeholder']) => CardModel(
+      id: '_online_${tag}_${_placeholderSeq++}',
+      type: _placeholderCardType,
+    );
 
 // ── Estado entrante: View (redactado) → GameState ───────────────────────────
 
@@ -160,15 +164,30 @@ GameState gameStateFromOnlineView(Map<String, dynamic> json) {
 PlayerModel _playerFromWire(Map<String, dynamic> json) {
   final id = json['id'] as String;
   final rawHand = json['hand'] as List<dynamic>?;
-  // El servidor ya decidió si esta conexión es la dueña de esta mano — si
-  // manda `hand`, es la propia; si no, solo `handSize` y hay que rellenar
-  // con placeholders (ver el comentario de _placeholderCard).
-  final hand = rawHand != null
-      ? rawHand.map((c) => _cardFromWire(c as Map<String, dynamic>)).toList()
-      : List.generate(
-          json['handSize'] as int,
-          (i) => _placeholderCard('${id}_hand$i'),
-        );
+  final hiddenHandIds = json['hiddenHandIds'] as List<dynamic>?;
+
+  // El servidor ya decidió qué nivel de detalle le manda al viewer sobre
+  // esta mano: `hand` completa si es la propia; `hiddenHandIds` (ids reales,
+  // sin type) si hay un trío de gatos pendiente contra ella y el viewer es
+  // quien elige a ciegas (ver HiddenHandIds en games/explodingkittens/view.go,
+  // cards_game_service#9) — necesario para poder mandar un ChooseCardAction
+  // válido, ya que el servidor busca la carta por id exacto; si no, solo
+  // `handSize` y hay que rellenar con placeholders sin sentido real.
+  final List<CardModel> hand;
+  if (rawHand != null) {
+    hand =
+        rawHand.map((c) => _cardFromWire(c as Map<String, dynamic>)).toList();
+  } else if (hiddenHandIds != null) {
+    hand = hiddenHandIds
+        .map((cardId) =>
+            CardModel(id: cardId as String, type: _placeholderCardType))
+        .toList();
+  } else {
+    hand = List.generate(
+      json['handSize'] as int,
+      (i) => _placeholderCard('${id}_hand$i'),
+    );
+  }
 
   return PlayerModel(
     id: id,
