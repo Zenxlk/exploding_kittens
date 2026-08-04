@@ -7,6 +7,7 @@ import '../../../../core/config/supabase_config.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../providers/settings_providers.dart';
 
@@ -38,6 +39,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   Widget build(BuildContext context) {
     ref.listen(settingsProvider, (_, __) => syncMenuMusic());
     final asyncSettings = ref.watch(settingsProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -45,14 +47,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.onBackground,
         elevation: 0,
-        title: Text('Ajustes', style: AppTextStyles.title),
+        title: Text(l10n.commonSettings, style: AppTextStyles.title),
       ),
       body: asyncSettings.when(
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
         error: (e, _) => Center(
-          child: Text('Error al cargar ajustes: $e', style: AppTextStyles.body),
+          child: Text(l10n.settingsLoadError('$e'), style: AppTextStyles.body),
         ),
         data: (settings) {
           // Sincroniza el controlador solo la primera vez o si cambió externamente
@@ -65,7 +67,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             children: [
               // ── Perfil ──────────────────────────────────────────────────
-              _SectionHeader('Perfil'),
+              _SectionHeader(l10n.settingsSectionProfile),
               const Gap(12),
 
               TextField(
@@ -73,7 +75,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 style: AppTextStyles.body,
                 maxLength: 20,
                 decoration: InputDecoration(
-                  labelText: 'Nombre de jugador',
+                  labelText: l10n.settingsPlayerNameLabel,
                   labelStyle: AppTextStyles.caption.copyWith(
                     color: AppColors.onBackground.withValues(alpha: 0.6),
                   ),
@@ -101,12 +103,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               // Online en LobbyScreen, la feature entera se apaga sin .env.
               if (SupabaseConfig.isConfigured) ...[
                 const Gap(28),
-                _SectionHeader('Cuenta'),
+                _SectionHeader(l10n.settingsSectionAccount),
                 const Gap(4),
                 Builder(builder: (context) {
                   final session = ref.watch(authSessionProvider).value;
                   return _SettingsTile(
-                    title: session?.email ?? 'Invitado',
+                    title: session?.email ?? l10n.settingsGuestLabel,
                     icon: Icons.account_circle_outlined,
                     trailing: const Icon(
                       Icons.chevron_right_rounded,
@@ -120,11 +122,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               const Gap(28),
 
               // ── Sonido ───────────────────────────────────────────────────
-              _SectionHeader('Audio'),
+              _SectionHeader(l10n.settingsSectionAudio),
               const Gap(4),
 
               _SettingsTile(
-                title: 'Efectos de sonido',
+                title: l10n.settingsSoundEffects,
                 icon: Icons.volume_up_rounded,
                 trailing: Switch(
                   value: settings.soundEnabled,
@@ -160,7 +162,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               const Gap(8),
 
               _SettingsTile(
-                title: 'Música de fondo',
+                title: l10n.settingsBackgroundMusic,
                 icon: Icons.music_note_rounded,
                 trailing: Switch(
                   value: settings.musicEnabled,
@@ -174,11 +176,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               const Gap(28),
 
               // ── Acerca de ────────────────────────────────────────────────
-              _SectionHeader('Acerca de'),
+              _SectionHeader(l10n.settingsSectionAbout),
               const Gap(4),
 
               _SettingsTile(
-                title: 'Versión',
+                title: l10n.settingsVersion,
                 icon: Icons.info_outline_rounded,
                 trailing: Text(
                   ref.watch(appVersionProvider).value ?? '',
@@ -189,11 +191,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               ),
 
               _SettingsTile(
-                title: 'Proyecto de fans · Sin fines comerciales',
+                title: l10n.commonFanProjectFooter,
                 icon: Icons.favorite_border_rounded,
                 trailing: const SizedBox.shrink(),
-                subtitle:
-                    'Basado en el juego original de Exploding Kittens LLC',
+                subtitle: l10n.settingsBasedOnOriginalGame,
               ),
             ],
           );

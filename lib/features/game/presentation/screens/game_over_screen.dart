@@ -15,6 +15,7 @@ import 'package:exploding_kittens/features/settings/domain/app_settings.dart';
 import 'package:exploding_kittens/features/settings/presentation/providers/settings_providers.dart';
 import 'package:exploding_kittens/game_engine/models/game/game_config.dart';
 import 'package:exploding_kittens/game_engine/models/player/player_model.dart';
+import 'package:exploding_kittens/l10n/app_localizations.dart';
 
 /// Resultado de la partida: ganador, ranking por orden real de eliminación
 /// (último eliminado queda 2º, el primero en explotar queda último) y
@@ -80,6 +81,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
     final sessionState = runsLocalEngine
         ? ref.watch(gameProvider)
         : ref.watch(remoteGameProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     if (sessionState is! GameFinished) {
       return Scaffold(
@@ -87,14 +89,14 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
         body: _CenteredColumn(
           children: [
             Text(
-              'No hay ningún resultado de partida',
+              l10n.gameOverNoResult,
               style: AppTextStyles.body,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: () => _goHome(context),
-              child: const Text('Volver al menú'),
+              child: Text(l10n.gameOverBackToMenu),
             ),
           ],
         ),
@@ -119,13 +121,13 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
         child: _CenteredColumn(
           children: [
             Text(
-              '¡${result.winnerName} ganó!',
+              l10n.gameOverWinnerAnnouncement(result.winnerName),
               style: AppTextStyles.title,
               textAlign: TextAlign.center,
             ).animate().fadeIn(duration: 300.ms).slideY(begin: -0.2, end: 0),
             const SizedBox(height: 4),
             Text(
-              '${result.totalTurns} turnos jugados',
+              l10n.gameOverTurnsPlayed(result.totalTurns),
               style: AppTextStyles.caption,
             ).animate().fadeIn(delay: 100.ms, duration: 300.ms),
             const SizedBox(height: 24),
@@ -133,7 +135,7 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Text(
-                  '${i + 1}. ${nameFor(ranking[i])}',
+                  l10n.gameOverRankingEntry(i + 1, nameFor(ranking[i])),
                   style: AppTextStyles.body,
                 ),
               )
@@ -146,18 +148,18 @@ class _GameOverScreenState extends ConsumerState<GameOverScreen> {
                 onPressed: () => _rematch(inRoom!),
                 style:
                     FilledButton.styleFrom(backgroundColor: AppColors.primary),
-                child: const Text('Revancha'),
+                child: Text(l10n.gameOverRematch),
               ).animate().fadeIn(delay: buttonsDelay)
             else
               Text(
-                'Esperando a que el host inicie una revancha…',
+                l10n.gameOverWaitingForRematch,
                 style: AppTextStyles.caption,
                 textAlign: TextAlign.center,
               ).animate().fadeIn(delay: buttonsDelay),
             const SizedBox(height: 12),
             TextButton(
               onPressed: () => _goHome(context),
-              child: const Text('Volver al menú'),
+              child: Text(l10n.gameOverBackToMenu),
             ).animate().fadeIn(delay: buttonsDelay),
           ],
         ),

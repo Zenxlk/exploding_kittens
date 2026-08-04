@@ -11,6 +11,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.9.0] — 2026-08-02
+
+### Añadido
+- Soporte multi-idioma español/inglés siguiendo el idioma del sistema (issue #45). `flutter_localizations` + `intl` + `flutter gen-l10n` nativo, sin selector manual ni paquetes de terceros. Cubre todas las pantallas y widgets de `presentation/` — home, ajustes, auth (login/registro/cuenta), reglas, lobby (único archivo que estaba en inglés, ahora traducido de verdad), pantalla de juego y fin de partida, y todos los overlays de la mesa (Nope, esconder bomba, Favor, See the Future, explosión). Incluye pluralización ICU real donde antes había un "(s)" fijo o un plural sin manejar. Quedan fuera a propósito los mensajes de error de `WsServer` (sin `BuildContext` en esa capa), el nombre de jugador por defecto y los nombres de carta — detalle en `docs/ARCHITECTURE.md`, sección "Localización"
+
+---
+
 ## [0.8.0] — 2026-08-02
 
 ### Añadido

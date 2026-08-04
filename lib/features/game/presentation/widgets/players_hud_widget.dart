@@ -4,6 +4,7 @@ import 'package:exploding_kittens/core/theme/app_colors.dart';
 import 'package:exploding_kittens/core/theme/app_text_styles.dart';
 import 'package:exploding_kittens/game_engine/models/player/player_model.dart';
 import 'package:exploding_kittens/game_engine/models/player/player_status.dart';
+import 'package:exploding_kittens/l10n/app_localizations.dart';
 
 /// Fila de avatares de todos los jugadores (o de los oponentes, según lo que
 /// le pase el caller) con su contador de cartas y quién tiene el turno.
@@ -113,7 +114,7 @@ class _PlayerBadge extends StatelessWidget {
           ),
           if (_isDisconnected)
             Text(
-              'Reconectando…',
+              AppLocalizations.of(context)!.gameReconnecting,
               style: AppTextStyles.caption.copyWith(
                 color: AppColors.secondary,
                 fontSize: 10,

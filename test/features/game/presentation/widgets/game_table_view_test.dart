@@ -20,6 +20,7 @@ import 'package:exploding_kittens/game_engine/models/turn/turn_action.dart';
 import 'package:exploding_kittens/game_engine/models/turn/turn_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../../support/localization_test_helpers.dart';
 
 GameState _state({
   required List<PlayerModel> players,
@@ -54,7 +55,12 @@ GameState _state({
   );
 }
 
-Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+Widget _wrap(Widget child) => MaterialApp(
+      locale: testLocale,
+      localizationsDelegates: testLocalizationsDelegates,
+      supportedLocales: testSupportedLocales,
+      home: Scaffold(body: child),
+    );
 
 // El surface de test por defecto (800×600) es más ancho que alto, así que
 // MediaQuery.orientationOf ya lo lee como landscape: sin este fixture los

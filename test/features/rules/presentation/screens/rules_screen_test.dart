@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../support/localization_test_helpers.dart';
 
 // RulesScreen's back button uses go_router's context.pop(), so it needs a
 // real GoRouter in the tree (not just a Navigator).
@@ -20,7 +21,14 @@ Widget _wrap() {
       ),
     ],
   );
-  return ProviderScope(child: MaterialApp.router(routerConfig: router));
+  return ProviderScope(
+    child: MaterialApp.router(
+      routerConfig: router,
+      locale: testLocale,
+      localizationsDelegates: testLocalizationsDelegates,
+      supportedLocales: testSupportedLocales,
+    ),
+  );
 }
 
 // La pantalla es un ListView largo (13 cartas + intro); se agranda la

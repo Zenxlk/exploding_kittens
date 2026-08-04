@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:exploding_kittens/core/theme/app_colors.dart';
 import 'package:exploding_kittens/core/theme/app_text_styles.dart';
+import 'package:exploding_kittens/l10n/app_localizations.dart';
 
 /// Animación de explosión cuando un jugador queda eliminado (robó una
 /// Exploding Kitten sin Defuse). Se cierra sola tras [duration], sin
@@ -50,6 +51,7 @@ class _ExplosionOverlayState extends State<ExplosionOverlay>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return IgnorePointer(
       child: ColoredBox(
         color: Colors.black.withValues(alpha: 0.85),
@@ -65,10 +67,10 @@ class _ExplosionOverlayState extends State<ExplosionOverlay>
                   size: 96,
                 ),
                 const SizedBox(height: 12),
-                Text('¡BOOM!', style: AppTextStyles.title),
+                Text(l10n.explosionBoom, style: AppTextStyles.title),
                 const SizedBox(height: 4),
                 Text(
-                  '${widget.eliminatedPlayerName} explotó',
+                  l10n.explosionPlayerEliminated(widget.eliminatedPlayerName),
                   style: AppTextStyles.caption,
                 ),
               ],

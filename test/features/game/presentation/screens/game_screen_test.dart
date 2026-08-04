@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../support/localization_test_helpers.dart';
 
 class _FakeLobbyNotifier extends LobbyNotifier {
   _FakeLobbyNotifier(this._initial, {bool isOnline = false})
@@ -126,7 +127,12 @@ Widget _wrap({
       if (remoteNotifierFactory != null)
         remoteGameProvider.overrideWith(remoteNotifierFactory),
     ],
-    child: const MaterialApp(home: GameScreen()),
+    child: const MaterialApp(
+      locale: testLocale,
+      localizationsDelegates: testLocalizationsDelegates,
+      supportedLocales: testSupportedLocales,
+      home: GameScreen(),
+    ),
   );
 }
 

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../support/localization_test_helpers.dart';
 
 // Fake AuthSessionNotifier — mismo patrón que _RecordingLobbyNotifier en
 // lobby_screen_test.dart: build() fija el estado inicial, signOut()
@@ -48,7 +49,12 @@ Widget _wrap(_FakeAuthSessionNotifier notifier) {
   );
   return ProviderScope(
     overrides: [authSessionProvider.overrideWith(() => notifier)],
-    child: MaterialApp.router(routerConfig: router),
+    child: MaterialApp.router(
+      routerConfig: router,
+      locale: testLocale,
+      localizationsDelegates: testLocalizationsDelegates,
+      supportedLocales: testSupportedLocales,
+    ),
   );
 }
 

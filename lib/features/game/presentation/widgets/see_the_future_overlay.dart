@@ -6,6 +6,7 @@ import 'package:exploding_kittens/core/theme/app_text_styles.dart';
 import 'package:exploding_kittens/features/game/presentation/widgets/card_widget.dart';
 import 'package:exploding_kittens/game_engine/models/card/card_model.dart';
 import 'package:exploding_kittens/game_engine/models/card/card_type.dart';
+import 'package:exploding_kittens/l10n/app_localizations.dart';
 
 /// Muestra las 3 cartas de arriba del mazo tras jugar See the Future.
 /// Widget "tonto": la visibilidad la decide el caller a partir de
@@ -24,16 +25,17 @@ class SeeTheFutureOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return ColoredBox(
       color: Colors.black.withValues(alpha: 0.8),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Ves las próximas 3 cartas', style: AppTextStyles.title),
+            Text(l10n.seeTheFutureTitle, style: AppTextStyles.title),
             const SizedBox(height: 4),
             Text(
-              'De arriba hacia abajo',
+              l10n.seeTheFutureSubtitle,
               style: AppTextStyles.caption,
             ),
             const SizedBox(height: 24),
@@ -54,7 +56,7 @@ class SeeTheFutureOverlay extends StatelessWidget {
             FilledButton(
               onPressed: onDismiss,
               style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-              child: const Text('Continuar'),
+              child: Text(l10n.seeTheFutureContinue),
             ),
           ],
         ),

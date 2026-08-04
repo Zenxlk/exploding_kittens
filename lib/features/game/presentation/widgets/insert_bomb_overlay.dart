@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import 'package:exploding_kittens/core/theme/app_colors.dart';
 import 'package:exploding_kittens/core/theme/app_text_styles.dart';
+import 'package:exploding_kittens/l10n/app_localizations.dart';
 
 /// Selector de posición para reinsertar la Exploding Kitten al jugar Defuse.
 /// Widget "tonto": el motor acepta cualquier posición entre 0 (arriba del
@@ -27,11 +28,12 @@ class _InsertBombOverlayState extends State<InsertBombOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final maxPosition = widget.drawPileCount;
     final description = switch (_position) {
-      0 => 'Arriba del todo — la próxima carta que se robe',
-      _ when _position == maxPosition => 'Abajo del todo',
-      _ => 'A $_position carta(s) de la de arriba',
+      0 => l10n.insertBombTop,
+      _ when _position == maxPosition => l10n.insertBombBottom,
+      _ => l10n.insertBombPosition(_position),
     };
 
     return ColoredBox(
@@ -40,7 +42,7 @@ class _InsertBombOverlayState extends State<InsertBombOverlay> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('¿Dónde escondes la bomba?', style: AppTextStyles.title),
+            Text(l10n.insertBombTitle, style: AppTextStyles.title),
             const SizedBox(height: 4),
             Text(
               description,
@@ -62,7 +64,7 @@ class _InsertBombOverlayState extends State<InsertBombOverlay> {
             FilledButton(
               onPressed: () => widget.onConfirm(_position),
               style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-              child: const Text('Esconder bomba'),
+              child: Text(l10n.insertBombConfirm),
             ),
           ],
         ),

@@ -38,6 +38,11 @@ $RECYCLE.BIN/
 *.freezed.dart
 *.gen.dart
 
+# Localización (flutter gen-l10n) — se regeneran solos en cada `flutter
+# pub get` gracias a `generate: true` en pubspec.yaml + l10n.yaml, no
+# hace falta ningún paso manual como con build_runner arriba.
+lib/l10n/app_localizations*.dart
+
 # ── Android ──────────────────────────────────────────────────────────────────
 android/local.properties
 android/.gradle/

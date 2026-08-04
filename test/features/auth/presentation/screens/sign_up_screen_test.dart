@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../support/localization_test_helpers.dart';
 
 class _FakeAuthSessionNotifier extends AuthSessionNotifier {
   final calls = <String>[];
@@ -42,6 +43,9 @@ Widget _wrapPushed(_FakeAuthSessionNotifier notifier) {
   return ProviderScope(
     overrides: [authSessionProvider.overrideWith(() => notifier)],
     child: MaterialApp(
+      locale: testLocale,
+      localizationsDelegates: testLocalizationsDelegates,
+      supportedLocales: testSupportedLocales,
       home: Builder(
         builder: (context) => Scaffold(
           body: Center(

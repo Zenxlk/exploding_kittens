@@ -8,6 +8,7 @@ import '../../../../../core/constants/app_constants.dart';
 import '../../../../../core/router/route_names.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../settings/presentation/providers/settings_providers.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -22,6 +23,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   Widget build(BuildContext context) {
     ref.listen(settingsProvider, (_, __) => syncMenuMusic());
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -53,7 +55,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               const Gap(4),
 
               Text(
-                'Fan Edition · ${AppConstants.company}',
+                l10n.homeSubtitle(AppConstants.company),
                 style: AppTextStyles.caption.copyWith(
                   color: AppColors.onBackground.withValues(alpha: 0.45),
                   letterSpacing: 1.5,
@@ -64,7 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
               // ── Botones principales ───────────────────────────
               _MenuButton(
-                label: 'Crear sala',
+                label: l10n.homeCreateRoom,
                 icon: Icons.add_circle_outline_rounded,
                 onTap: () => context.push(RouteNames.createRoom),
               )
@@ -75,7 +77,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               const Gap(12),
 
               _MenuButton(
-                label: 'Unirse a sala',
+                label: l10n.homeJoinRoom,
                 icon: Icons.wifi_rounded,
                 onTap: () => context.push(RouteNames.joinRoom),
               )
@@ -92,7 +94,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   TextButton.icon(
                     onPressed: () => context.push(RouteNames.rules),
                     icon: const Icon(Icons.menu_book_outlined, size: 18),
-                    label: const Text('Cómo jugar'),
+                    label: Text(l10n.homeHowToPlay),
                     style: TextButton.styleFrom(
                       foregroundColor:
                           AppColors.onBackground.withValues(alpha: 0.65),
@@ -101,7 +103,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   TextButton.icon(
                     onPressed: () => context.push(RouteNames.settings),
                     icon: const Icon(Icons.settings_outlined, size: 18),
-                    label: const Text('Ajustes'),
+                    label: Text(l10n.commonSettings),
                     style: TextButton.styleFrom(
                       foregroundColor:
                           AppColors.onBackground.withValues(alpha: 0.65),
@@ -114,7 +116,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
               // ── Pie de página ─────────────────────────────────
               Text(
-                'Proyecto de fans · Sin fines comerciales',
+                l10n.commonFanProjectFooter,
                 style: AppTextStyles.caption.copyWith(
                   color: AppColors.onBackground.withValues(alpha: 0.25),
                   fontSize: 10,

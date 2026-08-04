@@ -1,7 +1,7 @@
 name: exploding_kittens
 description: "Exploding Kittens — Mobile game by ZenXLK"
 publish_to: 'none'
-version: 0.8.0+54
+version: 0.9.0+55
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -52,6 +52,9 @@ dependencies:
   # ── Autenticación (Fase 7) ───────────────────────────
   supabase_flutter: ^2.16.0
   flutter_dotenv: ^6.0.1
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
@@ -76,6 +79,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
 
   assets:
     - assets/cards/

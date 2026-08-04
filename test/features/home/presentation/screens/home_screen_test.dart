@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../support/localization_test_helpers.dart';
 
 class _RecordingAudioService implements IAudioService {
   final List<String> musicCalls = [];
@@ -70,7 +71,12 @@ Widget _wrapWithRouter({IAudioService? audioService}) {
       if (audioService != null)
         audioServiceProvider.overrideWithValue(audioService),
     ],
-    child: MaterialApp.router(routerConfig: router),
+    child: MaterialApp.router(
+      routerConfig: router,
+      locale: testLocale,
+      localizationsDelegates: testLocalizationsDelegates,
+      supportedLocales: testSupportedLocales,
+    ),
   );
 }
 

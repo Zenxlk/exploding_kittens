@@ -7,6 +7,7 @@ import 'package:exploding_kittens/core/theme/app_colors.dart';
 import 'package:exploding_kittens/core/theme/app_text_styles.dart';
 import 'package:exploding_kittens/features/auth/presentation/providers/auth_providers.dart';
 import 'package:exploding_kittens/features/auth/presentation/widgets/auth_text_field.dart';
+import 'package:exploding_kittens/l10n/app_localizations.dart';
 
 // Vincula correo/contraseña a la sesión anónima actual (ver
 // SupabaseAuthService.signUpAndLinkAnonymous) — no crea una cuenta
@@ -35,15 +36,16 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      setState(() => _error = 'Completá correo y contraseña');
+      setState(() => _error = l10n.authFillEmailAndPassword);
       return;
     }
     if (password != _confirmController.text) {
-      setState(() => _error = 'Las contraseñas no coinciden');
+      setState(() => _error = l10n.authPasswordsDontMatch);
       return;
     }
 
@@ -59,7 +61,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
-      setState(() => _error = 'No se pudo crear la cuenta');
+      setState(() => _error = l10n.authSignUpGenericError);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -67,13 +69,14 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.onBackground,
         elevation: 0,
-        title: Text('Crear cuenta', style: AppTextStyles.title),
+        title: Text(l10n.authCreateAccount, style: AppTextStyles.title),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -82,21 +85,21 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           children: [
             AuthTextField(
               controller: _emailController,
-              label: 'Correo',
+              label: l10n.commonEmail,
               icon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
             ),
             const Gap(12),
             AuthTextField(
               controller: _passwordController,
-              label: 'Contraseña',
+              label: l10n.commonPassword,
               icon: Icons.lock_outline_rounded,
               obscureText: true,
             ),
             const Gap(12),
             AuthTextField(
               controller: _confirmController,
-              label: 'Confirmar contraseña',
+              label: l10n.authConfirmPasswordLabel,
               icon: Icons.lock_outline_rounded,
               obscureText: true,
             ),
@@ -119,7 +122,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                         color: AppColors.onPrimary,
                       ),
                     )
-                  : Text('Crear cuenta', style: AppTextStyles.body),
+                  : Text(l10n.authCreateAccount, style: AppTextStyles.body),
             ),
           ],
         ),

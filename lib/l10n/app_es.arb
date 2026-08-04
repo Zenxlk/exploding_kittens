@@ -1,0 +1,247 @@
+{
+  "@@locale": "es",
+  "appTitle": "Exploding Kittens",
+  "@appTitle": {
+    "description": "Título de la app, usado por MaterialApp.title (no visible en UI normalmente)."
+  },
+
+  "commonSettings": "Ajustes",
+  "@commonSettings": {
+    "description": "Compartido entre HomeScreen (botón) y SettingsScreen (título de AppBar)."
+  },
+  "commonFanProjectFooter": "Proyecto de fans · Sin fines comerciales",
+  "@commonFanProjectFooter": {
+    "description": "Compartido entre HomeScreen y SettingsScreen."
+  },
+
+  "homeSubtitle": "Edición de fans · {company}",
+  "@homeSubtitle": {
+    "placeholders": {
+      "company": {"type": "String"}
+    }
+  },
+  "homeCreateRoom": "Crear sala",
+  "homeJoinRoom": "Unirse a sala",
+  "homeHowToPlay": "Cómo jugar",
+
+  "settingsLoadError": "Error al cargar ajustes: {error}",
+  "@settingsLoadError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "settingsSectionProfile": "Perfil",
+  "settingsPlayerNameLabel": "Nombre de jugador",
+  "settingsSectionAccount": "Cuenta",
+  "settingsGuestLabel": "Invitado",
+  "settingsSectionAudio": "Audio",
+  "settingsSoundEffects": "Efectos de sonido",
+  "settingsBackgroundMusic": "Música de fondo",
+  "settingsSectionAbout": "Acerca de",
+  "settingsVersion": "Versión",
+  "settingsBasedOnOriginalGame": "Basado en el juego original de Exploding Kittens LLC",
+
+  "commonCancel": "Cancelar",
+  "commonEmail": "Correo",
+  "commonPassword": "Contraseña",
+  "authFillEmailAndPassword": "Completá correo y contraseña",
+  "authCreateAccount": "Crear cuenta",
+  "authLogin": "Iniciar sesión",
+
+  "accountTitle": "Cuenta",
+  "accountLoadError": "Error al cargar la cuenta: {error}",
+  "@accountLoadError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "accountGuestExplanation": "Estás jugando como invitado. Creá una cuenta para conservar tu historial de partidas si cambiás de dispositivo o desinstalás la app.",
+  "accountAlreadyHaveAccount": "Ya tengo cuenta",
+  "accountLinkedFallback": "Cuenta vinculada",
+  "accountLogout": "Cerrar sesión",
+
+  "authConfirmPasswordLabel": "Confirmar contraseña",
+  "authPasswordsDontMatch": "Las contraseñas no coinciden",
+  "authSignUpGenericError": "No se pudo crear la cuenta",
+
+  "authLoginGenericError": "No se pudo iniciar sesión",
+  "authForgotPassword": "¿Olvidaste tu contraseña?",
+  "authResetPasswordDialogTitle": "Recuperar contraseña",
+  "authResetPasswordEmailHint": "tu@correo.com",
+  "authSend": "Enviar",
+  "authResetPasswordConfirmation": "Si el correo existe, te llegará un enlace para restablecer la contraseña.",
+
+  "rulesSectionSpecialCards": "Cartas especiales",
+  "rulesSectionActionCards": "Cartas de acción",
+  "rulesSectionCats": "Gatos",
+  "rulesSectionObjective": "El objetivo",
+  "rulesSectionBeforeStart": "Antes de empezar",
+  "rulesSectionYourTurn": "Tu turno",
+  "rulesObjectiveBody": "Sé el último gato en pie. El resto va explotando (a menos que se defusen a tiempo) hasta que solo queda uno.",
+  "rulesBeforeStartBody": "Cada jugador arranca con 7 cartas y 1 Defuse. El resto del mazo (con suficientes Exploding Kittens para que quede una menos que la cantidad de jugadores) se baraja y se reparte boca abajo en el centro.",
+  "rulesYourTurnBody": "Podés jugar tantas cartas de acción como quieras, o ninguna. Cuando termines, siempre tenés que robar una carta del mazo para pasar el turno. Si te sale una Exploding Kitten y no tenés Defuse, quedás eliminado ahí mismo.",
+  "rulesExplodingKittenDesc": "Si la robás y no tenés un Defuse, quedás eliminado. No se juega desde la mano: solo aparece cuando te toca en el mazo.",
+  "rulesDefuseDesc": "Te salva de una Exploding Kitten: la escondés de nuevo en el mazo, en la posición que elijas.",
+  "rulesNopeDesc": "Cancela la última carta jugada (menos una Exploding Kitten o un Defuse). La puede jugar cualquiera, en cualquier momento, aunque no sea su turno — incluso para cancelar otro Nope.",
+  "rulesAttackDesc": "Termina tu turno sin robar, y el siguiente jugador tiene que jugar dos turnos seguidos.",
+  "rulesSkipDesc": "Termina tu turno sin robar. Ojo: si te atacaron y te tocan dos turnos, un Skip solo te libra de uno — necesitás jugar o robar una vez más.",
+  "rulesFavorDesc": "Elegís a otro jugador y te tiene que dar una carta de su mano — la elige él, no vos.",
+  "rulesShuffleDesc": "Reparte de nuevo el mazo al azar. Nadie ve las cartas.",
+  "rulesSeeTheFutureDesc": "Mirás las 3 cartas de arriba del mazo, en orden, sin cambiar nada.",
+  "rulesCatNeedsPairDesc": "No hace nada sola — necesita pareja.",
+  "rulesCatExplainerIntro": "Ninguna carta de gato hace algo sola: son \"cartas basura\" que solo sirven combinadas.",
+  "rulesCatExplainerPairTrio": "Juntá 2 iguales para elegir a otro jugador y robarle una carta al azar de su mano. Con 3 iguales elegís vos qué carta robarle, pero a ciegas: ves su mano boca abajo y tocás una posición sin saber qué es hasta que la tengas.",
+  "rulesCatExplainerLeftover": "Si te quedan solo gatos sueltos sin pareja, no hay drama: no podés jugarlos, así que simplemente tocá el mazo para robar y seguir.",
+
+  "lobbyRoomCodeDialogTitle": "Código de sala",
+  "lobbyRoomCodeHint": "AB12CD",
+  "lobbyConnect": "Conectar",
+  "lobbyCreatingRoom": "Creando sala…",
+  "lobbyConnectingEllipsis": "Conectando…",
+  "lobbyGenericError": "Error…",
+  "lobbyHowToHost": "¿Cómo querés hostear?",
+  "lobbyHowToJoin": "¿Cómo querés unirte?",
+  "lobbyLocalWifi": "WiFi local",
+  "lobbyOnline": "Online",
+  "lobbyOnlineUnavailable": "Online (no disponible en este build)",
+  "lobbyScanningNetwork": "Buscando en la red local…",
+  "lobbyNoRoomsFound": "Todavía no se encontraron salas",
+  "lobbyEnterIpManually": "Ingresar IP manualmente",
+  "lobbyHostIpDialogTitle": "Dirección IP del host",
+  "lobbyIpHint": "192.168.1.x",
+  "lobbyRoomCodeCopied": "Código de sala copiado al portapapeles",
+  "lobbyIpCopied": "IP copiada al portapapeles",
+  "lobbyNoWifi": "Sin WiFi",
+  "lobbyReadingIp": "Leyendo IP…",
+  "lobbyWifiIpUnavailable": "IP de WiFi no disponible",
+  "lobbyWaitingForHost": "Esperando a que el host inicie…",
+  "lobbyPlayerCount": "{count}/{max} jugadores",
+  "@lobbyPlayerCount": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "max": {"type": "int"}
+    }
+  },
+  "lobbyPlayerNameYou": "{name} (vos)",
+  "@lobbyPlayerNameYou": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "lobbyStartGame": "Iniciar partida",
+  "lobbyWaitingForPlayers": "Esperando jugadores…",
+  "lobbyNotReady": "No listo",
+  "lobbyReady": "Listo",
+
+  "gameNoMatchInProgress": "No hay ninguna partida en curso",
+  "gameDealingCards": "Repartiendo cartas…",
+
+  "gameOverNoResult": "No hay ningún resultado de partida",
+  "gameOverBackToMenu": "Volver al menú",
+  "gameOverWinnerAnnouncement": "¡{winnerName} ganó!",
+  "@gameOverWinnerAnnouncement": {
+    "placeholders": {
+      "winnerName": {"type": "String"}
+    }
+  },
+  "gameOverTurnsPlayed": "{count, plural, one{1 turno jugado} other{{count} turnos jugados}}",
+  "@gameOverTurnsPlayed": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "gameOverRankingEntry": "{position}. {name}",
+  "@gameOverRankingEntry": {
+    "placeholders": {
+      "position": {"type": "int"},
+      "name": {"type": "String"}
+    }
+  },
+  "gameOverRematch": "Revancha",
+  "gameOverWaitingForRematch": "Esperando a que el host inicie una revancha…",
+
+  "gameReconnecting": "Reconectando…",
+
+  "nopeWindowTitle": "Ventana de Nope",
+  "nopeWindowCancelled": "Cancelada… alguien más puede reactivarla",
+  "nopeWindowCanCancel": "Cualquiera puede cancelar esto con un Nope",
+  "nopeWindowButton": "¡Nope!",
+
+  "insertBombTitle": "¿Dónde escondes la bomba?",
+  "insertBombTop": "Arriba del todo — la próxima carta que se robe",
+  "insertBombBottom": "Abajo del todo",
+  "insertBombPosition": "{position, plural, one{A 1 carta de la de arriba} other{A {position} cartas de la de arriba}}",
+  "@insertBombPosition": {
+    "placeholders": {
+      "position": {"type": "int"}
+    }
+  },
+  "insertBombConfirm": "Esconder bomba",
+
+  "favorTargetTitle": "Elige a quién pedirle una carta",
+
+  "seeTheFutureTitle": "Ves las próximas 3 cartas",
+  "seeTheFutureSubtitle": "De arriba hacia abajo",
+  "seeTheFutureContinue": "Continuar",
+
+  "explosionBoom": "¡BOOM!",
+  "explosionPlayerEliminated": "{playerName} explotó",
+  "@explosionPlayerEliminated": {
+    "placeholders": {
+      "playerName": {"type": "String"}
+    }
+  },
+
+  "gameTurnTimerLabel": "{playerName} · {seconds}s restantes",
+  "@gameTurnTimerLabel": {
+    "placeholders": {
+      "playerName": {"type": "String"},
+      "seconds": {"type": "int"}
+    }
+  },
+
+  "gameFavorChooseCardTitle": "Elegí una carta para darle a {askerName}",
+  "@gameFavorChooseCardTitle": {
+    "placeholders": {
+      "askerName": {"type": "String"}
+    }
+  },
+  "gameCatTrioChooseCardTitle": "Elegí a ciegas una carta de la mano de {targetName}",
+  "@gameCatTrioChooseCardTitle": {
+    "placeholders": {
+      "targetName": {"type": "String"}
+    }
+  },
+  "gameNopeWindowOpenStatus": "Ventana de Nope abierta…",
+  "gameWaitingForBombHide": "Esperando a que {name} esconda la bomba…",
+  "@gameWaitingForBombHide": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "gameWaitingForCardChoice": "Esperando a que {name} elija una carta…",
+  "@gameWaitingForCardChoice": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "gameTurnOf": "Turno de {name}",
+  "@gameTurnOf": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "gameCardTypeSelected": "{cardName} seleccionada",
+  "@gameCardTypeSelected": {
+    "placeholders": {
+      "cardName": {"type": "String"}
+    }
+  },
+  "gamePlayButton": "Jugar",
+  "gameFavorSelected": "Favor seleccionado",
+  "gameCatPairReady": "Par de gatos listo",
+  "gameCatTrioReady": "Trío de gatos listo",
+  "gameChooseTarget": "Elegir objetivo",
+  "gameCatCardNeedsPairHint": "Un gato solo no se puede jugar: toca otra carta igual para formar un par, o toca el mazo para robar y pasar el turno",
+  "gameUnsupportedSelectionHint": "Esta carta no se juega así — toca el mazo para robar y pasar el turno"
+}
