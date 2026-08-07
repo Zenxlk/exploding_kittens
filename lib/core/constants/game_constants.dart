@@ -24,4 +24,9 @@ abstract final class GameConstants {
 
   // Segundos por turno antes de robar una carta automáticamente
   static const int turnTimeoutSeconds = 30;
+
+  // Pausa antes de que un bot aplique la acción que decidió (issue #47) —
+  // sin esto la jugada se siente instantánea y no da tiempo a que la
+  // animación de la jugada anterior termine.
+  static const int botThinkDelayMs = 700;
 }

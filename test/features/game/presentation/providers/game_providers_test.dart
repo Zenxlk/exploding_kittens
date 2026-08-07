@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:exploding_kittens/core/errors/exceptions.dart';
 import 'package:exploding_kittens/features/game/domain/i_game_gateway.dart';
 import 'package:exploding_kittens/features/game/presentation/providers/game_providers.dart';
@@ -600,6 +602,99 @@ void main() {
         final action = captured as ChooseCardAction;
         expect(action.playerId, 'p2');
         expect(action.cardId, 'card-1');
+      });
+    });
+
+    group('bots (issue #47)', () {
+      late _FakeGameGateway botGateway;
+      late ProviderContainer botContainer;
+
+      setUp(() {
+        botGateway = _FakeGameGateway();
+        botContainer = ProviderContainer(
+          overrides: [
+            gameProvider.overrideWith(
+              () => GameNotifier(
+                gateway: botGateway,
+                botThinkDelay: const Duration(milliseconds: 5),
+                botRng: Random(1),
+              ),
+            ),
+          ],
+        );
+        addTearDown(botContainer.dispose);
+      });
+
+      test(
+        'si le toca a un bot, GameNotifier aplica una acción sola tras la '
+        'pausa configurada, sin intervención externa',
+        () async {
+          final botTurn = GameState(
+            id: 'g1',
+            config: const GameConfig(playerCount: 2),
+            players: const [
+              PlayerModel(id: 'bot1', name: 'Bot', hand: [], isBot: true),
+              PlayerModel(id: 'p2', name: 'Human', hand: []),
+            ],
+            // No vacío: BotPlayer.decide simula DrawCardAction de verdad
+            // para puntuarla (ActionProcessor.process real) antes de
+            // elegirla — un mazo vacío haría que esa simulación misma
+            // lance StateError, algo que no puede pasar en una partida
+            // real (el juego termina por WinCondition antes de vaciarse).
+            deck: const DeckModel(
+              drawPile: [CardModel(id: 'deck-1', type: CardType.skip)],
+              discardPile: [],
+            ),
+            turn: const TurnModel(
+              currentPlayerId: 'bot1',
+              phase: TurnPhase.playing,
+            ),
+            phase: GamePhase.playing,
+          );
+          // Le pasa el turno a un humano — no hay más bots pendientes, así
+          // que no se agenda una segunda jugada automática tras esta.
+          final afterBotMove = _state(currentPlayerId: 'p2');
+
+          botGateway.onStart = (_, __) => botTurn;
+          TurnAction? captured;
+          botGateway.onApply = (action) {
+            captured = action;
+            return afterBotMove;
+          };
+
+          botContainer.read(gameProvider.notifier).startLocalGame(
+            const [],
+            const GameConfig(playerCount: 2),
+          );
+
+          // Antes de que pase botThinkDelay, todavía no debería haber
+          // aplicado nada — es lo que hace que la jugada no se sienta
+          // instantánea.
+          expect(botGateway.applyCalls, 0);
+
+          await Future.delayed(const Duration(milliseconds: 30));
+
+          expect(botGateway.applyCalls, 1);
+          expect(captured, isA<DrawCardAction>());
+          expect((captured as DrawCardAction).playerId, 'bot1');
+          expect(
+            (botContainer.read(gameProvider) as GameRunning).state,
+            afterBotMove,
+          );
+        },
+      );
+
+      test('si le toca a un humano, no dispara ninguna acción sola', () async {
+        botGateway.onStart = (_, __) => _state(currentPlayerId: 'p1');
+
+        botContainer.read(gameProvider.notifier).startLocalGame(
+          const [],
+          const GameConfig(playerCount: 2),
+        );
+
+        await Future.delayed(const Duration(milliseconds: 30));
+
+        expect(botGateway.applyCalls, 0);
       });
     });
   });

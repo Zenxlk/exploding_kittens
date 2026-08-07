@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,6 +8,8 @@ import 'package:exploding_kittens/core/errors/exceptions.dart';
 import 'package:exploding_kittens/features/game/data/local_game_gateway.dart';
 import 'package:exploding_kittens/features/game/data/online_wire_codec.dart';
 import 'package:exploding_kittens/features/game/domain/i_game_gateway.dart';
+import 'package:exploding_kittens/game_engine/bot/bot_config.dart';
+import 'package:exploding_kittens/game_engine/bot/bot_player.dart';
 import 'package:exploding_kittens/game_engine/events/game_event.dart';
 import 'package:exploding_kittens/game_engine/models/card/card_model.dart';
 import 'package:exploding_kittens/game_engine/models/game/game_config.dart';
@@ -15,6 +18,7 @@ import 'package:exploding_kittens/game_engine/models/game/game_state.dart';
 import 'package:exploding_kittens/game_engine/models/player/player_model.dart';
 import 'package:exploding_kittens/game_engine/models/turn/turn_action.dart';
 import 'package:exploding_kittens/game_engine/models/turn/turn_model.dart';
+import 'package:exploding_kittens/game_engine/rules/game_rules.dart';
 import 'package:exploding_kittens/network/websocket/websocket_message.dart';
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -67,18 +71,29 @@ class GameNotifier extends Notifier<GameSessionState> {
     IGameGateway? gateway,
     Duration? nopeWindowDuration,
     Duration? turnTimeout,
+    Duration? botThinkDelay,
+    BotConfig Function(String playerId)? botConfigFor,
+    Random? botRng,
   })  : _gateway = gateway ?? LocalGameGateway(),
         _nopeWindowDuration = nopeWindowDuration ??
             const Duration(milliseconds: GameConstants.nopeWindowMs),
         _turnTimeout = turnTimeout ??
-            const Duration(seconds: GameConstants.turnTimeoutSeconds);
+            const Duration(seconds: GameConstants.turnTimeoutSeconds),
+        _botThinkDelay = botThinkDelay ??
+            const Duration(milliseconds: GameConstants.botThinkDelayMs),
+        _botConfigFor = botConfigFor ?? ((_) => BotConfig.normal),
+        _botRng = botRng ?? Random();
 
   final IGameGateway _gateway;
   final Duration _nopeWindowDuration;
   final Duration _turnTimeout;
+  final Duration _botThinkDelay;
+  final BotConfig Function(String playerId) _botConfigFor;
+  final Random _botRng;
   Timer? _nopeTimer;
   Timer? _turnTimer;
   String? _turnTimerPlayerId;
+  Timer? _botTimer;
   final _rawStatesController = StreamController<GameState>.broadcast(
     sync: true,
   );
@@ -98,6 +113,7 @@ class GameNotifier extends Notifier<GameSessionState> {
     ref.onDispose(() {
       _nopeTimer?.cancel();
       _turnTimer?.cancel();
+      _botTimer?.cancel();
       _rawStatesController.close();
     });
     return const GameIdle();
@@ -229,12 +245,64 @@ class GameNotifier extends Notifier<GameSessionState> {
     if (next is GameFinished) {
       _nopeTimer?.cancel();
       _turnTimer?.cancel();
+      _botTimer?.cancel();
     }
     state = next;
     if (next is GameRunning) {
       _scheduleNopeWindowIfNeeded(gameState);
       _scheduleTurnTimerIfNeeded(gameState);
+      _scheduleBotDecisionIfNeeded(gameState);
     }
+  }
+
+  /// Si a quien le toca actuar ahora es un bot, dispara su jugada sola tras
+  /// una pausa breve — issue #47. Mismo punto de enganche que usa el
+  /// puente host↔red (`applyAction`), no toca `ActionProcessor`/`GameRules`
+  /// salvo por `GameRules.legalActions` (enumeración, no decisión).
+  void _scheduleBotDecisionIfNeeded(GameState gameState) {
+    _botTimer?.cancel();
+    final actorId = _nextActorId(gameState);
+    final actor = actorId == null ? null : gameState.playerById(actorId);
+    if (actorId == null || actor == null || !actor.isBot) return;
+
+    _botTimer = Timer(_botThinkDelay, () {
+      final action = BotPlayer.decide(
+        gameState,
+        actorId,
+        _botConfigFor(actorId),
+        _botRng,
+      );
+      if (action == null) {
+        // Solo pasa en una ventana de Nope: el bot decidió legítimamente
+        // no jugar el suyo — se resuelve igual que si nadie reaccionara.
+        _resolveNopeWindow();
+      } else {
+        applyAction(action);
+      }
+    });
+  }
+
+  /// Espeja el switch que ya usa `GameRules.validate` para `ChooseCardAction`
+  /// (quién puede elegir según `GameState.pendingAction`), más los casos de
+  /// `playing`/`resolving` (el jugador activo) y `nopeWindow` (cualquier
+  /// jugador vivo con algo legal para hacer ahora — hoy eso es únicamente
+  /// tener un Nope en mano).
+  String? _nextActorId(GameState gameState) {
+    return switch (gameState.turn.phase) {
+      TurnPhase.playing ||
+      TurnPhase.resolving =>
+        gameState.turn.currentPlayerId,
+      TurnPhase.nopeWindow => gameState.alivePlayers
+          .where((p) => GameRules.legalActions(p.id, gameState).isNotEmpty)
+          .firstOrNull
+          ?.id,
+      TurnPhase.awaitingCardChoice => switch (gameState.pendingAction) {
+          PlayFavorAction(:final targetPlayerId) => targetPlayerId,
+          PlayCatTrioAction(:final playerId) => playerId,
+          _ => null,
+        },
+      TurnPhase.drawRequired || TurnPhase.ended => null,
+    };
   }
 
   void _scheduleNopeWindowIfNeeded(GameState gameState) {
