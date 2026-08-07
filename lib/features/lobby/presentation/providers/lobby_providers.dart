@@ -223,6 +223,16 @@ class LobbyNotifier extends Notifier<LobbyState> {
     state = const LobbyIdle();
   }
 
+  // Host, LAN/local únicamente (issue #47) — el room_state actualizado
+  // llega solo por _subscribeToRoom, no hace falta setear state acá.
+  Future<void> addBot(String name) async {
+    await _repo.addBot(name);
+  }
+
+  Future<void> removeBot(String botId) async {
+    await _repo.removeBot(botId);
+  }
+
   // ── internals ────────────────────────────────────────────────────────────
 
   void _subscribeToRoom() {

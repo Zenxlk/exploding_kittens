@@ -61,6 +61,12 @@ abstract interface class ILobbyRepository {
   // Host only: start the game (requires canStart == true).
   Future<Result<void>> startGame();
 
+  // Host only, LAN/local (issue #47): agrega/quita un jugador-bot a la
+  // sala antes de arrancar. No-op en modo online (wsServer null ahí — el
+  // motor de bots server-side es un issue futuro separado).
+  Future<Result<void>> addBot(String name);
+  Future<Result<void>> removeBot(String botId);
+
   // Leave the current room; stops the server + advertiser if local player is host.
   Future<void> leaveRoom();
 }

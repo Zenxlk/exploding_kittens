@@ -169,6 +169,38 @@ class WsServer {
     _broadcastRoomState();
   }
 
+  // Decisión enteramente local del host sobre su propia sala — no hace
+  // falta ningún mensaje WebSocket nuevo, se propaga con el mismo
+  // RoomStateMessage que ya usa cualquier otro cambio de sala. El bot se
+  // agrega con isReady:true: LobbyRoom.canStart ya lo cuenta como listo sin
+  // cambios ahí. issue #47.
+  void addBot(String name) {
+    final room = _room!;
+    if (room.isFull || room.status != LobbyStatus.waiting) return;
+    _updateRoom(room.copyWith(
+      players: [
+        ...room.players,
+        LobbyPlayer(
+          id: const Uuid().v4(),
+          name: name,
+          isBot: true,
+          isReady: true,
+        ),
+      ],
+    ));
+    _broadcastRoomState();
+  }
+
+  void removeBot(String botId) {
+    final room = _room!;
+    final target = room.players.where((p) => p.id == botId).firstOrNull;
+    if (target == null || !target.isBot) return;
+    _updateRoom(room.copyWith(
+      players: room.players.where((p) => p.id != botId).toList(),
+    ));
+    _broadcastRoomState();
+  }
+
   void _onSetReady(WebSocket ws, bool ready) {
     final playerId = _playerIdFor(ws);
     if (playerId == null) return;

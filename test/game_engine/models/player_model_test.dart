@@ -16,6 +16,7 @@ void main() {
         ],
         status: PlayerStatus.disconnected,
         isHost: true,
+        isBot: true,
       );
 
       final restored = PlayerModel.fromJson(player.toJson());
@@ -28,6 +29,22 @@ void main() {
       expect(restored, equals(player));
       expect(restored.status, PlayerStatus.active);
       expect(restored.isHost, isFalse);
+      expect(restored.isBot, isFalse);
+    });
+
+    test('fromJson tolera JSON sin isBot (compatibilidad hacia atrás)', () {
+      const player = PlayerModel(id: 'p3', name: 'Carol', hand: []);
+      final json = player.toJson()..remove('isBot');
+      final restored = PlayerModel.fromJson(json);
+      expect(restored.isBot, isFalse);
+    });
+
+    test('copyWith actualiza isBot de forma independiente', () {
+      const player = PlayerModel(id: 'p4', name: 'Dave', hand: []);
+      final bot = player.copyWith(isBot: true);
+      expect(bot.isBot, isTrue);
+      expect(bot.id, player.id);
+      expect(bot.name, player.name);
     });
   });
 }

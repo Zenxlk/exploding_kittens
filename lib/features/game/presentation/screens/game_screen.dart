@@ -108,12 +108,17 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     ref.read(gameNetworkBridgeProvider);
 
     final players = lobbyState.room.players
-        .map((p) => PlayerModel(id: p.id, name: p.name, hand: const []))
+        .map((p) =>
+            PlayerModel(id: p.id, name: p.name, hand: const [], isBot: p.isBot))
         .toList();
 
-    ref
-        .read(gameProvider.notifier)
-        .startLocalGame(players, GameConfig(playerCount: players.length));
+    ref.read(gameProvider.notifier).startLocalGame(
+          players,
+          GameConfig(
+            playerCount: players.length,
+            botCount: players.where((p) => p.isBot).length,
+          ),
+        );
   }
 
   @override

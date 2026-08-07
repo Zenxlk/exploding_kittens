@@ -6,22 +6,26 @@ class LobbyPlayer extends Equatable {
     required this.name,
     this.isHost = false,
     this.isReady = false,
+    this.isBot = false,
   });
 
   final String id;
   final String name;
   final bool isHost;
   final bool isReady;
+  final bool isBot;
 
   LobbyPlayer copyWith({
     bool? isHost,
     bool? isReady,
+    bool? isBot,
   }) {
     return LobbyPlayer(
       id: id,
       name: name,
       isHost: isHost ?? this.isHost,
       isReady: isReady ?? this.isReady,
+      isBot: isBot ?? this.isBot,
     );
   }
 
@@ -30,6 +34,7 @@ class LobbyPlayer extends Equatable {
         'name': name,
         'isHost': isHost,
         'isReady': isReady,
+        'isBot': isBot,
       };
 
   factory LobbyPlayer.fromJson(Map<String, dynamic> j) => LobbyPlayer(
@@ -37,8 +42,9 @@ class LobbyPlayer extends Equatable {
         name: j['name'] as String,
         isHost: j['isHost'] as bool,
         isReady: j['isReady'] as bool,
+        isBot: j['isBot'] as bool? ?? false,
       );
 
   @override
-  List<Object?> get props => [id, name, isHost, isReady];
+  List<Object?> get props => [id, name, isHost, isReady, isBot];
 }

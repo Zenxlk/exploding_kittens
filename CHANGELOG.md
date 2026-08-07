@@ -11,6 +11,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [0.10.0] — 2026-08-06
+
+### Añadido
+- Motor de bots (IA) heurístico con proyección, jugable en partidas locales (pass-and-play) y LAN (issue #47). Un solo motor configurable (`BotConfig`/`BotWeights`: pesos, cantidad de determinizaciones sobre información oculta, temperatura) en vez de dos estrategias fijas separadas — la dificultad sale de variar la configuración sobre el mismo núcleo. `GameRules.legalActions` (nuevo, no existía antes: el motor solo sabía rechazar una acción ya construida) enumera las acciones legales de un jugador; `Determinizer` muestrea la información oculta (mazo no revelado + manos rivales) sin dejar pasar nunca la identidad real de una carta rival al evaluador. El host agrega/quita bots desde `LobbyScreen` antes de arrancar la partida. Bots en modo online (backend Go, `cards_game_service`) quedan para una issue futura y separada — detalle completo en `docs/ARCHITECTURE.md`, sección "Motor de bots"
+
+### Corregido
+- `TurnManager.advance` podía dejar el turno trabado para siempre en un jugador recién eliminado, si moría (Exploding Kitten sin Defuse) en el primer robo de una cadena de Attack de 2+ — bug preexistente del motor, no específico de bots, encontrado por el fuzz test bot-vs-bot de la feature de arriba
+
+---
+
 ## [0.9.0] — 2026-08-02
 
 ### Añadido

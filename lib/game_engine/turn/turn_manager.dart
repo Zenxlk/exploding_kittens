@@ -6,7 +6,15 @@ import '../rules/turn_rules.dart';
 abstract final class TurnManager {
   /// Avanza al siguiente jugador. Si Attack encadenó turnos, reduce actionsLeft.
   static GameState advance(GameState state) {
-    final attacksLeft = TurnRules.attackTurnsLeft(state);
+    // Un jugador eliminado no puede "deber" más turnos de Attack: si moría
+    // en el primer robo de una cadena de 2+, `attackTurnsLeft` seguía dando
+    // >0 y esta función lo dejaba como currentPlayerId para siempre (nadie
+    // vivo puede actuar en su nombre, ni hay otro disparador que vuelva a
+    // llamar advance) — softlock real, no solo un problema de bots.
+    final currentPlayer = state.playerById(state.turn.currentPlayerId);
+    final attacksLeft = (currentPlayer?.isAlive ?? false)
+        ? TurnRules.attackTurnsLeft(state)
+        : 0;
 
     if (attacksLeft > 0) {
       // El mismo jugador aún tiene turnos por el Attack

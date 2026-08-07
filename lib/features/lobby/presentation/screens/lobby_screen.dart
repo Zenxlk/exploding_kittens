@@ -477,6 +477,11 @@ class _InRoomView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final room = lobbyState.room;
     final isHost = lobbyState.isHost;
+    // Bots server-side (modo online) son un issue futuro separado — acá
+    // solo tiene sentido ofrecer agregar bots cuando el motor real corre
+    // en este dispositivo (LAN/local, ver ILobbyRepository.addBot).
+    final canManageBots =
+        isHost && mode == LobbyMode.lan && room.status == LobbyStatus.waiting;
 
     return Column(
       children: [
@@ -491,6 +496,11 @@ class _InRoomView extends ConsumerWidget {
             itemBuilder: (_, i) => _PlayerTile(
               player: room.players[i],
               isLocalPlayer: room.players[i].id == lobbyState.localPlayerId,
+              onRemoveBot: canManageBots
+                  ? () => ref
+                      .read(lobbyProvider.notifier)
+                      .removeBot(room.players[i].id)
+                  : null,
             )
                 .animate()
                 .fadeIn(delay: (i * 50).ms)
@@ -498,9 +508,39 @@ class _InRoomView extends ConsumerWidget {
           ),
         ),
 
+        // ── Agregar bot (issue #47) ─────────────────────────────────────
+        if (canManageBots && !room.isFull) _AddBotButton(room: room, ref: ref),
+
         // ── Action bar ──────────────────────────────────────────────────
         _ActionBar(lobbyState: lobbyState, ref: ref),
       ],
+    );
+  }
+}
+
+class _AddBotButton extends StatelessWidget {
+  const _AddBotButton({required this.room, required this.ref});
+  final LobbyRoom room;
+  final WidgetRef ref;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          onPressed: () {
+            final botNumber = room.players.where((p) => p.isBot).length + 1;
+            ref
+                .read(lobbyProvider.notifier)
+                .addBot(l10n.lobbyBotName(botNumber));
+          },
+          icon: const Icon(Icons.smart_toy_rounded, size: 18),
+          label: Text(l10n.lobbyAddBot),
+        ),
+      ),
     );
   }
 }
@@ -640,9 +680,18 @@ class _CopyableValue extends StatelessWidget {
 }
 
 class _PlayerTile extends StatelessWidget {
-  const _PlayerTile({required this.player, required this.isLocalPlayer});
+  const _PlayerTile({
+    required this.player,
+    required this.isLocalPlayer,
+    this.onRemoveBot,
+  });
   final LobbyPlayer player;
   final bool isLocalPlayer;
+
+  // No-null solo cuando el que mira es el host, el bot se puede sacar
+  // (sala en espera, LAN) y [player] es efectivamente un bot — controla el
+  // botón de "quitar" en trailing. issue #47.
+  final VoidCallback? onRemoveBot;
 
   @override
   Widget build(BuildContext context) {
@@ -654,13 +703,17 @@ class _PlayerTile extends StatelessWidget {
         backgroundColor: player.isHost
             ? AppColors.primary.withValues(alpha: 0.2)
             : AppColors.surface,
-        child: Text(
-          player.name.isEmpty ? '?' : player.name[0].toUpperCase(),
-          style: AppTextStyles.body.copyWith(
-            fontWeight: FontWeight.bold,
-            color: player.isHost ? AppColors.primary : AppColors.onBackground,
-          ),
-        ),
+        child: player.isBot
+            ? const Icon(Icons.smart_toy_rounded, color: AppColors.secondary)
+            : Text(
+                player.name.isEmpty ? '?' : player.name[0].toUpperCase(),
+                style: AppTextStyles.body.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: player.isHost
+                      ? AppColors.primary
+                      : AppColors.onBackground,
+                ),
+              ),
       ),
       title: Row(
         children: [
@@ -674,22 +727,31 @@ class _PlayerTile extends StatelessWidget {
           ],
         ],
       ),
-      trailing: player.isHost
-          ? null
-          : AnimatedSwitcher(
-              duration: 300.ms,
-              child: player.isReady
-                  ? const Icon(
-                      Icons.check_circle_rounded,
-                      color: AppColors.success,
-                      key: ValueKey('ready'),
-                    )
-                  : Icon(
-                      Icons.radio_button_unchecked_rounded,
-                      color: AppColors.onBackground.withValues(alpha: 0.3),
-                      key: const ValueKey('not_ready'),
-                    ),
-            ),
+      trailing: player.isBot
+          ? (onRemoveBot == null
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.close_rounded,
+                      color: AppColors.eliminated),
+                  tooltip: l10n.lobbyRemoveBot,
+                  onPressed: onRemoveBot,
+                ))
+          : player.isHost
+              ? null
+              : AnimatedSwitcher(
+                  duration: 300.ms,
+                  child: player.isReady
+                      ? const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.success,
+                          key: ValueKey('ready'),
+                        )
+                      : Icon(
+                          Icons.radio_button_unchecked_rounded,
+                          color: AppColors.onBackground.withValues(alpha: 0.3),
+                          key: const ValueKey('not_ready'),
+                        ),
+                ),
     );
   }
 }

@@ -7,12 +7,23 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   // ── LobbyPlayer ────────────────────────────────────────────────────────────
   group('LobbyPlayer', () {
-    const player =
-        LobbyPlayer(id: 'p1', name: 'Alice', isHost: false, isReady: false);
+    const player = LobbyPlayer(
+      id: 'p1',
+      name: 'Alice',
+      isHost: false,
+      isReady: false,
+      isBot: true,
+    );
 
     test('toJson / fromJson round-trip conserva todos los campos', () {
       final restored = LobbyPlayer.fromJson(player.toJson());
       expect(restored, equals(player));
+    });
+
+    test('fromJson tolera JSON sin isBot (compatibilidad hacia atrás)', () {
+      final json = player.toJson()..remove('isBot');
+      final restored = LobbyPlayer.fromJson(json);
+      expect(restored.isBot, isFalse);
     });
 
     test('copyWith cambia solo los campos indicados', () {
@@ -20,6 +31,7 @@ void main() {
       expect(ready.isReady, isTrue);
       expect(ready.id, equals(player.id));
       expect(ready.name, equals(player.name));
+      expect(ready.isBot, equals(player.isBot));
     });
   });
 

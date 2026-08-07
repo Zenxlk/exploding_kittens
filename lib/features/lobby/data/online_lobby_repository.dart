@@ -135,6 +135,19 @@ class OnlineLobbyRepository implements ILobbyRepository {
     return const Success(null);
   }
 
+  // El motor de bots server-side es un issue futuro separado (issue #47
+  // solo cubre el motor local en Dart) — la sala vive en el backend, este
+  // dispositivo no tiene forma de agregar un jugador ahí todavía.
+  @override
+  Future<Result<void>> addBot(String name) async => FailureResult(
+        const NetworkFailure('Los bots todavía no están disponibles online'),
+      );
+
+  @override
+  Future<Result<void>> removeBot(String botId) async => FailureResult(
+        const NetworkFailure('Los bots todavía no están disponibles online'),
+      );
+
   @override
   Future<void> leaveRoom() async {
     final playerId = _localPlayerId;

@@ -146,6 +146,26 @@ class LobbyRepository implements ILobbyRepository {
   }
 
   @override
+  Future<Result<void>> addBot(String name) async {
+    final server = _server;
+    if (server == null) {
+      return FailureResult(const NetworkFailure('No sos el host de la sala'));
+    }
+    server.addBot(name);
+    return const Success(null);
+  }
+
+  @override
+  Future<Result<void>> removeBot(String botId) async {
+    final server = _server;
+    if (server == null) {
+      return FailureResult(const NetworkFailure('No sos el host de la sala'));
+    }
+    server.removeBot(botId);
+    return const Success(null);
+  }
+
+  @override
   Future<void> leaveRoom() async {
     final playerId = _localPlayerId;
     if (playerId != null && _client != null) {

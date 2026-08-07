@@ -101,10 +101,20 @@ empezar la siguiente.
 - [x] Separar el manejo mDNS de host/cliente de `LobbyRepository` en clases propias (`HostBeaconSync`/`ClientRoomDiscovery`)
 - [x] `GameTableView` puede suscribirse al `Stream<GameEvent>` (mismo que ya consume `GameSoundController`) para animaciones que un diff de `GameState` no puede detectar por sí solo (mezclar el mazo, distinguir un robo propio de una carta ganada por Favor/pareja/trío) — ver Fase 4 (`DeckWidget`/`CardWidget`) y `CHANGELOG.md` para el detalle
 
-### Bots / modo offline
-- [ ] Interfaz `BotStrategy` con implementación básica (aleatoria)
-- [ ] Estrategia avanzada de bot (heurística)
-- [ ] Partida local contra 1–4 bots sin red
+### Bots / modo offline (issue #47)
+- [x] Motor de bots heurístico con proyección (OSLA), configurable en
+  dificultad — un solo motor paramétrico (`BotConfig`/`BotWeights`:
+  pesos, determinizaciones, temperatura), no dos estrategias fijas
+  separadas como sugería el ítem original ("básica aleatoria" +
+  "avanzada heurística"): la dificultad sale de variar la configuración
+  sobre el mismo núcleo. Ver `docs/ARCHITECTURE.md`, sección "Motor de
+  bots", para el diseño completo
+- [x] Partida local (pass-and-play) o LAN contra 1-4 bots — el host los
+  agrega desde `LobbyScreen` antes de arrancar
+- [ ] Bots en modo online (backend Go, `cards_game_service`) — issue
+  futuro y separado, sin dependencias pendientes; queda preparado
+  (features/config en tipos serializables) pero no implementado, ver
+  `docs/ARCHITECTURE.md`
 
 ### Autenticación (Fase 7)
 - [x] Mitad cliente de la identidad persistente de `cards_game_service` (backend hermano, repo separado): `SupabaseAuthService` + `authServiceProvider`/`authSessionProvider` (feature `auth/`, sign-in anónimo en la primera lectura), `JoinRoomMessage.authToken` opcional, `WsClient` lo manda en el join inicial y lo reenvía en cada reconexión automática, y `playerIdProvider` prefiere el `playerId` de la sesión sobre el UUID de invitado — ver `docs/ARCHITECTURE.md`, sección "Autenticación con Supabase", para el diseño completo

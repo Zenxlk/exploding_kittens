@@ -97,6 +97,9 @@
   "lobbyWaitingForPlayers": "Waiting for players…",
   "lobbyNotReady": "Not Ready",
   "lobbyReady": "Ready",
+  "lobbyAddBot": "Add bot",
+  "lobbyBotName": "Bot {number}",
+  "lobbyRemoveBot": "Remove bot",
 
   "gameNoMatchInProgress": "No match in progress",
   "gameDealingCards": "Dealing cards…",
