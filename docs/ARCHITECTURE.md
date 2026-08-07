@@ -499,6 +499,98 @@ vez de soluciones ad-hoc):
 
 ---
 
+## Motor de bots (Fase 6 — issue #47)
+
+Heurística ponderada con proyección corta (OSLA — one-step look-ahead),
+no búsqueda tipo MCTS/ISMCTS: investigación previa (papers específicos de
+Exploding Kittens — PyTAG arXiv:2405.18123, Dhumbal arXiv:2510.11736)
+mostró que un rule-based/heurístico simple iguala o supera a MCTS/ISMCTS
+en este juego puntual (mucho azar, techo de habilidad bajo), y que con la
+ramificación baja del juego (~5-15 acciones legales, mazo ~50-60 cartas)
+Dart AOT sobra — no hace falta otro lenguaje ni delegar a un `Isolate`.
+
+### Un solo motor configurable, no estrategias separadas
+
+`lib/game_engine/bot/` (pure Dart, sin Flutter, mismo criterio que el
+resto de `game_engine/`):
+
+- `BotConfig`/`BotWeights` — pesos de la heurística, cantidad de
+  determinizaciones (`K`) y `temperature` (0 = siempre la de mayor
+  puntaje; más alto = más aleatorio). Presets `easy`/`normal`/`hard` son
+  *valores* de `BotConfig` (mismos pesos, más `K` y menos `temperature` =
+  más fuerte), no clases ni estrategias separadas.
+- `GameStateEvaluator.evaluate(state, playerId, weights)` — determinista,
+  sin RNG: combina `BotFeatures` (probabilidad de explotar al robar,
+  Defuses en mano, cartas de escape, info de Ver el Futuro, presión de
+  mano rival) con `weights`.
+- `Determinizer.sample(state, observerId, rng)` — genera una hipótesis
+  internamente consistente de la información oculta: junta el mazo no
+  revelado + las manos rivales (nunca la propia) en un pool, lo mezcla, y
+  reparte de vuelta respetando los mismos tamaños — nunca deja pasar la
+  identidad real de una carta rival concreta al evaluador. Ver el Futuro
+  propio se mantiene fijo (información legítima). **No es una barrera de
+  seguridad** — en LAN el bot corre en el mismo proceso confiable que ya
+  ve `GameState` completo sin restricciones (es el host) — es disciplina
+  de diseño de juego, para que decida solo con lo que un jugador real
+  tendría.
+- `BotPlayer.decide(state, playerId, config, rng)` — para cada candidata
+  de `GameRules.legalActions` (nuevo: no existía ningún enumerador de
+  acciones legales, solo `validate()` para rechazar una ya construida;
+  genera candidatos baratos por fase y los filtra con `validate()` real,
+  así nunca puede divergir de la única fuente de reglas), promedia su
+  score sobre `K` determinizaciones y elige con softmax por temperatura.
+  Devuelve `TurnAction?` — `null` es una respuesta legítima, no un error:
+  el único caso es una ventana de Nope, donde "legal pero decido no
+  hacerlo" es una decisión real (a diferencia de `playing`/`resolving`,
+  que siempre fuerzan progreso — hasta robar es una opción). El trío de
+  gatos a ciegas (el actor no ve la mano del objetivo) nunca pasa por
+  `evaluate()` — sería trampa real aunque nadie la vea en pantalla — se
+  elige uniforme al azar.
+- `GameEventBus.runMuted(...)` (`lib/game_engine/events/game_event_bus.dart`)
+  — permite que `BotPlayer.decide` simule una candidata con
+  `ActionProcessor.process` real (para puntuarla) sin disparar sonidos ni
+  eventos reales durante la evaluación.
+
+### Dónde vive el bot según el modo
+
+Solo tiene sentido donde el `GameEngine` real corre en el dispositivo:
+pass-and-play y LAN (el host). En ambos casos no hay flujo de UI
+separado — hoy toda partida levanta un `WsServer` real (incluso la
+solitaria), así que "jugar contra bots sin red" es mecánicamente "una
+sala LAN donde no se une nadie más". `PlayerModel.isBot`/`LobbyPlayer
+.isBot` marcan al jugador; `WsServer.addBot`/`removeBot` son una decisión
+local del host sobre su propia sala (sin mensaje WebSocket nuevo, se
+propaga con el `RoomStateMessage` de siempre); `GameNotifier
+._scheduleBotDecisionIfNeeded` (enganchado en `_setFromGameState`, mismo
+patrón que los timers de ventana de Nope/turno) dispara la jugada del bot
+tras `GameConstants.botThinkDelayMs` llamando al mismo `applyAction` que
+ya usa el puente host↔red — no toca `ActionProcessor`/`GameRules` salvo
+por `legalActions`.
+
+**Modo online (backend Go, `cards_game_service`) queda fuera de alcance
+de esta issue** — el motor real ahí corre server-side y el cliente Dart
+nunca recibe el `GameState` completo (solo una `View` redactada), así que
+un bot Dart no tiene con qué decidir sin hacer trampa. Queda preparado
+para portar después: las features de `BotFeatures` están descritas en
+tipos simples (`double`/`int`/`bool`, no `CardModel`/`Equatable`) para
+ser re-describibles en Go, y `BotConfig`/`BotWeights` ya tienen
+`toJson`/`fromJson` aunque nada los consuma todavía. Issue futuro y
+separado, sin dependencias pendientes (el modo online del cliente ya está
+conectado, ver sección de Autenticación arriba).
+
+### Hallazgo de paso: softlock de `TurnManager.advance`
+
+El fuzz test bot-vs-bot (miles de turnos sin intervención humana)
+encontró un bug real y preexistente, no específico de bots: si un
+jugador moría (Exploding Kitten sin Defuse) en el primer robo de una
+cadena de Attack de 2+, `TurnManager.advance` solo miraba
+`actionsLeft > 0` para decidir si el mismo jugador seguía jugando, sin
+chequear si seguía vivo — el turno quedaba trabado para siempre en un
+`currentPlayerId` eliminado. Corregido para que un jugador eliminado
+nunca "deba" más turnos de Attack.
+
+---
+
 ## Gestión de estado (Riverpod)
 
 Los providers manuales (`Notifier`/`NotifierProvider`, sin `@riverpod`) son
