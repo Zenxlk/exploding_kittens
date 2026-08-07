@@ -147,5 +147,19 @@ void main() {
       final result = await repo.startGame();
       expect(result, isA<FailureResult<void>>());
     });
+
+    test(
+        'addBot no está disponible en modo online (issue #47 solo cubre '
+        'el motor local en Dart)', () async {
+      final repo = OnlineLobbyRepository(roomsClient: MockOnlineRoomsClient());
+      final result = await repo.addBot('Bot 1');
+      expect(result, isA<FailureResult<void>>());
+    });
+
+    test('removeBot no está disponible en modo online', () async {
+      final repo = OnlineLobbyRepository(roomsClient: MockOnlineRoomsClient());
+      final result = await repo.removeBot('bot-1');
+      expect(result, isA<FailureResult<void>>());
+    });
   });
 }

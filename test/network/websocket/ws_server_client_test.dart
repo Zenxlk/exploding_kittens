@@ -84,6 +84,108 @@ void main() {
     });
   });
 
+  // ── bots (issue #47) ─────────────────────────────────────────────────────
+  group('WsServer — addBot / removeBot', () {
+    test('addBot agrega un jugador-bot listo a la sala y lo propaga', () async {
+      final server = await startServer();
+      final update = server.roomStream
+          .firstWhere((r) => r.players.length == 2)
+          .timeout(const Duration(seconds: 3));
+
+      server.addBot('Bot 1');
+
+      final room = await update;
+      final bot = room.players.firstWhere((p) => p.id != 'h1');
+      expect(bot.isBot, isTrue);
+      expect(bot.isReady, isTrue);
+      expect(bot.name, 'Bot 1');
+
+      await server.close();
+    });
+
+    test('addBot no hace nada si la sala ya está llena', () async {
+      final server = await startServer();
+      // maxPlayers default (GameConstants.maxPlayers) — llenamos con bots.
+      final max = server.currentRoom!.maxPlayers;
+      for (var i = 0; i < max - 1; i++) {
+        server.addBot('Bot $i');
+      }
+      final full = server.currentRoom!;
+      expect(full.isFull, isTrue);
+
+      server.addBot('Uno de más');
+      expect(server.currentRoom!.players, hasLength(full.players.length));
+
+      await server.close();
+    });
+
+    test('addBot no hace nada si la partida ya arrancó', () async {
+      final server = await startServer();
+      final hostClient = await connectClient(
+        port: server.port,
+        playerId: 'h1',
+        playerName: 'Host',
+      );
+      final guest = await connectClient(
+        port: server.port,
+        playerId: 'p2',
+        playerName: 'Bob',
+      );
+      await server.roomStream
+          .firstWhere((r) => r.players.length == 2)
+          .timeout(const Duration(seconds: 3));
+      guest.send(const SetReadyMessage(ready: true));
+      await server.roomStream
+          .firstWhere((r) => r.canStart)
+          .timeout(const Duration(seconds: 3));
+      hostClient.send(const StartGameMessage());
+      await server.roomStream
+          .firstWhere((r) => r.status == LobbyStatus.starting)
+          .timeout(const Duration(seconds: 3));
+
+      final playersBefore = server.currentRoom!.players.length;
+      server.addBot('Tarde');
+      expect(server.currentRoom!.players, hasLength(playersBefore));
+
+      await hostClient.close(playerId: 'h1');
+      await guest.close(playerId: 'p2');
+      await server.close();
+    });
+
+    test('removeBot quita al bot indicado y lo propaga', () async {
+      final server = await startServer();
+      final added = server.roomStream
+          .firstWhere((r) => r.players.length == 2)
+          .timeout(const Duration(seconds: 3));
+      server.addBot('Bot 1');
+      final withBot = await added;
+      final botId = withBot.players.firstWhere((p) => p.isBot).id;
+
+      final removed = server.roomStream
+          .firstWhere((r) => r.players.length == 1)
+          .timeout(const Duration(seconds: 3));
+      server.removeBot(botId);
+      final room = await removed;
+      expect(room.players.any((p) => p.id == botId), isFalse);
+
+      await server.close();
+    });
+
+    test('removeBot no saca a un jugador humano', () async {
+      final server = await startServer();
+      final client = await connectClient(port: server.port);
+      await server.roomStream
+          .firstWhere((r) => r.players.length == 2)
+          .timeout(const Duration(seconds: 3));
+
+      server.removeBot('p1');
+      expect(server.currentRoom!.players.any((p) => p.id == 'p1'), isTrue);
+
+      await client.close(playerId: 'p1');
+      await server.close();
+    });
+  });
+
   // ── ready / start ────────────────────────────────────────────────────────
   group('WsServer — ready y start', () {
     test('SetReady actualiza el estado del jugador en la sala', () async {
