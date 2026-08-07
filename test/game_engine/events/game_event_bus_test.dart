@@ -33,7 +33,8 @@ void main() {
       await sub.cancel();
     });
 
-    test('restaura el estado previo si runMuted anida (silenciado dentro de silenciado)',
+    test(
+        'restaura el estado previo si runMuted anida (silenciado dentro de silenciado)',
         () async {
       final bus = GameEventBus.instance;
       final received = <GameEvent>[];
@@ -52,8 +53,8 @@ void main() {
 
     test('propaga excepciones y restaura el estado igual', () async {
       final bus = GameEventBus.instance;
-      expect(() => bus.runMuted(() => throw StateError('boom')),
-          throwsStateError);
+      expect(
+          () => bus.runMuted(() => throw StateError('boom')), throwsStateError);
 
       final received = <GameEvent>[];
       final sub = bus.stream.listen(received.add);
