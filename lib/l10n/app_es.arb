@@ -132,6 +132,14 @@
   "lobbyWaitingForPlayers": "Esperando jugadores…",
   "lobbyNotReady": "No listo",
   "lobbyReady": "Listo",
+  "lobbyAddBot": "Agregar bot",
+  "lobbyBotName": "Bot {number}",
+  "@lobbyBotName": {
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+  "lobbyRemoveBot": "Quitar bot",
 
   "gameNoMatchInProgress": "No hay ninguna partida en curso",
   "gameDealingCards": "Repartiendo cartas…",

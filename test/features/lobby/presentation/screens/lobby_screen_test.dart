@@ -70,6 +70,33 @@ class _InRoomAfterCreateNotifier extends LobbyNotifier {
   }
 }
 
+// Mismo patrón que _InRoomAfterCreateNotifier, pero además registra las
+// llamadas a addBot/removeBot sin tocar un LobbyRepository real — issue #47.
+class _InRoomWithBotTrackingNotifier extends LobbyNotifier {
+  _InRoomWithBotTrackingNotifier(this._room);
+  final LobbyRoom _room;
+  final addBotCalls = <String>[];
+  final removeBotCalls = <String>[];
+
+  @override
+  LobbyState build() => const LobbyIdle();
+
+  @override
+  Future<void> createRoom({LobbyMode mode = LobbyMode.lan}) async {
+    state = LobbyInRoom(room: _room, localPlayerId: _room.hostId);
+  }
+
+  @override
+  Future<void> addBot(String name) async {
+    addBotCalls.add(name);
+  }
+
+  @override
+  Future<void> removeBot(String botId) async {
+    removeBotCalls.add(botId);
+  }
+}
+
 Widget _wrap(Widget child, LobbyNotifier notifier) => ProviderScope(
       overrides: [lobbyProvider.overrideWith(() => notifier)],
       child: MaterialApp(
@@ -235,6 +262,94 @@ void main() {
         await tester.pump();
 
         expect(find.text('Faltan jugadores listos'), findsOneWidget);
+      },
+    );
+  });
+
+  group('LobbyScreen — bots (issue #47)', () {
+    testWidgets(
+      'el host ve "Agregar bot" en una sala LAN en espera y tocarlo llama '
+      'a addBot con un nombre generado',
+      (tester) async {
+        const room = LobbyRoom(
+          id: 'room-1',
+          hostId: 'host',
+          players: [
+            LobbyPlayer(id: 'host', name: 'Ana', isHost: true, isReady: true),
+          ],
+        );
+        final notifier = _InRoomWithBotTrackingNotifier(room);
+        await tester.pumpWidget(
+          _wrap(const LobbyScreen(isHost: true), notifier),
+        );
+        await tester.tap(find.text('WiFi local'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Agregar bot'), findsOneWidget);
+        await tester.tap(find.text('Agregar bot'));
+        await tester.pump();
+
+        expect(notifier.addBotCalls, ['Bot 1']);
+      },
+    );
+
+    testWidgets(
+      'no se ofrece "Agregar bot" si la sala ya está llena',
+      (tester) async {
+        const room = LobbyRoom(
+          id: 'room-1',
+          hostId: 'host',
+          maxPlayers: 1,
+          players: [
+            LobbyPlayer(id: 'host', name: 'Ana', isHost: true, isReady: true),
+          ],
+        );
+        final notifier = _InRoomWithBotTrackingNotifier(room);
+        await tester.pumpWidget(
+          _wrap(const LobbyScreen(isHost: true), notifier),
+        );
+        await tester.tap(find.text('WiFi local'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Agregar bot'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'un bot en la sala muestra ícono propio y, para el host, un botón '
+      'para quitarlo que llama a removeBot con su id',
+      (tester) async {
+        const room = LobbyRoom(
+          id: 'room-1',
+          hostId: 'host',
+          players: [
+            LobbyPlayer(id: 'host', name: 'Ana', isHost: true, isReady: true),
+            LobbyPlayer(
+              id: 'bot-1',
+              name: 'Bot 1',
+              isReady: true,
+              isBot: true,
+            ),
+          ],
+        );
+        final notifier = _InRoomWithBotTrackingNotifier(room);
+        await tester.pumpWidget(
+          _wrap(const LobbyScreen(isHost: true), notifier),
+        );
+        await tester.tap(find.text('WiFi local'));
+        await tester.pumpAndSettle();
+
+        expect(find.byIcon(Icons.smart_toy_rounded), findsWidgets);
+        final removeButton = find.widgetWithIcon(
+          IconButton,
+          Icons.close_rounded,
+        );
+        expect(removeButton, findsOneWidget);
+
+        await tester.tap(removeButton);
+        await tester.pump();
+
+        expect(notifier.removeBotCalls, ['bot-1']);
       },
     );
   });
