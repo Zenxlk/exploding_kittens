@@ -15,7 +15,7 @@ dependencies:
   riverpod_annotation: ^4.0.0
 
   # ── Navegación ──────────────────────────────────────
-  go_router: ^17.3.0
+  go_router: ^17.4.0
 
   # ── Modelos inmutables ───────────────────────────────
   freezed_annotation: ^3.1.0
