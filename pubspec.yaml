@@ -28,7 +28,7 @@ dependencies:
   http: ^1.6.0
 
   # ── Animaciones ─────────────────────────────────────
-  lottie: ^3.5.1
+  lottie: ^3.6.1
   flutter_animate: ^4.5.0
 
   # ── Audio ────────────────────────────────────────────
